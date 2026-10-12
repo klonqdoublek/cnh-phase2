@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
+import { UploadZone } from '@/components/upload/UploadZone'
+import { UploadedFile } from '@/components/upload/UploadedFile'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
-import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
-import { OutlineButton } from '@/bbl/outline-button'
 import { PillChip } from '@/bbl/pill-chip'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
@@ -77,52 +77,22 @@ export function BasicInfo({ f }: F) {
 
 /* ── Step 2 ─────────────────────────────────────────────────────────────── */
 
-/** GAP — webds ships no file upload / drop zone. Composed from tokens, the
- *  webds Icon and Outline Button, as the Import dialog does. */
+/** The CMS prototype's upload zone and file slot (components/upload) —
+ *  webds ships no upload control (gap). */
 export function AudienceFile({ f }: F) {
-  const input = useRef<HTMLInputElement>(null)
-  const [dragging, setDragging] = useState(false)
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
       {f.file ? (
         <FileResult f={f} />
       ) : (
-        <div
-          data-error={f.errors.file ? 'true' : undefined}
-          onDragOver={(e) => {
-            e.preventDefault()
-            setDragging(true)
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault()
-            setDragging(false)
-            f.pick(e.dataTransfer.files)
-          }}
-          className={cn(
-            'flex flex-col items-center gap-[var(--space-2)] rounded-[var(--radius-2)] border border-dashed border-[var(--color-border-primary-default)] bg-[var(--color-surface-secondary-default)] px-[var(--space-4)] py-[var(--space-6)] text-center',
-            dragging && 'border-[var(--color-border-highlight-default)] bg-[var(--color-surface-highlight-subtle-default)]',
-            f.errors.file && 'border-[var(--color-border-negative-default)]',
-          )}
-        >
-          <Icon slug="share" size={32} color="var(--color-icon-highlight-default)" />
-          <p className="type-label-m-emphasized text-[var(--color-text-primary-default)]">{BROADCAST_COPY.dropTitle}</p>
-          <p className={NOTE}>{BROADCAST_COPY.dropHint}</p>
-          <OutlineButton className="mt-[var(--space-2)] h-[36px]" onClick={() => input.current?.click()}>
-            {BROADCAST_COPY.browse}
-          </OutlineButton>
-        </div>
+        <UploadZone
+          buttonLabel={BROADCAST_COPY.browse}
+          hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
+          accept=".csv,.xlsx,text/csv"
+          error={!!f.errors.file}
+          onFiles={f.pick}
+        />
       )}
-      <input
-        ref={input}
-        type="file"
-        accept=".csv,.xlsx,text/csv"
-        hidden
-        onChange={(e) => {
-          f.pick(e.target.files)
-          e.target.value = ''
-        }}
-      />
       {f.errors.file && (
         <InlineMessage appearance="negative" size="s">
           {f.errors.file}
@@ -155,45 +125,26 @@ function FileResult({ f }: F) {
   const invalidRows = f.check ? f.check.rows.filter((r) => r.errors.length) : []
   return (
     <div className="flex flex-col gap-[var(--space-3)]">
-      <div
-        className={cn(
-          'flex min-h-[40px] items-center gap-[var(--space-3)] rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)] py-[var(--space-1)] pr-[var(--space-2)] pl-[var(--space-4)]',
-          bad && 'border-[var(--color-border-negative-default)]',
-        )}
-      >
-        <Icon
-          slug="documents"
-          size={24}
-          color={bad ? 'var(--color-icon-negative-default)' : 'var(--color-icon-secondary-default)'}
-        />
-        <p title={file.name} className="min-w-[120px] flex-1 truncate type-label-m-emphasized text-[var(--color-text-primary-default)]">
-          {file.name}
-        </p>
-        <p
-          className={cn(
-            'max-w-[60%] truncate text-right type-body-s',
-            bad ? 'text-[var(--color-text-negative-default)]' : 'text-[var(--color-text-secondary-default)]',
-          )}
-        >
-          {f.read
+      <UploadedFile
+        name={file.name}
+        error={bad}
+        meta={
+          f.read
             ? f.read.ok
               ? `${sizeLabel(file.size)} · ${n(f.read.audience.rows.length)} rows`
               : f.read.message
-            : BROADCAST_COPY.checking}
-        </p>
-        {f.audience && (
-          <span className="inline-flex shrink-0 items-center gap-[var(--space-1)] type-label-m-emphasized text-[var(--color-text-positive-default)]">
-            <Icon slug="tick-circle" size={16} color="var(--color-icon-positive-default)" />
-            {BROADCAST_COPY.validated}
-          </span>
-        )}
-        <IconButton
-          size={16}
-          label={`Remove ${file.name}`}
-          icon={<Icon slug="close" size={16} color="currentColor" />}
-          onClick={f.clearFile}
-        />
-      </div>
+            : BROADCAST_COPY.checking
+        }
+        status={
+          f.audience && (
+            <span className="inline-flex shrink-0 items-center gap-[var(--space-1)] type-label-m-emphasized text-[var(--color-text-positive-default)]">
+              <Icon slug="tick-circle" size={16} color="var(--color-icon-positive-default)" />
+              {BROADCAST_COPY.validated}
+            </span>
+          )
+        }
+        onRemove={f.clearFile}
+      />
       {f.checking && (
         <div className="flex justify-center p-[var(--space-4)]">
           <SpinnerLoader size="m" appearance="brand" />

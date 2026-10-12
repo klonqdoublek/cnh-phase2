@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
-import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
-import { OutlineButton } from '@/bbl/outline-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import {
@@ -18,20 +16,14 @@ import {
   type ImportPreset,
 } from '@/data/import-spec'
 import type { Template } from '@/data/templates'
-import { cn } from '@/lib/cn'
+import { UploadZone } from '@/components/upload/UploadZone'
+import { UploadedFile } from '@/components/upload/UploadedFile'
 
 type Picked = { key: number; file: File; check: FileCheck | null }
 type Phase = 'idle' | 'uploading' | 'failed'
 
 const sizeLabel = (bytes: number) => (bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(+(bytes < 10240))} KB`)
 const isBad = (p: Picked) => p.check !== null && !p.check.ok
-
-/* Dashed drop area / bar. webds ships no file upload or drop zone (gap,
-   recorded in the flow archive for cnh-phase2) — composed from tokens. */
-const DROP_BASE =
-  'rounded-[var(--radius-2)] border border-dashed border-[var(--color-border-primary-default)] bg-[var(--color-surface-secondary-default)]'
-const DROP_DRAGGING = 'border-[var(--color-border-highlight-default)] bg-[var(--color-surface-highlight-subtle-default)]'
-const DROP_ERROR = 'border-[var(--color-border-negative-default)]'
 
 /**
  * Import templates — a dialog on the list (Korn, 2026-10-05): several .jsonl
@@ -53,8 +45,6 @@ export function ImportDialog({
   const [files, setFiles] = useState<Picked[]>([])
   const [phase, setPhase] = useState<Phase>('idle')
   const [message, setMessage] = useState<string | null>(null)
-  const [dragging, setDragging] = useState(false)
-  const input = useRef<HTMLInputElement>(null)
   const nextKey = useRef(0)
   const uploading = phase === 'uploading'
 
@@ -80,7 +70,6 @@ export function ImportDialog({
     setFiles([])
     setPhase('idle')
     setMessage(null)
-    setDragging(false)
   }
   const close = () => {
     if (uploading) return
@@ -121,25 +110,6 @@ export function ImportDialog({
       onImported(templates)
     }, UPLOAD_MS)
   }
-
-  const dropHandlers = {
-    onDragOver: (e: React.DragEvent) => {
-      e.preventDefault()
-      setDragging(true)
-    },
-    onDragLeave: () => setDragging(false),
-    onDrop: (e: React.DragEvent) => {
-      e.preventDefault()
-      setDragging(false)
-      add(e.dataTransfer.files)
-    },
-  }
-  const dropState = cn(dragging && DROP_DRAGGING, message === IMPORT_COPY.noFile && DROP_ERROR)
-  const browse = (compact: boolean) => (
-    <OutlineButton onClick={() => input.current?.click()} className={compact ? 'h-[32px]' : 'h-[36px]'}>
-      {IMPORT_COPY.browse}
-    </OutlineButton>
-  )
 
   return (
     <ConfirmDialog
@@ -183,42 +153,19 @@ export function ImportDialog({
           </div>
         )}
 
+        {/* The CMS prototype's upload zone (components/upload) — webds ships none. */}
         {files.length === 0 ? (
-          <div
-            {...dropHandlers}
-            className={cn(
-              DROP_BASE,
-              'flex flex-col items-center gap-[var(--space-2)] px-[var(--space-4)] py-[var(--space-6)] text-center',
-              dropState,
-            )}
-          >
-            <Icon slug="share" size={32} color="var(--color-icon-highlight-default)" />
-            <p className="type-label-m-emphasized text-[var(--color-text-primary-default)]">{IMPORT_COPY.dropTitle}</p>
-            <p className="type-body-s text-[var(--color-text-secondary-default)]">{IMPORT_COPY.dropHint}</p>
-            <div className="mt-[var(--space-2)]">{browse(false)}</div>
-          </div>
+          <UploadZone
+            buttonLabel={IMPORT_COPY.browse}
+            hint={[IMPORT_COPY.dropTitle, IMPORT_COPY.dropHint]}
+            accept=".jsonl"
+            multiple
+            error={message === IMPORT_COPY.noFile}
+            onFiles={add}
+          />
         ) : (
-          <div
-            {...dropHandlers}
-            className={cn(DROP_BASE, 'flex items-center gap-[var(--space-3)] px-[var(--space-4)] py-[var(--space-2)]', dropState)}
-          >
-            <Icon slug="share" size={24} color="var(--color-icon-highlight-default)" />
-            <p className="flex-1 type-body-s text-[var(--color-text-secondary-default)]">{IMPORT_COPY.dropMore}</p>
-            {browse(true)}
-          </div>
+          <UploadZone layout="bar" buttonLabel={IMPORT_COPY.browse} hint={IMPORT_COPY.dropMore} accept=".jsonl" multiple onFiles={add} />
         )}
-
-        <input
-          ref={input}
-          type="file"
-          accept=".jsonl"
-          multiple
-          hidden
-          onChange={(e) => {
-            add(e.target.files)
-            e.target.value = ''
-          }}
-        />
 
         {files.length > 0 && (
           <div className="flex min-h-[32px] items-center justify-between gap-[var(--space-4)]">
@@ -254,36 +201,8 @@ export function ImportDialog({
                   : check.message
                 : 'Checking…'
               return (
-                <li
-                  key={key}
-                  className="flex min-h-[40px] shrink-0 items-center gap-[var(--space-3)] py-[var(--space-1)] shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]"
-                >
-                  <Icon
-                    slug="documents"
-                    size={24}
-                    color={error ? 'var(--color-icon-negative-default)' : 'var(--color-icon-secondary-default)'}
-                  />
-                  <p
-                    title={file.name}
-                    className="min-w-[120px] flex-1 basis-0 truncate type-label-m-emphasized text-[var(--color-text-primary-default)]"
-                  >
-                    {file.name}
-                  </p>
-                  <p
-                    title={meta}
-                    className={cn(
-                      'max-w-[60%] truncate text-right type-body-s',
-                      error ? 'text-[var(--color-text-negative-default)]' : 'text-[var(--color-text-secondary-default)]',
-                    )}
-                  >
-                    {meta}
-                  </p>
-                  <IconButton
-                    size={16}
-                    label={`Remove ${file.name}`}
-                    icon={<Icon slug="close" size={16} color="currentColor" />}
-                    onClick={() => remove([key])}
-                  />
+                <li key={key}>
+                  <UploadedFile name={file.name} meta={meta} error={error} density="row" onRemove={() => remove([key])} />
                 </li>
               )
             })}
