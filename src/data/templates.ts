@@ -1,5 +1,5 @@
 /* Notification templates — the Phase 1 list's records.
- * Ported from the cnh-tm-phase2 build (reference/cnh-tm-phase2/app-extract.js,
+ * Ported from the cnh-tm-phase2 build (.reference/cnh-tm-phase2/app-extract.js,
  * `CHANNELS` … `toJsonl`). Values are transcribed, not composed. */
 
 export const CHANNELS = ['Push notification', 'Email', 'SMS'] as const

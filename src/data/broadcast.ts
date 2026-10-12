@@ -1,6 +1,6 @@
 /* Broadcast message — records, copy and the rules the list, drawer and Create
  * form share. Ported from the cnh-tm-phase2 build
- * (reference/cnh-tm-phase2/app-extract.js, `BROADCAST_COPY` … `STATUS_TONE`).
+ * (.reference/cnh-tm-phase2/app-extract.js, `BROADCAST_COPY` … `STATUS_TONE`).
  * Copy and fixtures are transcribed, not composed. */
 
 import type { Channel } from './templates'
