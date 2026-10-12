@@ -31,7 +31,8 @@ export type ImportPreset = (typeof IMPORT_PRESETS)[number]
 export const IMPORT_COPY = {
   title: 'Import templates',
   dropTitle: 'Drag and drop .jsonl files here',
-  dropHint: 'You can import one or more template files at a time',
+  /* The original's second hint line, "You can import one or more template files at
+     a time", is gone: the CMS drop zone carries one hint line, 84 tall (12 Oct 2026). */
   browse: 'Browse files',
   format: 'Invalid file format. Only .jsonl files can be imported',
   structure: 'Invalid template structure',

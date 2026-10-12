@@ -172,7 +172,7 @@ export function ImportDialog({
           {/* The CMS prototype's upload zone (components/upload) — webds ships none. */}
           <UploadZone
             buttonLabel={IMPORT_COPY.browse}
-            hint={[IMPORT_COPY.dropTitle, IMPORT_COPY.dropHint]}
+            hint={IMPORT_COPY.dropTitle}
             accept=".jsonl"
             multiple
             error={tooMany !== null || message === IMPORT_COPY.noFile}
