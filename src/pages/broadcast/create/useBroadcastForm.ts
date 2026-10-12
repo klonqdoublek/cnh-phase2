@@ -1,0 +1,344 @@
+import { useEffect, useMemo, useState } from 'react'
+import {
+  BROADCAST_COPY,
+  DEFAULT_DND,
+  MESSAGE_MAX,
+  checkRecipients,
+  fieldsOf,
+  firstSend,
+  guessColumn,
+  idKind,
+  readAudience,
+  readAudienceFile,
+  type AudienceResult,
+  type Broadcast,
+  type BroadcastContent,
+  type BroadcastStatus,
+  type Dnd,
+  type RecipientType,
+} from '@/data/broadcast'
+import { formSeed, type FormPreset, type FormSeed } from '@/data/broadcast-presets'
+import { CHANNELS, type Channel } from '@/data/templates'
+import type { SaveKind } from '../BroadcastWizard'
+
+/* The Create / Edit broadcast form's state and rules — `useBroadcastForm` in the
+ * original build, ported as is. Waits are the original's: the file is "checked"
+ * for 600 ms, a submit takes 900 ms. */
+
+const CHECK_MS = 600
+const CREATE_MS = 900
+
+export const CHANNEL_FIELDS: Record<Channel, (keyof BroadcastContent)[]> = {
+  'Push notification': ['pushTitle', 'pushBody'],
+  Email: ['emailSubject', 'emailBody'],
+  SMS: ['smsMessage'],
+}
+export const DIRECT_CHANNELS: Channel[] = ['Email', 'SMS']
+
+const EMPTY_CONTENT: BroadcastContent = { smsMessage: '', emailSubject: '', emailBody: '', pushTitle: '', pushBody: '' }
+
+export type FormErrors = Partial<
+  Record<
+    | 'name'
+    | 'description'
+    | 'file'
+    | 'channels'
+    | 'column'
+    | keyof BroadcastContent
+    | 'startDate'
+    | 'startTime'
+    | 'dndDays'
+    | 'dndTime',
+    string
+  >
+>
+export type ErrorKey = keyof FormErrors
+
+const pad = (n: number) => String(n).padStart(2, '0')
+/** `YYYY-MM-DD` of a local date. */
+export const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const iso = (d: Date) => `${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+/** A `YYYY-MM-DD` date and an `HH:mm` time, as a local moment. */
+const combine = (date: string, time: string) => {
+  if (!date || !time) return null
+  const [y, m, d] = date.split('-').map(Number)
+  const [hh, mm] = time.split(':').map(Number)
+  return new Date(y, m - 1, d, hh, mm, 0, 0)
+}
+
+const fromDraft = (b: Broadcast): FormSeed => ({
+  file: b.audienceText === undefined ? undefined : { name: b.audienceFile, text: b.audienceText },
+  recipientType: b.recipientType,
+  column: b.recipientColumn,
+  channels: b.channels,
+  name: b.name,
+  description: b.description,
+  content: b.content,
+  mode: b.startMode,
+  dnd: b.dnd,
+})
+
+export function useBroadcastForm({
+  onCreate,
+  failNext,
+  preset,
+  initial,
+}: {
+  onCreate: (broadcast: Omit<Broadcast, 'id'>, kind: SaveKind) => void
+  failNext?: boolean
+  preset?: FormPreset
+  initial?: Broadcast
+}) {
+  const [seed] = useState<FormSeed>(() => (initial ? fromDraft(initial) : preset ? formSeed(preset) : {}))
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [name, setName] = useState(seed.name ?? '')
+  const [description, setDescription] = useState(seed.description ?? '')
+  const [file, setFile] = useState<File | null>(() =>
+    seed.file ? new File([seed.file.text], seed.file.name, { type: 'text/csv' }) : null,
+  )
+  const [read, setRead] = useState<AudienceResult | null>(() =>
+    seed.file ? readAudience(seed.file.name, seed.file.text) : null,
+  )
+  const [fileText, setFileText] = useState(seed.file?.text ?? '')
+  const [recipientType, setType] = useState<RecipientType>(seed.recipientType ?? 'cis')
+  const [column, setColumn] = useState(seed.column ?? '')
+  const [channels, setChannels] = useState<Channel[]>(seed.channels ?? [])
+  const [content, setContent] = useState<BroadcastContent>(seed.content ?? EMPTY_CONTENT)
+  const [mode, setMode] = useState<'now' | 'schedule'>(seed.mode ?? 'now')
+  const draftStart = initial?.startMode === 'schedule' ? new Date(initial.start) : null
+  const [startDate, setStartDate] = useState(() => {
+    if (draftStart) return ymd(draftStart)
+    if (seed.start) {
+      const d = new Date()
+      d.setDate(d.getDate() + seed.start.inDays)
+      return ymd(d)
+    }
+    return ''
+  })
+  const [startTime, setStartTime] = useState(() =>
+    draftStart ? `${pad(draftStart.getHours())}:${pad(draftStart.getMinutes())}` : (seed.start?.time ?? ''),
+  )
+  const [dnd, setDnd] = useState<Dnd>(seed.dnd ?? DEFAULT_DND)
+  const [leaveOpen, setLeaveOpen] = useState(seed.open === 'leave')
+  const [confirmOpen, setConfirmOpen] = useState(seed.open === 'confirm')
+  const [creating, setCreating] = useState(seed.open === 'submitting')
+  const [failed, setFailed] = useState(seed.open === 'fail')
+  const [failPending, setFailPending] = useState(!!failNext)
+
+  const audience = read && read.ok ? read.audience : null
+  const kind = idKind(recipientType, channels)
+  const check = useMemo(
+    () => (audience && column && kind ? checkRecipients(audience, column, kind) : null),
+    [audience, column, kind],
+  )
+  const fields = useMemo(() => fieldsOf(audience, column), [audience, column])
+  const checking = file !== null && read === null
+  const dirty = !!(file || name || description || channels.length || Object.values(content).some(Boolean))
+  const offered = recipientType === 'direct' ? DIRECT_CHANNELS : [...CHANNELS]
+
+  const clear = (...keys: ErrorKey[]) =>
+    setErrors((prev) => {
+      const next = { ...prev }
+      for (const k of keys) delete next[k]
+      return next
+    })
+  /** A setter that also clears its own error. */
+  const edit =
+    <T,>(key: ErrorKey, set: (v: T) => void) =>
+    (v: T) => {
+      set(v)
+      clear(key)
+    }
+  const setC = (key: keyof BroadcastContent) => edit<string>(key, (v) => setContent((c) => ({ ...c, [key]: v })))
+
+  const pick = (list: FileList | null | undefined) => {
+    const f = list?.[0]
+    if (!f) return
+    setFile(f)
+    setRead(null)
+    setFileText('')
+    f.text().then(setFileText, () => setFileText(''))
+    clear('file', 'column')
+    readAudienceFile(f).then((result) =>
+      window.setTimeout(() => {
+        setRead(result)
+        setColumn(result.ok && kind ? guessColumn(result.audience.headers, kind) : '')
+      }, CHECK_MS),
+    )
+  }
+  const clearFile = () => {
+    setFile(null)
+    setRead(null)
+    setFileText('')
+    setColumn('')
+  }
+
+  const setRecipientType = (type: RecipientType) => {
+    setType(type)
+    const next = type === 'direct' ? channels.filter((c) => DIRECT_CHANNELS.includes(c)).slice(0, 1) : channels
+    setChannels(next)
+    const k = idKind(type, next)
+    setColumn(audience && k ? guessColumn(audience.headers, k) : '')
+    clear('channels', 'column', 'file')
+  }
+  const toggleChannel = (channel: Channel, on: boolean) => {
+    setChannels((prev) => (on ? CHANNELS.filter((c) => c === channel || prev.includes(c)) : prev.filter((c) => c !== channel)))
+    clear('channels', ...(on ? [] : CHANNEL_FIELDS[channel]))
+  }
+  const chooseDirect = (channel: Channel) => {
+    setChannels([channel])
+    const k = idKind('direct', [channel])
+    if (audience && k) setColumn(guessColumn(audience.headers, k) || column)
+    clear('channels', 'column', 'file', ...CHANNEL_FIELDS[channel === 'SMS' ? 'Email' : 'SMS'])
+  }
+
+  const start = mode === 'now' ? new Date() : combine(startDate, startTime)
+  const first = start ? firstSend(start, dnd) : null
+  const waits = !!(start && first && first.getTime() !== start.getTime())
+
+  const setDndPart = (part: Partial<Dnd>) => {
+    setDnd((d) => ({ ...d, ...part }))
+    clear('dndDays', 'dndTime')
+  }
+
+  const validate = () => {
+    const e: FormErrors = {}
+    if (!name.trim()) e.name = BROADCAST_COPY.required
+    else if (name.length > 100) e.name = BROADCAST_COPY.msgMax(100)
+    if (description.length > 250) e.description = BROADCAST_COPY.msgMax(250)
+    if (!file) e.file = BROADCAST_COPY.noFile
+    else if (read && !read.ok) e.file = read.message
+    if (recipientType === 'direct' && !channels.length) e.channels = BROADCAST_COPY.noDirectChannel
+    else if (!channels.length) e.channels = BROADCAST_COPY.noChannel
+    if (audience && kind && !column) e.column = BROADCAST_COPY.noColumn
+    if (check && check.valid === 0) e.file = BROADCAST_COPY.noValidRows
+    for (const c of channels) for (const k of CHANNEL_FIELDS[c]) if (!content[k].trim()) e[k] = BROADCAST_COPY.required
+    if (channels.includes('Push notification') && content.pushBody.length > 250) e.pushBody = BROADCAST_COPY.msgMax(250)
+    if (channels.includes('Email') && content.emailSubject.length > 100) e.emailSubject = BROADCAST_COPY.msgMax(100)
+    if (channels.includes('Email') && content.emailBody.length > 1000) e.emailBody = BROADCAST_COPY.msgMax(MESSAGE_MAX)
+    if (mode === 'schedule') {
+      if (!startDate) e.startDate = BROADCAST_COPY.required
+      if (!startTime) e.startTime = BROADCAST_COPY.required
+      if (start && start <= new Date()) e.startDate = BROADCAST_COPY.startPast
+    }
+    if (dnd.enabled && !dnd.days.length) e.dndDays = BROADCAST_COPY.dndNoDay
+    if (dnd.enabled && dnd.from === dnd.to) e.dndTime = BROADCAST_COPY.dndSame
+    return e
+  }
+
+  const scrollToError = (root: HTMLElement | null) =>
+    requestAnimationFrame(() =>
+      root?.querySelector('[data-error="true"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+    )
+
+  const submit = (root: HTMLElement | null) => {
+    if (checking) return
+    const e = validate()
+    setErrors(e)
+    if (Object.keys(e).length) return scrollToError(root)
+    setConfirmOpen(true)
+  }
+
+  const record = (status: BroadcastStatus): Omit<Broadcast, 'id'> => ({
+    name: name.trim(),
+    description: description.trim(),
+    channels: CHANNELS.filter((c) => channels.includes(c)),
+    audienceFile: file?.name ?? '',
+    audienceText: file ? fileText : undefined,
+    recipients: check?.valid ?? 0,
+    recipientType,
+    recipientColumn: column,
+    startMode: mode,
+    start: iso(start ?? new Date()),
+    dnd,
+    status,
+    success: 0,
+    failed: 0,
+    content,
+    createdBy: initial?.createdBy ?? 'Panisa R.',
+    createdAt: initial?.createdAt ?? iso(new Date()),
+  })
+
+  const create = () => {
+    setConfirmOpen(false)
+    setCreating(true)
+    window.setTimeout(() => {
+      setCreating(false)
+      if (failPending) {
+        setFailPending(false)
+        setFailed(true)
+        return
+      }
+      onCreate(record(mode === 'now' && !waits ? 'Sending' : 'Scheduled'), 'submit')
+    }, CREATE_MS)
+  }
+
+  const saveDraft = (root: HTMLElement | null) => {
+    if (!name.trim()) {
+      setErrors({ name: BROADCAST_COPY.draftNeedsName })
+      return scrollToError(root)
+    }
+    onCreate(record('Draft'), 'draft')
+  }
+
+  useEffect(() => {
+    if (seed.press === 'submit') submit(null)
+    if (seed.press === 'draft') saveDraft(null)
+    // Runs once: a preset presses its button on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return {
+    editing: !!initial,
+    errors,
+    clear,
+    edit,
+    setC,
+    name,
+    setName,
+    description,
+    setDescription,
+    file,
+    read,
+    audience,
+    check,
+    checking,
+    pick,
+    clearFile,
+    recipientType,
+    setRecipientType,
+    column,
+    setColumn,
+    kind,
+    offered,
+    channels,
+    toggleChannel,
+    chooseDirect,
+    content,
+    fields,
+    mode,
+    setMode,
+    startDate,
+    setStartDate,
+    startTime,
+    setStartTime,
+    start,
+    first,
+    waits,
+    dnd,
+    setDndPart,
+    dirty,
+    leaveOpen,
+    setLeaveOpen,
+    confirmOpen,
+    setConfirmOpen,
+    creating,
+    failed,
+    setFailed,
+    submit,
+    create,
+    saveDraft,
+  }
+}
+
+export type BroadcastForm = ReturnType<typeof useBroadcastForm>

@@ -2,7 +2,7 @@
 
 ## What this is
 
-Phase 2 of the **Customer Notification Hub (CNH)** console: Import templates and Broadcast message, on top of the Phase 1 notification list. This repo is a **rebuild on webds** of Korn's prototype (https://cnh-tm-phase2.vercel.app, built on `@bbl-web/ui-components`), started 2026-10-12 to enhance it. The original source was not available; `reference/` holds the deployed build and the app code cut out of it (see `reference/README.md`).
+Phase 2 of the **Customer Notification Hub (CNH)** console: Import templates and Broadcast message, on top of the Phase 1 notification list. This repo is a **rebuild on webds** of Korn's prototype (https://cnh-tm-phase2.vercel.app, built on `@bbl-web/ui-components`), started 2026-10-12 to enhance it. The original source was not available; `.reference/` holds the deployed build and the app code cut out of it (see `.reference/README.md`).
 
 The webds flow archive already records this delivery as `cnh-phase2` (`get_flow`): its routes, rulings, open questions P2-1…P2-20 and gaps. Read it before changing a flow.
 
@@ -15,7 +15,7 @@ npm run audit   # webds consumer audit
 node scripts/webds-add.mjs <item> …   # install webds registry items verbatim
 ```
 
-Reference build, for side-by-side checks: `cd reference/cnh-tm-phase2 && python3 -m http.server 5176 --bind 127.0.0.1`.
+Reference build, for side-by-side checks: `cd .reference/cnh-tm-phase2 && python3 -m http.server 5176 --bind 127.0.0.1`.
 
 Headless Chrome on this machine needs `--no-proxy-server`, or every request to the dev server hangs.
 
@@ -44,7 +44,7 @@ Same rules as the CMS prototype:
 
 ## Content rule
 
-Copy, labels, statuses and fixtures are transcribed from the original build (`reference/cnh-tm-phase2/app-extract.js`), never composed. A changed label is a decision; record it.
+Copy, labels, statuses and fixtures are transcribed from the original build (`.reference/cnh-tm-phase2/app-extract.js`), never composed. A changed label is a decision; record it.
 
 ## Layout of the code
 
@@ -57,5 +57,5 @@ src/pages/template/         Create/Edit notification + view drawer
 src/pages/broadcast/        list, drawer (list/), Create/Edit (create/)
 src/data/                   records, copy and rules ported from the original
 src/prototype/              Task flow runner (dev chrome, not product UI)
-reference/                  the original build, for comparison only
+.reference/                 the original build, for comparison only
 ```
