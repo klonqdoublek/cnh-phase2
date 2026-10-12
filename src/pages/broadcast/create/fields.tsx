@@ -1,6 +1,5 @@
-import { useId, useState } from 'react'
+import { useState } from 'react'
 import { Checkbox } from '@/bbl/checkbox'
-import { FIELD_TEXT, FieldBox, FieldHint, FieldLabel, FieldRoot, toneFor } from '@/bbl/field'
 import { RadioButton } from '@/bbl/radio-button'
 import { TextArea } from '@/bbl/text-area'
 import { FormField } from '@/patterns/form-field'
@@ -164,53 +163,6 @@ export function TimeSelect(props: {
   disabled?: boolean
 }) {
   return <Select {...props} options={TIMES} placeholder="HH:mm" className="w-[220px]" />
-}
-
-/** Start date — webds field primitives around a native date control: the
- *  library's Date Field is a spec render with no editable state (a GAP). */
-export function DateInput({
-  label,
-  value,
-  onChange,
-  error,
-  min,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  error?: string
-  min?: string
-}) {
-  const [focused, setFocused] = useState(false)
-  const id = useId()
-  const state = error ? (value ? 'Error - Completed' : 'Error') : focused ? 'Focused' : value ? 'Completed' : 'Default'
-  const tone = toneFor(state)
-  return (
-    <div data-error={error ? 'true' : undefined} className="min-w-0">
-      <FieldRoot>
-        <label htmlFor={id} className="contents">
-          <FieldLabel colour="tertiary" required>
-            {label}
-          </FieldLabel>
-        </label>
-        <FieldBox part="Input Field Container" tone={tone} className="h-[56px] items-center p-[var(--space-4)]">
-          <input
-            id={id}
-            type="date"
-            value={value}
-            min={min}
-            aria-required
-            aria-invalid={!!error}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            onChange={(e) => onChange(e.target.value)}
-            className={cn('type-body-m w-full bg-transparent outline-none', value ? FIELD_TEXT.primary : FIELD_TEXT.placeholder)}
-          />
-        </FieldBox>
-        <FieldHint message={error} tone={tone} />
-      </FieldRoot>
-    </div>
-  )
 }
 
 /** A bordered radio option with a title and a note — recipient type, delivery. */

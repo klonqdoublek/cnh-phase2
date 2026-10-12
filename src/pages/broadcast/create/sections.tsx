@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
+import { DateInput } from '@/components/fields/DateInput'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
@@ -14,7 +15,7 @@ import { FormStep } from '@/patterns/console-page'
 import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import { Choice, DateInput, LABEL, ModeOption, NOTE, Select, SmsField, Text, TimeSelect } from './fields'
+import { Choice, LABEL, ModeOption, NOTE, Select, SmsField, Text, TimeSelect } from './fields'
 import { ymd, type BroadcastForm } from './useBroadcastForm'
 
 type F = { f: BroadcastForm }
