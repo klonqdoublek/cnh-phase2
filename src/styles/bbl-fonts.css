@@ -1,0 +1,139 @@
+/* Every @font-face in the system. Published as the `bbl-fonts` registry item, which
+   rewrites the url()s below to absolute — see CLAUDE.md §5.
+
+   Two layers, in the order the --font-* stacks ask for them:
+
+   1. The installed Office faces, `local()` only. **They split their weights into
+      separate families**: /Library/Fonts ships `BBL Sans Office`, `BBL Sans Office
+      Medium`, `BBL Sans Looped Office` and `BBL Sans Looped Office Medium` — the
+      Medium of each is its own *family*, subfamily Regular. So `font-weight: 500`
+      on the family the tokens name never reaches the Medium face; the browser
+      takes Regular and fakes the weight, and the text comes out measurably
+      narrower than the design (221px against 231px on a Thai sample at 14px).
+      These rules re-join them into one weighted family from whatever is installed.
+   2. The web cut, served from webds. This is what a viewer without the licensed
+      faces installed gets instead of a system sans — which matters because Thai in
+      a system sans has different metrics, not just a different look. */
+@font-face {
+  font-family: 'BBL Sans Office';
+  src: local('BBL Sans Office Regular'), local('BBLSansOffice-Regular');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'BBL Sans Office';
+  src: local('BBL Sans Office Medium'), local('BBLSansOffice-Medium');
+  font-weight: 500 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'BBL Sans Looped Office';
+  src: local('BBL Sans Looped Office Regular'), local('BBLSansLoopedOffice-Regular');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'BBL Sans Looped Office';
+  src: local('BBL Sans Looped Office Medium'), local('BBLSansLoopedOffice-Medium');
+  font-weight: 500 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "BBL Sans";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansV3-Lt.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansV3-LtIt.woff") format("woff");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansV3-Rg.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansV3-RgIt.woff") format("woff");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansV3-Md.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansV3-MdIt.woff") format("woff");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansV3-Bd.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansV3-BdIt.woff") format("woff");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+/* Looped has no Light cut — 300 falls through to the browser's synthetic light. */
+@font-face {
+  font-family: "BBL Sans Looped";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansLoopedV3-Rg.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans Looped";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansLoopedV3-RgIt.woff") format("woff");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans Looped";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansLoopedV3-Md.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans Looped";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansLoopedV3-MdIt.woff") format("woff");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans Looped";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansLoopedV3-Bd.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "BBL Sans Looped";
+  src: url("https://webds-bbl.vercel.app/fonts/BBLSansLoopedV3-BdIt.woff") format("woff");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}

@@ -1,0 +1,15 @@
+/* Layer order — declared before anything else so it wins.
+ *
+ * webds v0.18+ ships plain `.webds-*` rules in `@layer webds.*` instead of
+ * Tailwind utilities. Placing `webds` after Tailwind's `base` and before its
+ * `utilities` means a Tailwind class a screen passes through `className`
+ * overrides the component's own rule. Same chain as the CMS prototype. */
+@layer theme, base, webds, components, utilities;
+
+@import 'tailwindcss';
+@import './styles/bbl-fonts.css';
+@import './styles/webds-preflight.css';
+@import './styles/tokens.css';
+@import './styles/webds-foundation.css';
+@import './styles/webds-components.css';
+@import './styles/utilities.css';
