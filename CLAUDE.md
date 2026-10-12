@@ -39,7 +39,7 @@ Same rules as the CMS prototype:
 - **Every value is a token.** No literal hex. App code imports `cn` from `@/lib/cn` (twMerge); `@/lib/utils` is the installed clsx-only one.
 - No dark mode. Fonts come from webds (`styles/bbl-fonts.css`).
 - CNH's own patterns were measured on this product: `product-shell`, `sign-in-split`, `console-page`, `form-section-card`, `form-field`, `detail-drawer`, `profile-menu`. Prefer them.
-- **File upload is the CMS prototype's** (requester's call, 12 Oct 2026): `src/components/upload/` — `UploadZone` from CMS `EmptyAssetSlot`, `UploadedFile` from CMS `UploadedAssetSlot`. webds ships no upload control (gap). Use these for any new upload; the Import list keeps its one-line `density="row"` for 10–50 files.
+- **File upload is the CMS prototype's** (requester's call, 12 Oct 2026): `src/components/upload/` — `UploadZone` from CMS `EmptyAssetSlot`, `UploadedFile` from CMS `UploadedAssetSlot`. webds ships no upload control (gap). `FilePreviewDialog` from CMS `AssetPreviewModal`. Use these for any new upload; Import shows each picked file as a CMS slot (one column, scrolling) with a Preview.
 - Tailwind scans `src/` only (`source('./')` in `src/index.css`), so the 6 MB reference bundle stays out of the build.
 - `noUnusedParameters` is off because the installed `task-flow-view` has an unused map parameter.
 

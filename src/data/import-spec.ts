@@ -37,7 +37,8 @@ export const IMPORT_COPY = {
   structure: 'Invalid template structure',
   noFile: 'Select at least one .jsonl file to import',
   hasErrors: 'Remove the files with errors to continue',
-  dropMore: 'Drag and drop more .jsonl files here, or',
+  /* The original's one-line "Drag and drop more .jsonl files here, or" is gone:
+     the CMS drop zone keeps its own hint once files are picked (12 Oct 2026). */
   summary: (files: number, templates: number) =>
     `${files} ${files === 1 ? 'file' : 'files'} · ${templates} ${templates === 1 ? 'template' : 'templates'}`,
   errorCount: (n: number) => `${n} with ${n === 1 ? 'error' : 'errors'}`,

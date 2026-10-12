@@ -1,24 +1,29 @@
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
+import { OutlineButton } from '@/bbl/outline-button'
 import { cn } from '@/lib/cn'
 
 /**
  * A picked file, taken from the CMS prototype's `UploadedAssetSlot`
- * (`~/kkdevmode/CMS/src/components/asset/UploadedAssetSlot.tsx`): the file
- * name (Body S Emphasized) and a highlight trash mark on the first row, its
- * meta (Body XS, Text/Placeholder) on the second, with an optional status at
- * the right. In error the border turns Negative and the meta reads in
- * Text/Negative.
+ * (`~/kkdevmode/CMS/src/components/asset/UploadedAssetSlot.tsx`, board
+ * `1552:262191`): an 84-tall bordered slot with the file name (Body S
+ * Emphasized) and a highlight trash mark on the first row, its meta (Body XS,
+ * Text/Placeholder) and an Outline **Preview** (28) on the second, with an
+ * optional status before the Preview.
  *
- * `density="row"` is the one-line form for a list of many files (CNH Import):
- * same type and trash mark, no box, a rule under each row.
+ * In error the border turns Negative and `errorMessage` sits under the slot
+ * in Body XS, Text/Negative, as CMS draws its oversize hint. Without an
+ * `errorMessage` the meta itself reads in Text/Negative (the Audience file's
+ * older form).
  */
 export function UploadedFile({
   name,
   meta,
   status,
   error = false,
-  density = 'slot',
+  errorMessage,
+  previewLabel = 'Preview',
+  onPreview,
   onRemove,
 }: {
   name: string
@@ -26,58 +31,56 @@ export function UploadedFile({
   /** Right of the meta — e.g. "File validated". */
   status?: React.ReactNode
   error?: boolean
-  density?: 'slot' | 'row'
+  /** Under the slot, in Text/Negative, when `error`. */
+  errorMessage?: React.ReactNode
+  previewLabel?: React.ReactNode
+  /** Shows the Outline Preview button. */
+  onPreview?: () => void
   onRemove?: () => void
 }) {
-  const remove = onRemove && (
-    <IconButton
-      label={`Remove ${name}`}
-      icon={<Icon slug="trash" size={16} color="var(--color-icon-highlight-default)" />}
-      onClick={onRemove}
-    />
-  )
-  const metaText = meta != null && (
-    <span
-      title={typeof meta === 'string' ? meta : undefined}
-      className={cn(
-        'min-w-px truncate type-body-xs',
-        error ? 'text-[var(--color-text-negative-default)]' : 'text-[var(--color-text-placeholder-default)]',
-      )}
-    >
-      {meta}
-    </span>
-  )
-
-  if (density === 'row')
-    return (
-      <div className="flex min-h-[40px] items-center gap-[var(--space-3)] py-[var(--space-1)] shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]">
-        <span title={name} className="min-w-[120px] flex-1 basis-0 truncate type-body-s-emphasized text-[var(--color-text-primary-default)]">
-          {name}
-        </span>
-        <span className="flex max-w-[60%] justify-end">{metaText}</span>
-        {status}
-        {remove}
-      </div>
-    )
-
+  const metaInRed = error && errorMessage == null
   return (
-    <div
-      data-invalid={error ? 'true' : undefined}
-      className={cn(
-        'flex flex-col justify-between gap-[var(--space-2)] rounded-2 border p-[var(--space-3)]',
-        error ? 'border-[var(--color-border-negative-default)]' : 'border-[var(--color-border-primary-default)]',
-      )}
-    >
-      <span className="flex items-center gap-[var(--space-2)]">
-        <span title={name} className="min-w-px flex-1 truncate type-body-s-emphasized text-[var(--color-text-primary-default)]">
-          {name}
+    <div className="flex flex-col gap-[var(--space-1)]">
+      <div
+        data-invalid={error ? 'true' : undefined}
+        className={cn(
+          'flex min-h-[84px] flex-col justify-between gap-[var(--space-2)] rounded-2 border p-[var(--space-3)]',
+          error ? 'border-[var(--color-border-negative-default)]' : 'border-[var(--color-border-primary-default)]',
+        )}
+      >
+        <span className="flex items-center gap-[var(--space-2)]">
+          <span title={name} className="min-w-px flex-1 truncate type-body-s-emphasized text-[var(--color-text-primary-default)]">
+            {name}
+          </span>
+          {onRemove && (
+            <IconButton
+              label={`Remove ${name}`}
+              icon={<Icon slug="trash" size={16} color="var(--color-icon-highlight-default)" />}
+              onClick={onRemove}
+            />
+          )}
         </span>
-        {remove}
-      </span>
-      <span className="flex items-center gap-[var(--space-4)]">
-        <span className="flex min-w-px flex-1">{metaText}</span>
-        {status}
-      </span>
+        <span className="flex items-center gap-[var(--space-4)]">
+          <span
+            title={typeof meta === 'string' ? meta : undefined}
+            className={cn(
+              'min-w-px flex-1 truncate type-body-xs',
+              metaInRed ? 'text-[var(--color-text-negative-default)]' : 'text-[var(--color-text-placeholder-default)]',
+            )}
+          >
+            {meta}
+          </span>
+          {status}
+          {onPreview && (
+            <OutlineButton className="h-[28px]" onClick={onPreview}>
+              {previewLabel}
+            </OutlineButton>
+          )}
+        </span>
+      </div>
+      {error && errorMessage != null && (
+        <span className="type-body-xs text-[var(--color-text-negative-default)]">{errorMessage}</span>
+      )}
     </div>
   )
 }
