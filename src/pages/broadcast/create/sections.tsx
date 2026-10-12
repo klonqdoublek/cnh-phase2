@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateInput } from '@/components/fields/DateInput'
+import { TimeInput } from '@/components/fields/TimeInput'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
@@ -15,7 +16,7 @@ import { FormStep } from '@/patterns/console-page'
 import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import { Choice, LABEL, ModeOption, NOTE, Select, SmsField, Text, TimeSelect } from './fields'
+import { Choice, LABEL, ModeOption, NOTE, Select, SmsField, Text } from './fields'
 import { ymd, type BroadcastForm } from './useBroadcastForm'
 
 type F = { f: BroadcastForm }
@@ -521,7 +522,7 @@ export function Delivery({ f }: F) {
               }}
             />
           </div>
-          <TimeSelect
+          <TimeInput
             label="Start time"
             required
             value={f.startTime}
@@ -593,7 +594,7 @@ export function DndPanel({ f }: F) {
         </div>
         <div data-error={f.errors.dndTime ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
           <div className="flex items-end gap-[var(--space-4)]">
-            <TimeSelect
+            <TimeInput
               label="Quiet period from"
               value={dnd.from}
               disabled={!dnd.enabled}
@@ -602,7 +603,7 @@ export function DndPanel({ f }: F) {
             <span className="pb-[var(--space-4)] type-body-m text-[var(--color-text-secondary-default)]">to</span>
             {/* The original draws no label here, only the room for one, so the two
                 boxes share a line. */}
-            <TimeSelect label=" " value={dnd.to} disabled={!dnd.enabled} onChange={(v) => f.setDndPart({ to: v })} />
+            <TimeInput label=" " value={dnd.to} disabled={!dnd.enabled} onChange={(v) => f.setDndPart({ to: v })} />
           </div>
           {f.errors.dndTime && (
             <InlineMessage appearance="negative" size="xs">

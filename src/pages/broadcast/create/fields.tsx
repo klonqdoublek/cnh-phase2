@@ -3,7 +3,7 @@ import { Checkbox } from '@/bbl/checkbox'
 import { RadioButton } from '@/bbl/radio-button'
 import { TextArea } from '@/bbl/text-area'
 import { FormField } from '@/patterns/form-field'
-import { TIMES, smsInfo } from '@/data/broadcast'
+import { smsInfo } from '@/data/broadcast'
 import { cn } from '@/lib/cn'
 
 /* The Create form's fields. Text, text area and select are webds `form-field`
@@ -105,8 +105,8 @@ export function SmsField({
   )
 }
 
-/** Select — webds `form-field`'s select. The menu is capped so the 48 half-hour
- *  times do not run off the screen (Select List has no height of its own). */
+/** Select — webds `form-field`'s select. The menu is capped so a long list
+ *  does not run off the screen (Select List has no height of its own). */
 export function Select({
   label,
   value,
@@ -152,17 +152,6 @@ export function Select({
       />
     </div>
   )
-}
-
-export function TimeSelect(props: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  error?: string
-  required?: boolean
-  disabled?: boolean
-}) {
-  return <Select {...props} options={TIMES} placeholder="HH:mm" className="w-[220px]" />
 }
 
 /** A bordered radio option with a title and a note — recipient type, delivery. */

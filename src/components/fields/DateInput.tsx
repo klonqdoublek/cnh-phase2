@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { DatePicker, type DateCell } from '@/bbl/date-picker'
 import { FIELD_TEXT, FieldBox, FieldHint, FieldLabel, FieldRoot, toneFor } from '@/bbl/field'
 import { Icon } from '@/bbl/icon'
@@ -8,6 +8,7 @@ import { MONTHS, MONTH_GRID_CELLS, dayInGridCell, displayDate, isoDate, monthOf,
 import { periodCells } from './period-cells'
 import { PickerHeaderLabel } from './PickerHeaderLabel'
 import { PICKER_STATE_GAPS } from './picker-state-gaps'
+import { useDismissOnOutside } from './useDismissOnOutside'
 import { usePickerViews } from './usePickerViews'
 
 /**
@@ -54,21 +55,7 @@ export function DateInput({
   const rootRef = useRef<HTMLDivElement>(null)
   const views = usePickerViews({ view, setView, today: monthOf(today) })
 
-  useEffect(() => {
-    if (!open) return
-    const away = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', away)
-    document.addEventListener('keydown', escape)
-    return () => {
-      document.removeEventListener('pointerdown', away)
-      document.removeEventListener('keydown', escape)
-    }
-  }, [open])
+  useDismissOnOutside(open, rootRef, setOpen)
 
   /* 42 cells, Sunday first; days outside the month are blank, as CMS draws. */
   const days: DateCell[] = Array.from({ length: MONTH_GRID_CELLS }, (_, cellIndex) => {
