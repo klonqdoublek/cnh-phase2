@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
-import { DateInput } from '@/components/fields/DateInput'
+import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
@@ -509,30 +509,23 @@ export function Delivery({ f }: F) {
         />
       </div>
       {f.mode === 'schedule' && (
-        <div className="flex w-full items-start gap-[var(--space-6)]">
-          <div className="w-[604px]">
-            <DateInput
-              label="Start date"
-              value={f.startDate}
-              min={ymd(new Date())}
-              error={f.errors.startDate}
-              onChange={(v) => {
-                f.setStartDate(v)
-                f.clear('startDate')
-              }}
-            />
-          </div>
-          <TimeInput
-            label="Start time"
-            required
-            value={f.startTime}
-            error={f.errors.startTime}
-            onChange={(v) => {
-              f.setStartTime(v)
-              f.clear('startTime', 'startDate')
-            }}
-          />
-        </div>
+        /* One field, as CMS's Effective date: webds' Date Time Picker. The
+           form still keeps the date and the time apart. */
+        <DateTimeInput
+          label="Start date and time"
+          required
+          className="w-[604px]"
+          value={f.startDate && f.startTime ? `${f.startDate}T${f.startTime}` : ''}
+          min={ymd(new Date())}
+          minuteStep={30}
+          error={!!(f.errors.startDate || f.errors.startTime)}
+          message={f.errors.startDate ?? f.errors.startTime}
+          onChange={(v) => {
+            f.setStartDate(v.slice(0, 10))
+            f.setStartTime(v.slice(11, 16))
+            f.clear('startDate', 'startTime')
+          }}
+        />
       )}
       <Outlook f={f} />
     </div>

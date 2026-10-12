@@ -1,4 +1,4 @@
-/** Date arithmetic the composed date field needs — webds' pickers are
+/** Date arithmetic the composed date and time fields need — webds' pickers are
  *  presentational and do none of it. From the CMS prototype's
  *  `fields/date-parts.ts` and `enums/fields.ts` (v4.56). */
 
@@ -32,11 +32,27 @@ export const padTwo = (value: number) => String(value).padStart(2, '0')
 /** `YYYY-MM-DD` from a 0-based month. */
 export const isoDate = (year: number, month: number, day: number) => `${year}-${padTwo(month + 1)}-${padTwo(day)}`
 
-/** `YYYY-MM-DD` → `DD/MM/YYYY`, the original build's format. */
-export const displayDate = (value: string) => (value ? `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}` : '')
+/** A date and time split into numbers; `month` is 0-based. */
+export type DateTimeParts = { year: number; month: number; day: number; hour: number; minute: number }
 
-/** The month `YYYY-MM-DD` falls in. */
-export const monthOf = (value: string): MonthView => ({ year: Number(value.slice(0, 4)), month: Number(value.slice(5, 7)) - 1 })
+/** `YYYY-MM-DDTHH:mm` → parts, or null for ''. */
+export const parseDateTime = (value: string): DateTimeParts | null =>
+  value
+    ? {
+        year: +value.slice(0, 4),
+        month: +value.slice(5, 7) - 1,
+        day: +value.slice(8, 10),
+        hour: +value.slice(11, 13) || 0,
+        minute: +value.slice(14, 16) || 0,
+      }
+    : null
+
+export const serialiseDateTime = (parts: DateTimeParts) =>
+  `${parts.year}-${padTwo(parts.month + 1)}-${padTwo(parts.day)}T${padTwo(parts.hour)}:${padTwo(parts.minute)}`
+
+/** `DD/MM/YYYY, HH:mm` — what the field box shows. */
+export const displayDateTime = (parts: DateTimeParts) =>
+  `${padTwo(parts.day)}/${padTwo(parts.month + 1)}/${parts.year}, ${padTwo(parts.hour)}:${padTwo(parts.minute)}`
 
 /** The day of the month in grid cell `cellIndex`, or null for a blank cell
  *  outside the month. */
