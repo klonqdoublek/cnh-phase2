@@ -12,6 +12,7 @@
 @import './styles/tokens.css';
 @import './styles/webds-foundation.css';
 @import './styles/webds-components.css';
+@import './styles/webds-task-flow.css';
 @import './styles/utilities.css';
 
 /* The console fills the window; screens scroll inside their own regions.

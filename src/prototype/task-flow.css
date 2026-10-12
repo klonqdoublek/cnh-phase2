@@ -1,0 +1,46 @@
+/* Runner only. webds pins the trigger bottom-right, where this console keeps
+   the table's page counter. Bottom-left of the main area is empty on every
+   screen. Unlayered, so it wins over webds's @layer rule. The 320 is the
+   product-shell sidebar's measured width. */
+.webds-tfv-trigger {
+  right: auto;
+  left: calc(320px + var(--space-4));
+}
+
+.cnh-tf-hidden .webds-tfv-trigger {
+  display: none;
+}
+
+.cnh-tf-hide,
+.cnh-tf-tab {
+  position: fixed;
+  z-index: 1401;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--color-border-primary-default);
+  background-color: var(--color-surface-primary-default);
+  color: var(--color-text-secondary-default);
+  box-shadow: var(--shadow-overlay);
+  cursor: pointer;
+  font: inherit;
+}
+
+.cnh-tf-hide {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.cnh-tf-tab {
+  left: 320px;
+  bottom: var(--space-4);
+  width: 12px;
+  height: 44px;
+  border-left: 0;
+  border-radius: 0 var(--radius-2) var(--radius-2) 0;
+  font-size: 12px;
+}
