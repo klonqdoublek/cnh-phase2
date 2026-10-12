@@ -1,0 +1,2943 @@
+/* The axis `bbl-tokens.css` does not carry yet — the Thai / Looped font theme.
+ *
+ * WHY THIS FILE EXISTS
+ * webds's own `tokens.css` resolves type on TWO axes: device (`@media
+ * (max-width: 1023px)`) and language (`:root:lang(th)`, plus
+ * `[data-font-theme="looped"]`). The token file webds generates for
+ * @bbl-web/ui-components carries **one mode** — 0 media queries, 0 `:lang()`
+ * selectors — so an app on that package gets the English/Device-L values at
+ * every width and in every language.
+ *
+ * On a Thai product that is visible immediately: the four family names stay on
+ * the non-looped cut, so every screen renders in `BBL Sans Office` where the
+ * design (and the deployed prototype) draws `BBL Sans Looped Office`.
+ *
+ * The four values below are webds's own, copied from its `:root:lang(th)`
+ * block — the same stack, re-spelled into this package's token names. Set
+ * `lang="th"` on <html> and the looped cut resolves itself.
+ *
+ * STILL MISSING, and it has to come from the generator, not from here: the
+ * DEVICE axis. webds steps the whole typescale down below 1024 (Body M 16/22 →
+ * 14/20, Heading XS 24/32 → 18/24, and so on for ~30 steps). Those are not
+ * transcribed here on purpose — hand-copying thirty values is how a wrong one
+ * gets in. webds has to emit both axes into `bbl-tokens.css`.
+ */
+
+:root:lang(th),
+:root[data-font-theme="looped"] {
+  --stringFontFamilyDisplay:
+    "BBL Sans Looped Office", "BBL Sans Looped", "BBL Sans", sans-serif;
+  --stringFontFamilyHeading:
+    "BBL Sans Looped Office", "BBL Sans Looped", "BBL Sans", sans-serif;
+  --stringFontFamilyBody:
+    "BBL Sans Looped Office", "BBL Sans Looped", "BBL Sans", sans-serif;
+  --stringFontFamilyLabel:
+    "BBL Sans Looped Office", "BBL Sans Looped", "BBL Sans", sans-serif;
+}
+/* The reset an app built on @bbl-web/ui-components has to supply itself.
+ *
+ * webds ships `webds-preflight.css` and every one of its components was measured
+ * with it in place. This package ships NO reset — only `.`, `./index.css` and
+ * `./shadows.css`, and `index.css` is the component rules, not a preflight. An
+ * app that imports the package and nothing else therefore renders on the
+ * browser's own defaults, and two of those quietly break every measurement:
+ *
+ *   box-sizing: content-box  — a measured `height: 80px` on a box with p 24/16
+ *                              paints 120. Every height in a handoff is a BOX
+ *                              height, so this is not a preference.
+ *   body { margin: 8px }     — the 1920 page starts at x8 and the sidebar is
+ *                              inset from the edge the design pins it to.
+ *
+ * Import it once at the app root, before the screens' own stylesheets.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  /* 🔴 The console does not scroll — its REGIONS do. Every frame of this file
+     draws the sidebar at 320 × 1000 pinned at y0 and the pagination row at
+     y954.5, with the table clipped to eleven rows (`1:127401` draws body rows
+     at 271 … 911 out of the fifty its own pagination counts). Without this line
+     the viewport itself was scrollable to 3419: the table's own scroller took
+     the first 2518 and then CHAINED the rest to the window, which slid the
+     sidebar to −400 and the pagination off the bottom (Korn, 2026-09-22 — it
+     shows up most with the drawer open, where a modal is left sitting over a
+     page that moves underneath it).
+     Each screen already carries its own scroll region inside 100vh —
+     `.cnh-list__table-scroll`, `.cnh-form__scroll`, `.login` — so nothing
+     becomes unreachable; only the page stops being the scroller. */
+  overflow: hidden;
+}
+
+/* 🔴 …and `overflow: hidden` alone is not enough, which is what QA round 4
+   caught (R4-01). It makes a scroll container the user cannot WHEEL; it does
+   not make one that cannot SCROLL, and sequential focus navigation scrolls it.
+   The package positions its checkbox input ABSOLUTELY, and every ancestor up to
+   <html> was `position: static`, so all fifty of them resolved their containing
+   block to the initial containing block and escaped every clip in the chain:
+   the document's scroll height was 3418 against a 1000 viewport, and 95 real
+   Tab presses from a cold load slid the sidebar to y −123 and kept going to
+   −2406, with black below the app.
+   Giving every scroll region a containing block is the fix — measured, it takes
+   the document from 3418 back to 1000. It belongs here rather than in one
+   screen's stylesheet because it is the app's rule, not the table's. */
+.cnh-shell,
+.cnh-list__table-scroll,
+.cnh-form__scroll,
+.login {
+  position: relative;
+}
+
+body {
+  /* The type tokens carry the Thai/Looped axis; a literal family opts the text
+     out of it. */
+  font-family: var(--stringFontFamilyBody);
+}
+
+#root {
+  height: 100%;
+}
+
+/* webds's preflight zeroes these; the browser gives h1 21px and p 16px of
+   margin, which turned the login block's 24 gaps into 89 and 81 before this
+   line existed. */
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+/* 🔴 The package's Button / GhostButton / OutlineButton draw `gap: 4px` between
+   label and icon AND keep MUI's `.MuiButton-endIcon { margin-left: 8px }`, so
+   the mark sits 12 after the label where every frame of this file measures 4
+   (`Create template`, `Download`, the drawer's `Download`). Zeroed here for
+   the whole app; the 4 is the component's own gap. */
+.MuiButton-root .MuiButton-endIcon,
+.MuiButton-root .MuiButton-startIcon {
+  margin: 0; /* two classes: MUI's emotion rule is one class, injected later */
+}
+
+/* QA I1 — the product's focus ring, on everything the package does not ring
+   itself: 2px Border/Highlight at offset 2 (the prototype's W-17 rule). MUI
+   Buttons carry their own focus-visible; native inputs the package hides (the
+   checkbox's 1 × 1 input, the switch's) hand the ring to their visible box. */
+:where(
+  button,
+  [role="button"],
+  a[href],
+  input,
+  textarea,
+  select,
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 2px solid var(--colorBorderHighlightDefault);
+  outline-offset: 2px;
+}
+
+/* MUI's `.MuiButtonBase-root { outline: 0 }` is one class and outranks the
+   `:where()` above; the Icon Button relies on it (QA I1 round 2: pagination). */
+.MuiIconButton-root:focus-visible,
+.checkbox-with-label:has(input:focus-visible),
+.MuiSwitch-root:has(input:focus-visible) {
+  outline: 2px solid var(--colorBorderHighlightDefault);
+  outline-offset: 2px;
+}
+
+/* 🔴 A scrollable region is keyboard-focusable whether or not anyone asked —
+   the browser makes it so, and it SHOULD be, because content you can only
+   reach by scrolling has to be reachable by keyboard (WCAG 2.1.1). What it
+   must not do is paint the BROWSER's ring: the package's `ScrollBar` wrapper
+   carries no tabindex, so it fell through the rule above and Chrome drew its
+   own `outline: auto` in `-webkit-focus-ring-color` — an amber frame around
+   the drawer's whole body (Korn, 2026-09-22, in the same breath as the panel's
+   own ring). It keeps the focus and takes the product's ring instead, inset so
+   it does not sit on the content. */
+.scrollbar-content:focus-visible {
+  outline: 2px solid var(--colorBorderHighlightDefault);
+  outline-offset: -2px;
+}
+
+/* The package's FIELDS draw their own focus — a 1px Border/Highlight on the
+   box (`.search-field:focus-within`, `.text-field` wrapper, `.textarea:focus`),
+   which is what every board frame draws for a focused field. The ring above
+   must not land on the <input> inside them as well: it did, and a focused
+   field showed two rectangles (Korn, 2026-09-21). */
+.search-field input:focus-visible,
+.text-field input:focus-visible,
+.textarea:focus-visible,
+.select-wrapper .MuiSelect-select:focus-visible {
+  outline: none;
+}
+
+/* QA I8 — the spinner is the one animation; stop it for people who asked. */
+@media (prefers-reduced-motion: reduce) {
+  /* 🔴 QA C-03 — stopping the ANIMATIONS left 118 transitioning elements on the
+     list and 45 on the form, including the package's own `aside.sidebar`
+     width transition. "Reduced motion" has to cover both. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .spinner-loader,
+  .spinner-loader * {
+    animation: none !important;
+  }
+}
+
+/* Tokens come from `src/styles/bbl-tokens.css`, generated by webds — the package
+   exports none of its own. Font WEIGHT is a token in neither system. */
+.cnh-shell {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  /* The page's ground is the SECONDARY surface; the sidebar and the work area
+     paint their own white over it. */
+  background-color: var(--colorSurfaceSecondaryDefault);
+  /* 🔴 `Sidebar` in `static` mode does NOT render an MUI Drawer paper — it
+     renders its own `.sidebar__paper`. A rule written against
+     `.MuiDrawer-paper` (the obvious guess for a Drawer-based control) matches
+     nothing and fails silently: the paper stayed a plain block, `flex: 1` on the
+     nav had no column to grow in, and the profile row sat directly under the
+     menu at y193 instead of at the foot of the 1000 panel. The class the
+     package actually paints is the one to name. */
+}
+.cnh-shell__panel {
+  position: relative;
+  flex-shrink: 0;
+  width: 320px;
+  height: 100%;
+}
+.cnh-shell__panel .sidebar__paper {
+  position: relative;
+  display: flex;
+  height: 100%;
+  width: 320px;
+  flex-direction: column;
+  border: 0;
+  background-color: var(--colorSurfacePrimaryDefault);
+}
+.cnh-shell__panel {
+  /* The right rule is a PSEUDO-ELEMENT, not an inset shadow. The footer row is
+     the full 320 and paints its own white background, which covers an inset
+     shadow exactly along that row and leaves the line stopping short of the
+     bottom. */
+}
+.cnh-shell__panel::after {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--colorBorderPrimaryDefault);
+  content: "";
+}
+.cnh-shell {
+  /* 80 · p 24/16/16/16 · the product mark 161 × 40. */
+}
+.cnh-shell__top {
+  display: flex;
+  height: 80px;
+  flex-shrink: 0;
+  align-items: flex-start;
+  padding: var(--floatGenericSpace6) var(--floatGenericSpace4)
+    var(--floatGenericSpace4);
+}
+.cnh-shell {
+  /* p 16 · gap 6 between rows. */
+}
+.cnh-shell__nav {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: auto;
+  gap: var(--floatGenericSpace15);
+  padding: var(--floatGenericSpace4);
+}
+.cnh-shell__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace15);
+}
+.cnh-shell {
+  /* 288 × 24, and the 16-tall text sits at the TOP of it — Figma puts
+     `Section Header` at y16 inside the 850 slot and its text at y0 of that
+     frame, so the label reads at 96 absolute and the first row at 46 + 80 =
+     126. Centring the text pushed it to 100, and an extra `padding-bottom: 8`
+     pushed the row to 134. Neither is in the file: 16 + 24 + the nav's own 6
+     gap = 46 exactly. */
+}
+.cnh-shell__group-label {
+  display: flex;
+  height: 24px;
+  align-items: flex-start;
+}
+.cnh-shell__group-label span {
+  color: var(--colorTextTertiaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodyXsSize);
+  font-weight: 500;
+  line-height: var(--floatBodyXsLineHeight);
+}
+.cnh-shell {
+  /* 288 × 38 · p 8 · radius 8 — a title-only row. */
+}
+.cnh-shell__row {
+  display: flex;
+  height: 38px;
+  width: 100%;
+  align-items: center;
+  border: 0;
+  border-radius: var(--floatRadius2);
+  background: none;
+  cursor: pointer;
+  padding: var(--floatGenericSpace2);
+  text-align: left;
+  transition: background-color 0.2s;
+}
+.cnh-shell__row:hover {
+  background-color: var(--colorSurfacePrimaryHovered);
+}
+.cnh-shell__row--selected {
+  background-color: var(--colorSurfaceHighlightSubtleDefault);
+  /* The selected row's label is Label XL EMPHASIZED — the board draws it at
+     weight 500 on Text/Highlight where a resting row is 400 on
+     Text/Primary. */
+}
+.cnh-shell__row--selected .cnh-shell__row-label {
+  color: var(--colorTextHighlightDefault);
+  font-weight: 500;
+}
+.cnh-shell {
+  /* Label XL 16/22 on Text/Primary — the row's only content. */
+}
+.cnh-shell__row-label {
+  overflow: hidden;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelXlSize);
+  font-weight: 400;
+  line-height: var(--floatLabelXlLineHeight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnh-shell {
+  /* Divider + a 67 row holding a 58 surface. */
+}
+.cnh-shell__foot {
+  flex-shrink: 0;
+}
+.cnh-shell {
+  /* Divider + a 67 row holding a 58 surface. NO side padding: the row is the
+     full 320 and the 16 belongs to the profile surface inside it, which is what
+     puts the avatar's left edge at 16 and the text at 60. */
+}
+.cnh-shell__foot-row {
+  display: flex;
+  height: 67px;
+  align-items: center;
+  background-color: var(--colorSurfacePrimaryDefault);
+}
+.cnh-shell {
+  /* 320 × 58 · p 8/16 · radius 8 · gap 12 — avatar 32 at x16, text at x60. */
+}
+.cnh-shell__profile {
+  display: flex;
+  height: 58px;
+  width: 100%;
+  align-items: center;
+  gap: var(--floatGenericSpace3);
+  border: 0;
+  border-radius: var(--floatRadius2);
+  background: none;
+  cursor: pointer;
+  padding: var(--floatGenericSpace2) var(--floatGenericSpace4);
+  text-align: left;
+  transition: background-color 0.2s;
+}
+.cnh-shell__profile:hover {
+  background-color: var(--colorSurfacePrimaryHovered);
+}
+.cnh-shell__profile-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.cnh-shell {
+  /* Label XL 16/22 over Body S 14/20 — the steps the file draws, measured on
+     the deployed prototype. */
+}
+.cnh-shell__profile-name {
+  overflow: hidden;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelXlSize);
+  font-weight: 400;
+  line-height: var(--floatLabelXlLineHeight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnh-shell__profile-role {
+  overflow: hidden;
+  color: var(--colorTextSecondaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  font-weight: 400;
+  line-height: var(--floatBodySLineHeight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnh-shell {
+  /* The work area: 1600 of the 1920, its own white. */
+}
+.cnh-shell__main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--colorSurfacePrimaryDefault);
+}
+/* Tokens from `src/styles/bbl-tokens.css` + `bbl-tokens-axes.css`. */
+.cnh-profile-menu {
+  /* Anchored to the sidebar, not to the row: the UI file puts the card at
+     x53 / bottom 63 (1080 − 865.76 − 151). A pattern that pinned its own
+     coordinates could only ever be right for one sidebar, so the position is the
+     consumer's and the anatomy is the file's. */
+  position: absolute;
+  z-index: 50;
+  /* QA U27 — the file puts the card at y797 (frame y876 − 79): its foot at 948
+     overlaps the profile row by 11. 63 was the prototype's reading. */
+  bottom: 52px;
+  left: 53px;
+  display: flex;
+  width: 288px;
+  flex-direction: column;
+  gap: var(--floatGenericSpace4);
+  border-radius: var(--floatRadius2);
+  background-color: var(--colorSurfacePrimaryDefault);
+  padding: var(--floatGenericSpace4);
+  /* 🔴 INSIDE, not a border. The spec records the Card Surface's 1px stroke as
+     INSIDE and the card as 288 × 151, which is 16 + 42 + 16 + 1 + 16 + 44 + 16.
+     A CSS border takes part in layout and ships 153. */
+  outline: 1px solid var(--colorBorderPrimaryDefault);
+  outline-offset: -1px;
+}
+.cnh-profile-menu__who {
+  display: flex;
+  height: 42px;
+  width: 100%;
+  align-items: center;
+  gap: var(--floatGenericSpace3);
+}
+.cnh-profile-menu__text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.cnh-profile-menu {
+  /* Label XL 16/22 on Text/Primary. */
+}
+.cnh-profile-menu__name {
+  overflow: hidden;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelXlSize);
+  font-weight: 400;
+  line-height: var(--floatLabelXlLineHeight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnh-profile-menu {
+  /* Body S 14/20 on Text/Secondary. */
+}
+.cnh-profile-menu__role {
+  overflow: hidden;
+  color: var(--colorTextSecondaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  font-weight: 400;
+  line-height: var(--floatBodySLineHeight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnh-profile-menu__rule {
+  width: 256px;
+}
+.cnh-profile-menu {
+  /* 256 × 44, p 0/16, the label left-aligned with the mark 4 after it.
+     🔴 `GhostButton` puts `className` on a WRAPPER div, not on the button, so
+     these rules have to reach the button through it — set on the wrapper they
+     landed on the wrong box and pushed the button 16 to the right of where the
+     file draws it. The package centres its content and `padding="none"` removes
+     the 16, so both are set back here. */
+  /* `button.MuiButton-root`, not just `button`: MUI styles this control through
+     TWO of its own classes (`.MuiButton-root.MuiButton-outlined`), so a
+     single-class descendant selector loses on specificity and silently does
+     nothing. Styling this package's controls from an app means out-specifying
+     MUI, which is worth knowing before a whole stylesheet reads as ignored. */
+}
+.cnh-profile-menu__action button.MuiButton-root {
+  justify-content: flex-start;
+}
+/* Tokens from `src/styles/bbl-tokens.css`.
+
+   The same corrections the form's and the list's dialogs carry — the package
+   pads its paper 24 all round, rounds it at radius2, and pads its action
+   buttons 10/20 against the file's 44-tall button hugging its label at 0/16.
+   `1:138456` is 600 × 170: title 48 · content 54 · actions 68. */
+.cnh-logout-dialog .MuiDialog-paper {
+  border-radius: var(--floatRadius3) !important;
+  padding: 0 !important;
+}
+.cnh-logout-dialog .MuiDialog-paper .dialog-popup__action-button {
+  height: 44px;
+  min-width: 0;
+  padding: 0 var(--floatGenericSpace4);
+}
+.cnh-logout-dialog .MuiDialog-paper {
+  /* MUI puts 8 of its own margin between actions; the component already draws
+     the file's 8 as a flex gap, so this would ship 16. */
+}
+.cnh-logout-dialog
+  .MuiDialog-paper
+  .MuiDialogActions-root
+  > :not(:first-of-type) {
+  margin-left: 0;
+}
+
+/* The body is Body M 16/22 on Text/Primary — the package renders dialog
+   content at its own 14/20, a step no BBL text style has. */
+.cnh-logout-dialog .MuiDialogContent-root {
+  font-size: var(--floatBodyMSize);
+  line-height: var(--floatBodyMLineHeight);
+}
+
+/* 🔴 The destructive pair. The package's `outline` variant is Border/Highlight
+   blue on Text/Highlight blue; `1:138456` strokes this one #E21056 and writes
+   its label in the same colour. `DialogPopupAction` carries no appearance of
+   its own, so the colour is set here — and the hover/active tints the package
+   derives from its blue have to follow, or the button flashes blue on press. */
+.cnh-logout-dialog .dialog-popup__action-button--outline {
+  border-color: var(--colorBorderNegativeDefault);
+  color: var(--colorTextNegativeDefault);
+  /* The board draws no hover or pressed state for this pair, so these keep the
+     package's own two-step shape and take it down the system's negative ramp:
+     Surface/Negative/Subtle (15%) then Surface/Negative. Left on the blue, the
+     button flashes blue on press. */
+}
+.cnh-logout-dialog .dialog-popup__action-button--outline:hover:not(:disabled) {
+  background-color: var(--colorSurfaceNegativeSubtleDefault);
+}
+.cnh-logout-dialog .dialog-popup__action-button--outline:active:not(:disabled) {
+  background-color: var(--colorSurfaceNegativeDefault);
+}
+.cnh-logout-dialog .dialog-popup__action-button--outline:focus-visible {
+  outline-color: var(--colorBorderNegativeDefault);
+}
+
+/* QA U30 — Component/Scrim/Strong (70%), not MUI's 50%. */
+.cnh-logout-dialog .MuiBackdrop-root {
+  background-color: var(--colorComponentScrimStrongDefault);
+}
+/* Phase 2 — Import dialog body. No Figma frame: spacing is on the generic
+   4-step scale and type on the product's existing steps (Label M Emphasized
+   for names, Body S for meta). Every value is a token; the 1px rules and the
+   400/500 weights follow Dashboard.scss. */
+.cnh-import__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace4);
+}
+
+.cnh-import__drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--floatGenericSpace2);
+  padding: var(--floatGenericSpace6) var(--floatGenericSpace4);
+  border: 1px dashed var(--colorBorderPrimaryDefault);
+  border-radius: var(--floatRadius2);
+  background-color: var(--colorSurfaceSecondaryDefault);
+  text-align: center;
+}
+.cnh-import__drop.is-dragging {
+  border-color: var(--colorBorderHighlightDefault);
+  background-color: var(--colorSurfaceHighlightSubtleDefault);
+}
+.cnh-import__drop.is-error {
+  border-color: var(--colorBorderNegativeDefault);
+}
+.cnh-import__drop > button {
+  margin-top: var(--floatGenericSpace2);
+}
+
+.cnh-import__drop-title,
+.cnh-import__file-name,
+.cnh-import__fail-title {
+  margin: 0;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelMSize);
+  font-weight: 500;
+  line-height: var(--floatLabelMLineHeight);
+}
+
+.cnh-import__drop-hint,
+.cnh-import__file-meta,
+.cnh-import__fail-body {
+  margin: 0;
+  color: var(--colorTextSecondaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  font-weight: 400;
+  line-height: var(--floatBodySLineHeight);
+}
+
+/* Uploading — one opaque layer over the whole paper (title, body, actions).
+   Positioned against `.MuiDialog-paper`, which MUI already makes relative;
+   the radius follows the paper's Radius 3 so the corners stay clean. */
+.cnh-import__uploading {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--floatGenericSpace3);
+  border-radius: var(--floatRadius3);
+  background-color: var(--colorSurfacePrimaryDefault);
+}
+
+.cnh-import__uploading-title {
+  margin: var(--floatGenericSpace2) 0 0;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyHeading);
+  font-size: var(--floatHeadingXxsSize);
+  font-weight: 500;
+  line-height: var(--floatHeadingXxsLineHeight);
+}
+
+/* The collapsed drop area — one line once files exist (10–50 file layout). */
+.cnh-import__drop-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--floatGenericSpace3);
+  padding: var(--floatGenericSpace2) var(--floatGenericSpace4);
+  border: 1px dashed var(--colorBorderPrimaryDefault);
+  border-radius: var(--floatRadius2);
+  background-color: var(--colorSurfaceSecondaryDefault);
+}
+.cnh-import__drop-bar .cnh-import__drop-hint {
+  flex: 1;
+}
+.cnh-import__drop-bar.is-dragging {
+  border-color: var(--colorBorderHighlightDefault);
+  background-color: var(--colorSurfaceHighlightSubtleDefault);
+}
+
+/* "50 files · 92 templates · 4 with errors"  ·  [Remove 4 files with errors] */
+.cnh-import__summary {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--floatGenericSpace4);
+}
+
+.cnh-import__summary-text {
+  margin: 0;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelMSize);
+  font-weight: 500;
+  line-height: var(--floatLabelMLineHeight);
+}
+
+.cnh-import__summary-errors {
+  color: var(--colorTextNegativeDefault);
+}
+
+.cnh-import__files {
+  display: flex;
+  flex-direction: column;
+  /* ~10 one-line rows at 40. Capped by the viewport too, so the dialog never
+     outgrows a short window and pushes its own actions off screen. */
+  max-height: min(400px, 40vh);
+  margin: 0;
+  /* 🔴 The right gutter is for the SCROLLBAR. macOS overlay scrollbars take no
+     width (offsetWidth − clientWidth = 0) and float over the last 8–11 px —
+     exactly where the row's × sat, which clipped it to ">" and ate the click
+     (found in the 2026-10-05 walkthrough). */
+  padding: 0 var(--floatGenericSpace3) 0 0;
+  border-top: 1px solid var(--colorBorderPrimaryDefault);
+  overflow-y: auto;
+  list-style: none;
+}
+
+/* One line per file: icon · name (shrinks first) · status (right) · ×. */
+.cnh-import__file {
+  display: flex;
+  min-height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--floatGenericSpace3);
+  /* 4, not 8: the × is a 32-tall hit area (the package pads its 16 icon by 8),
+     so 4 + 32 + 4 is what makes the row 40. */
+  padding: var(--floatGenericSpace1) 0;
+  box-shadow: inset 0 -1px 0 0 var(--colorBorderPrimaryDefault);
+}
+.cnh-import__file .cnh-import__file-name {
+  flex: 1 1 0;
+  min-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnh-import__file .cnh-import__file-meta {
+  max-width: 60%;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnh-import__file.is-error .cnh-import__file-meta {
+  color: var(--colorTextNegativeDefault);
+}
+
+.cnh-import__fail {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--floatGenericSpace3);
+  padding: var(--floatGenericSpace3) var(--floatGenericSpace4);
+  border-radius: var(--floatRadius2);
+  background-color: var(--colorSurfaceNegativeSubtleDefault);
+}
+.cnh-import__fail .cnh-import__fail-title,
+.cnh-import__fail .cnh-import__fail-body {
+  color: var(--colorTextNegativeStrongDefault);
+}
+/* Tokens come from `src/styles/bbl-tokens.css`, generated by webds.
+   `@bbl-web/ui-components` exports only ".", "./index.css" and "./shadows.css";
+   its dist CSS carries 34 custom properties and not one design token, and deep
+   imports of its SCSS are blocked — so `@use '.../theme/float'` cannot resolve
+   from an app. That file is the tokens in THEIR naming, with the opacity intact
+   and px on the geometry. Import it once at the app root.
+
+   Font FAMILY is a token (--stringFontFamily{Heading,Body,Label}) and carries the
+   Thai/Looped axis. Font WEIGHT is a token in NEITHER system — their
+   typography.scss writes 400/500/700 as literals, so the numbers below are
+   theirs, not a hardcode we introduced. */
+.cnh-list {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  background-color: var(--colorSurfacePrimaryDefault);
+  /* The `compact` page-header band: 82 tall, px 16, items centred — CNH
+     `1:127401` › Header, against the 87–88 / px 24 / top-aligned band every
+     other BBL console file draws. webds carries both as one pattern with a
+     `band` prop; this package has no page-header at all, so the band is
+     authored here and is real work for the dev team.
+
+     The rule is drawn INSIDE the frame, not as a border: Figma strokes inside,
+     and a border would make the band 83 against the file's 82. */
+}
+.cnh-list__header {
+  display: flex;
+  height: 82px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: var(--floatGenericSpace4);
+  background-color: var(--colorSurfacePrimaryDefault);
+  box-shadow: inset 0 -1px 0 0 var(--colorBorderPrimaryDefault);
+}
+.cnh-list {
+  /* Phase 2 — Import + Create. No frame yet; the scale's 16. */
+}
+.cnh-list__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--floatGenericSpace4);
+}
+.cnh-list {
+  /* Heading XS Emphasized 24/32 on Text/Primary. */
+}
+.cnh-list__title {
+  margin: 0;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyHeading);
+  font-size: var(--floatHeadingXsSize);
+  font-weight: 500;
+  line-height: var(--floatHeadingXsLineHeight);
+}
+.cnh-list__body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cnh-list {
+  /* 1600 x 105 · pt 20 / px 16 / pb 21 · gap 16 · BORDER-B. */
+  /* 🔴 The board overlaps this bar 1px onto the header's bottom border — the
+     landing frame puts `Filtter` at y81 under an 82 header, so the two share
+     the rule. Stacked flush, everything below the header lands 1 low. */
+}
+.cnh-list__filters {
+  margin-top: -1px;
+  display: flex;
+  height: 105px;
+  width: 100%;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: var(--floatGenericSpace4);
+  padding: var(--floatGenericSpace5) var(--floatGenericSpace4) 21px;
+  background-color: var(--colorSurfacePrimaryDefault);
+  box-shadow: inset 0 -1px 0 0 var(--colorBorderPrimaryDefault);
+}
+.cnh-list {
+  /* The file draws this bar two ways (QA U1): the landing frame `1:127401` at
+     520 · 304 · 304 · 304 · 72 with 16 gaps (= 1600 exactly), the loading frame
+     at 520 · 291.33 ×3 · 110. Korn ruled for the landing frame, so every item
+     is FIXED — nothing here depends on content, and the bar never re-deals when
+     the search box changes state. */
+  /* 520 · 304 at 1920, as measured. Under that they give way (QA 2026-10-06:
+     at a 1512 laptop the bar ran 1584 wide in 1192 and Status was cut off) —
+     the floors keep the labels readable down to a 1280 screen. */
+}
+.cnh-list__search {
+  flex: 0 1 520px;
+  min-width: 200px;
+}
+.cnh-list__filter-field {
+  flex: 0 1 304px;
+  min-width: 180px;
+}
+.cnh-list__clear {
+  display: flex;
+  height: 64px;
+  flex-shrink: 0;
+  align-items: center;
+  /* 110 x 44 as the file draws it, on ONE line. Chrome measures the label at
+     77 inside a 110 box, and a shrinkable flex item gives up its last pixels
+     under compression — which broke "Clear filter" onto two lines and made the
+     button 2 rows tall. This is the same defect this project already fixed
+     once in the webds build. */
+}
+.cnh-list__clear button {
+  white-space: nowrap;
+}
+.cnh-list {
+  /* ⚠️ Neither Select nor SearchField takes a height prop, and the board draws
+     both boxes 64 on every frame (`Input Field Container`, p 8/16) where the
+     package's own default is shorter. Set from the app, on the package's MUI
+     root rather than on its internals. If the package grows a size prop, delete
+     this block rather than keeping both. */
+}
+.cnh-list__search .search-field-wrapper,
+.cnh-list__search .search-field,
+.cnh-list__search .MuiInputBase-root,
+.cnh-list__filter-field .MuiInputBase-root {
+  height: 64px;
+}
+.cnh-list {
+  /* 🔴 QA U2/U3 — the filter's label is MUI's floating label in its "shrink"
+     step: 12px scaled by 0.75 = **9px**, 13.5 tall. The file draws it at
+     Label XL 16/22 in a 24 row at (16, 8) inside the 64 box, and the value
+     under it at y33 (8 + 24 + 1). `!important` throughout: the package
+     positions this label with its own `translate(16px, 8px) scale(0.75)` and
+     12px, declared important. */
+  /* Five classes deep on purpose: the package's own rule is
+     `.select-wrapper .select-form-control .select-label.MuiInputLabel-shrink`
+     (four) with the transform declared important, and between two importants
+     specificity decides. */
+}
+.cnh-list__filter-field
+  .select-wrapper
+  .select-form-control
+  .select-label.MuiInputLabel-shrink {
+  max-width: none !important;
+  transform: translate(var(--floatGenericSpace4), var(--floatGenericSpace2))
+    scale(1) !important;
+  font-family: var(--stringFontFamilyLabel) !important;
+  font-size: var(--floatLabelXlSize) !important;
+  line-height: var(--floatLabelXlLineHeight) !important;
+}
+.cnh-list__filter-field .MuiSelect-select.MuiSelect-select {
+  padding-top: 33px !important;
+  padding-bottom: 9px !important;
+}
+.cnh-list {
+  /* QA U4 — the file puts the magnifier at x16 and the value at x46. The
+     package lays the row out from its own offsets (icon at 13, text at 49), so
+     the row is restated: left-aligned, 16 in, icon, then 6 to the text. */
+}
+.cnh-list__search .search-field {
+  justify-content: flex-start !important;
+  /* The file measures the 16 from the box edge; the package draws a 1px
+     border INSIDE that box, so the padding pays for it. */
+  padding-left: calc(var(--floatGenericSpace4) - 1px) !important;
+}
+.cnh-list__search .search-field__icon--search {
+  margin-left: 0 !important;
+}
+.cnh-list__search .search-field__input {
+  flex: 1 1 auto;
+  padding-left: 6px !important;
+}
+.cnh-list {
+  /* QA I1/I2 — the search icon is a control: DS Icon Button hover
+     (Surface/Primary/Subtle/Hovered). The board draws no hover for it; the DS
+     does. */
+}
+.cnh-list__search .search-field__icon--search:hover {
+  border-radius: var(--floatRadius1);
+  background-color: var(--colorSurfacePrimarySubtleHovered);
+}
+.cnh-list {
+  /* 🔴 And the WIDTH, which is the part that showed: `SearchField` does not fill
+     its container — it renders 388 inside the file's 520 box, so the resting
+     label ("Search Template name / Template Description / Product Name") was cut
+     mid-word at `Descriptior`. The prototype's box is 520 and its label runs to
+     447.7 before ellipsis. Neither the width nor the height is a prop. */
+}
+.cnh-list__search .search-field-wrapper,
+.cnh-list__search .search-field {
+  width: 100%;
+}
+.cnh-list {
+  /* The filter's multi-select panel — `Activity Option1 - Multi Selection`,
+     measured from Figma at 291 × 281: pt 8 / pb 8, a 291 divider at y216 and a
+     56 footer. It is rendered into MUI's Menu paper, so the width and the
+     spacing are set on that paper rather than inside the field. */
+}
+.cnh-list__option-label {
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  font-weight: 500;
+  line-height: var(--floatBodySLineHeight);
+}
+.cnh-list {
+  /* Selection bar — `1:160295` / `1:160767`: 1600 x 64 above the header row,
+     p 16 · gap 16 · Surface/Primary/Default · BORDER-B.
+
+     Sticky, Korn 2026-09-01: it is the control surface FOR the selection you are
+     scrolling through, so scrolling it away leaves the ticks with nothing to act
+     on. 64 tall is what pushes the table header's own sticky top down while it
+     shows. */
+}
+.cnh-list__selection {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  height: 64px;
+  width: 100%;
+  align-items: center;
+  gap: var(--floatGenericSpace4);
+  padding: var(--floatGenericSpace4);
+  background-color: var(--colorSurfacePrimaryDefault);
+  box-shadow: inset 0 -1px 0 0 var(--colorBorderPrimaryDefault);
+}
+.cnh-list__selection-text {
+  flex-shrink: 0;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodyMSize);
+  font-weight: 400;
+  line-height: var(--floatBodyMLineHeight);
+}
+.cnh-list {
+  /* 1 x 20. The file's instance is a 20 x 1 Divider ROTATED 90°, so its layout
+     footprint is 1 wide — 16+355+16+1+16+1069+16+95+16 = 1600 only with the 1. */
+}
+.cnh-list__selection-rule {
+  display: block;
+  width: 1px;
+  height: 20px;
+  flex-shrink: 0;
+  align-self: center;
+  background-color: var(--colorComponentDividerDefault);
+}
+.cnh-list__selection-grow {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  /* The wrapper runs 28 tall (its own line box) and the 24 Ghost sat at its
+     BOTTOM, 2 low in a bar that is otherwise centred. */
+  align-items: center;
+  justify-content: flex-start;
+}
+.cnh-list__table-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  background-color: var(--colorSurfacePrimaryDefault);
+}
+.cnh-list__table {
+  /* 🔴 The column widths are a SPEC, so the table cannot be auto-layout.
+     `style={{ width }}` on a TableCell is a suggestion to an auto table: the
+     browser re-deals every column by its content, and the measured
+     56 · 240 · 450 · 213.5 × 4 came out 56 · 163 · 582 · 134 · 88 · 243 · 140
+     — the description column eating 582 of the 1600. `fixed` is what makes the
+     widths mean what they say. Nothing in the package sets it. */
+  /* 🔴 The package's TableContainer is its own overflow:auto box, so the
+     sideways scrollbar sat under all 50 rows — at 1512 the last two columns
+     were out of reach (QA 2026-10-06). Let `&__table-scroll` own both axes:
+     its scrollbar is at the bottom of what is on screen. Doubled class: the
+     package's emotion class lands after this sheet.
+     🔴 And its Paper elevation-1 shadow drew a grey edge under the last row
+     (Korn, 2026-10-06) — the board's table has none. */
+}
+.cnh-list__table.cnh-list__table {
+  overflow: visible;
+  box-shadow: none;
+  border-radius: 0;
+}
+.cnh-list__table table {
+  table-layout: fixed;
+  /* 1600, the measured table width, NOT 100%. At 100% the browser scales
+     every column to the container and the spec'd 56 · 240 · 450 · 213.5 × 4
+     becomes seven equal columns the moment the viewport is under 1600. The
+     board is a 1920 screen with a 1600 table; below that the page scrolls. */
+  width: 1600px;
+}
+.cnh-list__table {
+  /* The header row stays put: the page is 50 rows deep by its own pagination
+     default, and a header that leaves on row 12 stops the other 38 from being
+     readable. The scroll container is `&__table-scroll`, so this pins to that,
+     not to the window. */
+}
+.cnh-list__table :where(thead th) {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--colorSurfacePrimaryHovered);
+}
+.cnh-list {
+  /* Header type — 16/22 REGULAR on Text/Tertiary. Every board frame draws the
+     header run at weight 400 (REST: `1:127401`, `1:140369`, `1:162628`, all
+     bound to the file's own style `55:93205`); the "16 Medium" in gaps.md G-24
+     was a misread of the MCP's substituted font, and 500 shipped on it until
+     2026-09-21. webds's own TableHeaderCell is Label L Medium 14/20 — the file
+     overrules it at 16/22, which is the G-24 ruling that stands. */
+}
+.cnh-list__th {
+  display: block;
+  color: var(--colorTextTertiaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelXlSize);
+  font-weight: 400;
+  line-height: var(--floatLabelXlLineHeight);
+}
+.cnh-list {
+  /* Body M 16/22 on Text/Primary. The board's cells are `Table Data Cell`
+     instances at 64 tall, p 16 — Body M, not the Body S 14/20 a generic data
+     table would give you. */
+}
+.cnh-list__cell {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodyMSize);
+  font-weight: 400;
+  line-height: var(--floatBodyMLineHeight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnh-list {
+  /* The Channel cell WRAPS where every other cell truncates — `1:127401` draws
+     row 5's "Push notification, Email, SMS" 44 tall (two 22 lines) inside the
+     64 row. Two lines, then it clips; the row height does not move. */
+}
+.cnh-list__cell--wrap {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+}
+.cnh-list {
+  /* The selection bar's Ghost Buttons: the package gives the label a 24 line
+     box where the file draws the same 16 run at 22 (both Ghosts, y+2). */
+}
+.cnh-list__selection .MuiButton-root {
+  line-height: var(--floatLabelXlLineHeight);
+}
+.cnh-list {
+  /* 🔴 QA C-01 — every body cell on `1:127401` carries a 1px bottom stroke at
+     `individualStrokeWeights {bottom: 1}` on black 10%: the file's row rule,
+     which this build drew nowhere. As an inset shadow, not a border — the row
+     is pinned to 64 and a border would make it 65. */
+}
+.cnh-list__row > td {
+  box-shadow: inset 0 -1px 0 0 var(--colorBorderPrimaryDefault);
+}
+.cnh-list {
+  /* QA B-01 — the file's Inactive badge is Surface/Secondary #F5F5F5 with
+     Text/Secondary #5E5E66. The package's `disabled` variant paints
+     rgba(94,94,102,.1) (which renders #E7E7E8 on white) and #939399. */
+}
+.cnh-list__status .badge--disabled {
+  background-color: var(--colorSurfaceSecondaryDefault);
+  color: var(--colorTextSecondaryDefault);
+}
+.cnh-list__row {
+  cursor: pointer;
+  /* The row is 64 whatever it holds: the file's two-line Channel cell is
+     centred INSIDE the 64 (text 44 at y516 in a row whose other cells sit at
+     527), it does not grow the row. A height on the <tr> alone is only a
+     minimum — the cell's own vertical padding still grew the row to 76, so
+     the padding moves to the CELL's box and the 64 is held by the <td>. */
+  height: 64px;
+}
+.cnh-list__row > td {
+  height: 64px;
+  padding-block: 0;
+}
+.cnh-list {
+  /* `E. Select each row` — the annotation's indicator box covers the whole row
+     (1535 x 747) beside `D. Select Checkbox` (63 wide), so the row is the
+     hotspot, not just the checkbox. */
+  /* 🔴 The download mark is PINNED at the x the file draws it — 1481 in the
+     table, 1801 on the screen — on every row. Figma `1:140369` shows one hovered
+     row: a 79 badge cell (p 16 · Draft 43 · p 20) and a 135 action cell at 1465
+     whose Icon Button sits at x16. Read as "36 after the badge" that x moves
+     with the badge's width and the column jitters row to row (Inactive is 15
+     wider than Draft) — which is what shipped for a round. Read as a position,
+     it is one number, the same on every row, 20 clear of the widest badge, and
+     exactly what the file draws. Right-aligning it at 1888, as the webds
+     prototype did, is not in the file either. The 79 is the file's badge cell;
+     the cell's own 16 padding is already outside this box. */
+}
+.cnh-list__status {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+.cnh-list {
+  /* `Hover — when hover will show Download icon at last column`. The reveal is
+     ours because the package's HoverAction cell hides its whole slot, and the
+     Status badge shares this cell — see the note in Dashboard.tsx. */
+}
+.cnh-list__row-download {
+  position: absolute;
+  top: 50%;
+  /* 🔴 A DELIBERATE DEVIATION from the file — D18, Korn 2026-09-22.
+     The file pins this icon at x1801 and, when a row is hovered, shrinks the
+     Status cell from 213.5 to 79 to open a 135-wide cell for it at x1785.
+     79 less its own 16 inset leaves 63 of room, and the widest badge,
+     `Published`, is 69 — it does not fit, and at 1801 the icon sits 8 from
+     that badge's right edge. The file never met the case: both frames that
+     draw a hovered row (`1:134939`, `1:161683`) draw `Draft`, 43 wide.
+     79 was the file's number. 87 is the widest badge (71 as this package
+     renders it) plus one 16 step, which puts the icon at x1809.5 — still
+     inside the file's own download cell, which runs from 1785 to 1920 and
+     has 95 of unused space to the right of where the file parks the icon.
+     Revert to 79 the day the file moves it. */
+  left: 87px;
+  display: inline-flex;
+  width: 24px;
+  height: 16px;
+  align-items: center;
+  justify-content: flex-start;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  transform: translateY(-50%);
+  visibility: hidden;
+}
+.cnh-list__row:hover .cnh-list__row-download,
+.cnh-list__row:focus-within .cnh-list__row-download {
+  visibility: visible;
+}
+.cnh-list {
+  /* 1600 x 68 · p 16 · BORDER-T · counter and chevrons, right.
+     QA U5 — the file's `Buttons Container` is two 24 Icon Buttons at gap 8,
+     16 after the 90-wide counter. The package's `icon-button--24` renders
+     40 × 40 and its navigation at gap 24. */
+}
+.cnh-list__pagination .table-pagination__content {
+  gap: var(--floatGenericSpace4);
+}
+.cnh-list__pagination .table-pagination__navigation {
+  gap: var(--floatGenericSpace2);
+}
+.cnh-list {
+  /* 🔴 The wrapper takes the 24, but the MUI button inside keeps `padding: 8px`
+     and stays 40 × 24, so the mark drew 8 past the wrapper and 16 past the
+     table's edge (QA U5, round 2). */
+}
+.cnh-list__pagination .icon-button.icon-button--24 {
+  width: 24px;
+  height: 24px;
+}
+.cnh-list__pagination .icon-button.icon-button--24 .MuiIconButton-root {
+  width: 24px;
+  height: 24px;
+  min-width: 0;
+  padding: 0;
+}
+.cnh-list__pagination .icon-button.icon-button--24 .icon-button__icon {
+  display: flex;
+}
+.cnh-list__pagination {
+  display: flex;
+  height: 68px;
+  width: 100%;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  padding-inline: var(--floatGenericSpace4);
+  background-color: var(--colorSurfacePrimaryDefault);
+  box-shadow: inset 0 1px 0 0 var(--colorBorderPrimaryDefault);
+}
+.cnh-list {
+  /* 🔴 The grey is on the 1600 × 813 `Card Surface`, not on its 1552 × 765
+     content slot (QA U11): all four frames paint Surface/Primary/Hovered
+     #F5F5F5 at radius 8 on the OUTER box (1:123310, 1:126486, 1:126231,
+     1:143612) — the 24 around the slot is part of the grey, not a white
+     margin. */
+}
+.cnh-list__card-wrap {
+  width: 100%;
+  border-radius: var(--floatRadius2);
+  background-color: var(--colorSurfacePrimaryHovered);
+  padding: var(--floatGenericSpace6);
+}
+.cnh-list__card {
+  display: flex;
+  height: 765px;
+  width: 100%;
+  flex-direction: column;
+}
+.cnh-list__spinner {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+.cnh-list {
+  /* All three state blocks start at the card's pt 100 — the board draws the first
+     line at y538 on the empty, error and no-result frames alike, NOT centred in
+     the card. Illustration → text is 24 (QA U12, `Frame 2085668195` at y148
+     under the 124 illustration); the gaps INSIDE the text block are 32. */
+}
+.cnh-list__centred {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--floatGenericSpace6);
+  padding-top: 100px;
+  text-align: center;
+}
+.cnh-list {
+  /* QA U16 — the package's spinner draws an 82 image inside its 64 box. */
+}
+.cnh-list__spinner .spinner-loader__icon img {
+  width: 64px;
+  height: 64px;
+}
+.cnh-list__state-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--floatGenericSpace8);
+}
+.cnh-list__state-title {
+  margin: 0;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyHeading);
+  font-size: var(--floatHeadingXsSize);
+  font-weight: 500;
+  line-height: var(--floatHeadingXsLineHeight);
+}
+.cnh-list__state-line {
+  margin: 0;
+  color: var(--colorTextSecondaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelXlSize);
+  font-weight: 400;
+  line-height: var(--floatLabelXlLineHeight);
+}
+.cnh-list__state-line--pre {
+  white-space: pre-line;
+}
+
+/* The panel is portalled out of `.cnh-list`, so these rules sit at the root
+   rather than nested under it. */
+/* 🔴 Two classes on purpose: MUI's paper rules (`.MuiPaper-rounded { border-
+   radius: 4px }`, `.MuiPaper-elevation8 { box-shadow: … }`) are one class each
+   and injected AFTER this sheet, so a one-class rule here lost on radius,
+   outline and shadow — the panel shipped at MUI's 4px with MUI's shadow while
+   its width (which MUI does not set) landed. Korn caught it on `1:151220`. */
+.cnh-list__panel.MuiPaper-root {
+  /* The panel component `1:72242` is drawn 291 wide under a 291 field; with the
+     field at 304 (U1) the panel follows the field. */
+  width: 304px;
+  /* 8 below the field, which is what the board draws between the box and the
+     panel. MUI offsets its menu from the anchor, so this is a margin. */
+  margin-top: var(--floatGenericSpace2);
+  border-radius: var(--floatRadius2);
+  background-color: var(--colorSurfacePrimaryDefault);
+  padding-block: var(--floatGenericSpace2);
+  /* Stroke INSIDE — a border would take part in layout and ship the panel at
+     293 against the file's 291. */
+  outline: 1px solid var(--colorBorderPrimaryDefault);
+  outline-offset: -1px;
+  /* `Elevation/Shadow/Overlay` A + B — the same two the drawer carries; see the
+     note in TemplateDrawer.scss on why the alpha is right only in this file. */
+  box-shadow:
+    var(--floatShadowOverlayShadowAX) var(--floatShadowOverlayShadowAY)
+      var(--floatShadowOverlayShadowABlur)
+      var(--floatShadowOverlayShadowASpread)
+      var(--colorShadowOverlayShadowAColor),
+    var(--floatShadowOverlayShadowBX) var(--floatShadowOverlayShadowBY)
+      var(--floatShadowOverlayShadowBBlur)
+      var(--floatShadowOverlayShadowBSpread)
+      var(--colorShadowOverlayShadowBColor);
+  /* MUI pads its list 8/0 on top of the paper's own 8, which put the first row
+     at 16 and the panel at 289 against the file's 281. `:where()` carries NO
+     specificity, so the first attempt at this rule tied with `.MuiList-padding`
+     and lost — the class has to be named. */
+}
+.cnh-list__panel.MuiPaper-root ul.MuiList-root {
+  padding: 0;
+}
+.cnh-list__panel.MuiPaper-root .cnh-list__option {
+  display: flex;
+  height: 40px;
+  align-items: center;
+  gap: var(--floatGenericSpace2);
+  padding: var(--floatGenericSpace2) var(--floatGenericSpace4);
+}
+.cnh-list__panel.MuiPaper-root {
+  /* The file's list frame is 291 × 208 for five 40-tall rows — 8 of padding
+     under the last one. Every child of a MUI Select's menu lives in the same
+     <ul>, so that 8 cannot be the list's padding-bottom; it is the rule's own
+     margin-top. Without it the divider lands at 382 where the file draws 390
+     and the panel ships 273 against 281. */
+  /* 🔴 The 8 sits on the LAST ROW, not on the rule. MUI sets the Divider's
+     margin itself and wins the cascade from inside the library, so a margin-top
+     on the rule computes to 0 no matter how the selector is written — the same
+     wall the GhostButton padding hit. A margin on our own class is not
+     contested. */
+}
+.cnh-list__panel.MuiPaper-root .cnh-list__option:last-of-type {
+  margin-bottom: var(--floatGenericSpace2);
+}
+.cnh-list__panel.MuiPaper-root {
+  /* 291 × 56 · the two Ghost Buttons 24 tall at x16 and x215 — which is 16 from
+     each edge, so the row is a space-between at p 16. */
+}
+.cnh-list__panel.MuiPaper-root .cnh-list__panel-foot {
+  display: flex;
+  height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--floatGenericSpace4);
+}
+
+/* The download dialog — `1:138457`, 600 x 176 on the file's sectioned shell.
+   Title 48 / content 60 / actions 68, radius 12 (Radius 3). Portalled, so at
+   the root.
+
+   🔴 `DialogPopup`'s `className` lands on the MUI Dialog ROOT (the full-screen
+   modal), not on the paper — the first version of this rule rounded and
+   un-padded a 1920 × 1000 box and changed nothing visible. The paper is reached
+   through it. */
+/* QA U30 — the scrim is `Component/Scrim/Strong/Default` (70%); MUI's backdrop
+   is 50%. */
+.cnh-list__dialog .MuiBackdrop-root {
+  background-color: var(--colorComponentScrimStrongDefault);
+}
+
+.cnh-list__dialog .MuiDialog-paper {
+  border-radius: var(--floatRadius3) !important;
+  /* The paper pads itself 24 all round on top of the three section paddings, so
+     the file's 48 + 60 + 68 = 176 shipped as 224. The sections carry the
+     file's padding (titlePadding / contentPadding / actionsPadding); the paper
+     carries none. */
+  padding: 0 !important;
+  /* The file's dialog buttons are 44 tall at p 0/16 and hug their label — the
+     same Button the rest of the product draws. The package's
+     `.dialog-popup__action-button` is p 10/20, its filled one 42 tall, and both
+     carry a min-width that held `Sure` at 80 against the file's 65.6. */
+}
+.cnh-list__dialog .MuiDialog-paper .dialog-popup__action-button {
+  height: 44px;
+  min-width: 0;
+  padding: 0 var(--floatGenericSpace4);
+}
+.cnh-list__dialog .MuiDialog-paper {
+  /* MUI's DialogActions adds `margin-left: 8px` to every button after the
+     first, on top of the file's gap 8. */
+}
+.cnh-list__dialog
+  .MuiDialog-paper
+  .MuiDialogActions-root
+  > :not(:first-of-type) {
+  margin-left: 0;
+}
+
+/* The package renders dialog content at 10px/14px — a value no BBL text style
+   has. The file's body is Heading XXS 20/28 on Text/Primary. */
+.cnh-list__dialog-body {
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyHeading);
+  font-size: var(--floatHeadingXxsSize);
+  font-weight: 400;
+  line-height: var(--floatHeadingXxsLineHeight);
+}
+
+/* The toast — `1:138457` › Toast: fixed top 16 / right 16, 76 tall = p 16/24
+   around a 44 row, gap 12, icon 24, close 24. The package's Toast is MUI
+   Snackbar + Alert and brings their own spacing: the snackbar anchors at 24,
+   the icon and message slots pad themselves (7/0 and 8/0), the close button is
+   a 34 IconButton with p 5, and the description line-height rounds to 21.
+   Every rule here removes one of those; none adds a value of ours. Keyed on
+   the MUI root because `Toast` takes no `className`; two classes because
+   `.MuiSnackbar-anchorOriginTopRight { top: 24px; right: 24px }` out-ranked
+   the single-class version. */
+/* The board's Toast is 620 x 76 at top-right 16 (`1:198757` · `1:201516` ·
+   `1:194332` · `1:138458`, all four the same box). The package sizes its
+   snackbar to its content — 458 for the shortest of them — and takes no width,
+   so the 620 is set here. */
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight {
+  top: var(--floatGenericSpace4);
+  right: var(--floatGenericSpace4);
+  width: 620px;
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiAlert-root,
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiPaper-root {
+  width: 100%;
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiAlert-root {
+  align-items: center;
+  gap: var(--floatGenericSpace3);
+  padding: var(--floatGenericSpace4) var(--floatGenericSpace6);
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiAlert-icon,
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiAlert-message,
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiAlert-action {
+  margin: 0;
+  padding: 0;
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight {
+  /* title 22 over description 20 at gap 2 — the package's Typography carries a
+     bottom margin and its description a 1.5 line-height (21). */
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiAlert-message > * {
+  display: block;
+  margin: 0;
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight {
+  /* QA B-02 — the file writes BOTH lines of a toast in one colour: the positive
+     pair at #09594A (Text/Positive/Strong) and the negative at #7A0335
+     (Text/Negative/Pressed). The package keeps the title there and drops the
+     description a step (#067F5D), so the two lines disagreed. Two classes —
+     MUI's own rule is one. */
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight
+  .toast--positive.MuiAlert-root
+  .MuiAlert-message
+  > * {
+  color: var(--colorTextPositiveStrongDefault);
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight
+  .toast--negative.MuiAlert-root
+  .MuiAlert-message
+  > * {
+  color: var(--colorTextNegativePressed);
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight
+  .MuiAlert-root
+  .MuiAlert-message
+  .MuiTypography-root {
+  margin-bottom: var(--floatGenericSpace05);
+  line-height: var(--floatLabelXlLineHeight);
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight
+  .MuiAlert-root
+  .MuiAlert-message
+  span {
+  line-height: var(--floatBodySLineHeight);
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight {
+  /* 🔴 The message takes the row, so the close sits at the right padding: icon
+     24 · 12 · message 500 · 12 · close 24 inside p 24 = the file's 620. The
+     `margin: 0` above also removed MUI's `margin-left: auto` on the action,
+     which is what used to push the close right — so on every toast shorter
+     than the box the × sat straight after the text (Korn, 2026-10-05, on the
+     Import toast; the board's own toasts had it too). */
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiAlert-message {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight {
+  /* MUI top-aligns the action slot; the file centres the 24 close in the 44 row. */
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiAlert-action {
+  align-self: center;
+}
+.MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight .MuiIconButton-root {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+/* Tokens come from `src/styles/bbl-tokens.css`, generated by webds — the package
+   exports none of its own. See the note at the top of TemplateDrawer.scss.
+   Font WEIGHT is a token in neither system; their typography.scss writes the
+   numbers as literals. */
+.cnh-form {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  /* The form page's ground is the SECONDARY surface — the cards are the white. */
+  background-color: var(--colorSurfaceSecondaryDefault);
+  /* `Header logic: Sticky` — 82 · px 32 · gap 16 · BORDER-B drawn inside. */
+}
+.cnh-form__header {
+  display: flex;
+  height: 82px;
+  width: 100%;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--floatGenericSpace4);
+  padding-inline: var(--floatGenericSpace8);
+  background-color: var(--colorSurfacePrimaryDefault);
+  box-shadow: inset 0 -1px 0 0 var(--colorBorderPrimaryDefault);
+}
+.cnh-form__back {
+  display: grid;
+  height: 24px;
+  width: 24px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  place-items: center;
+}
+.cnh-form {
+  /* Heading XS Emphasized 24/32 on Text/Primary — the title sits at x72, which
+     is px 32 + the 24 chevron + the 16 gap. */
+}
+.cnh-form__title {
+  margin: 0;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyHeading);
+  font-size: var(--floatHeadingXsSize);
+  font-weight: 500;
+  line-height: var(--floatHeadingXsLineHeight);
+}
+.cnh-form__scroll {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+.cnh-form {
+  /* px 80 · py 32 · the column 1280 centred in 1920. No sidebar: the frame draws
+     the form full-width (`1:171893`). */
+}
+.cnh-form__page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--floatGenericSpace8);
+  padding: var(--floatGenericSpace8) var(--floatGenericSpace20);
+}
+.cnh-form__column {
+  display: flex;
+  width: 1280px;
+  flex-direction: column;
+  margin-inline: auto;
+  gap: var(--floatGenericSpace8);
+}
+.cnh-form__step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace6);
+}
+.cnh-form {
+  /* `1:74314` — the title and the Alert share a frame at gap 16. */
+}
+.cnh-form__step-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace4);
+}
+.cnh-form__step-title {
+  margin: 0;
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyHeading);
+  font-size: var(--floatHeadingXsSize);
+  font-weight: 500;
+  line-height: var(--floatHeadingXsLineHeight);
+}
+.cnh-form__cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace8);
+}
+.cnh-form__card {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--floatGenericSpace8);
+  /* The "no channel on" rule has no field to attach to, so the file marks it on
+     the CARD: a 1px stroke drawn INSIDE, on all three channel cards at once
+     (`1:74332` / `1:74353` / `1:74364`), radius 8, Border/Negative. An outline
+     at -1 offset, not a border — a border would grow each card by 2. */
+}
+.cnh-form__card--invalid {
+  outline: 1px solid var(--colorBorderNegativeDefault);
+  outline-offset: -1px;
+}
+.cnh-form__card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--floatGenericSpace4);
+}
+.cnh-form__card-title {
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyHeading);
+  font-size: var(--floatHeadingXsSize);
+  font-weight: 500;
+  line-height: var(--floatHeadingXsLineHeight);
+}
+.cnh-form {
+  /* The head hugs its List Content, and the file draws three heights: 32 with
+     a toggle (Push, SMS), 52 when the Email hint sits under the title
+     (32 + 20), and 28 for the text-only General head — a 24/32 title in a 28
+     frame, overflowing 2 above and 2 below (`209:107397`: Text Content 32 at
+     y −2). The 32 below the head is the card's own gap in all three. */
+}
+.cnh-form__card-head--text {
+  height: 28px;
+}
+.cnh-form__card-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.cnh-form {
+  /* Body S, Text/Secondary — the List Content's Description slot. */
+}
+.cnh-form__card-hint {
+  color: var(--colorTextSecondaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  font-weight: 400;
+  line-height: var(--floatBodySLineHeight);
+}
+.cnh-form {
+  /* G-37 — the Push card draws 16 between rows, the General and Email cards 24. */
+}
+.cnh-form__rows--16 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace4);
+}
+.cnh-form__rows--24 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace6);
+}
+.cnh-form__row {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: var(--floatGenericSpace6);
+}
+.cnh-form {
+  /* 1232 inside the card's p24: half 604, third 395, both at gap 24. */
+}
+.cnh-form__span--half {
+  width: 604px;
+}
+.cnh-form__span--third {
+  width: 395px;
+}
+.cnh-form__span--full {
+  width: 100%;
+}
+.cnh-form {
+  /* `Bottom nav bar logic: Sticky` — 76 · py 16 · BORDER-T · the CTAs right in
+     the same 1280 column, gap 24, 177 wide each. */
+}
+.cnh-form__footer {
+  display: flex;
+  height: 76px;
+  width: 100%;
+  flex-shrink: 0;
+  align-items: center;
+  padding-block: var(--floatGenericSpace4);
+  background-color: var(--colorSurfacePrimaryDefault);
+  box-shadow: inset 0 1px 0 0 var(--colorBorderPrimaryDefault);
+}
+.cnh-form__footer-row {
+  display: flex;
+  width: 1280px;
+  justify-content: flex-end;
+  margin-inline: auto;
+  gap: var(--floatGenericSpace6);
+}
+.cnh-form {
+  /* ── the package's fields, re-sized to the file ─────────────────────────
+     Every rule in this block is a place where @bbl-web/ui-components draws a
+     value the file does not, measured on `1:171893` and on the deployed
+     prototype. None of them is a prop. */
+  /* 🔴 `.text-field { width: 366px }` — a FIXED width in the package's own CSS.
+     The file's fields are 604 / 394.67 / 1232, filled by their column. */
+}
+.cnh-form .text-field,
+.cnh-form .textarea-wrapper {
+  width: 100%;
+}
+.cnh-form {
+  /* QA U17 — the file's Text Area puts its Input State at (16, 16); the package
+     pads 12/16. And its `min-height: 120px` (README: "can be overridden") held
+     the four 77-tall fields at 120 — the `height` prop alone does not win. */
+}
+.cnh-form .textarea {
+  min-height: 0;
+  padding: var(--floatGenericSpace4);
+}
+.cnh-form {
+  /* QA I5 — the package's CardSurface draws cursor: pointer and a hover fill on
+     a box that is not a control. */
+}
+.cnh-form .cnh-form__card.card-surface {
+  cursor: default;
+  /* 🔴 The file draws the cards FLAT: #F5F5F5 runs up to the white on every
+     edge of every card on `1:172365` (sampled at the edge: 245,245,245, no
+     falloff), and the package's own `.card-surface` already says
+     `box-shadow: none`. What paints is MUI's Card underneath it —
+     `.MuiPaper-root { box-shadow: var(--Paper-shadow) }` = elevation 1, on the
+     same element, so the DS rule is overridden from inside the library
+     (Korn, 2026-09-22). */
+  box-shadow: none;
+}
+.cnh-form .cnh-form__card.card-surface:hover {
+  background-color: var(--colorSurfacePrimaryDefault);
+}
+.cnh-form .cnh-form__card.card-surface {
+  /* `tabIndex={-1}` keeps the card out of the Tab order but a CLICK still
+     focuses it, and the package answers `:focus` with a 1px Border/Highlight
+     (`.card-surface--default:focus … { border: 1px solid #0064ff }`) — a
+     form section lit up like a field (Korn, 2026-09-21). Both focus rules
+     are undone; the invalid-state outline is untouched. */
+}
+.cnh-form .cnh-form__card.card-surface:focus:not(:active):not(:disabled) {
+  border: 0;
+}
+.cnh-form .cnh-form__card.card-surface:focus-visible {
+  outline: none;
+}
+.cnh-form {
+  /* QA I2 — Back is a control: DS Icon Button hover. */
+}
+.cnh-form .cnh-form__back {
+  border-radius: var(--floatRadius1);
+  transition: background-color 0.2s;
+}
+.cnh-form .cnh-form__back:hover {
+  background-color: var(--colorSurfacePrimarySubtleHovered);
+}
+.cnh-form {
+  /* 🔴 The outside label. The package renders it in its "shrink" step — 12/16
+     in a 16 row — so a field stands 76. The file draws it at Label XL 16/22,
+     Text/Tertiary, in a 24 row, so a Text Field stands 84 and a Select Field
+     84 beside it (Korn's ruling, prototype `selectOutsideLabel="xl"`; the set's
+     own spec says 76 and the file overrules it). The textarea's label is the
+     same row in the file and 14/20 in the package. */
+}
+.cnh-form .text-field--label-outside > .MuiInputLabel-root,
+.cnh-form .select-wrapper--label-outside > .MuiInputLabel-root,
+.cnh-form .textarea-label {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  gap: var(--floatGenericSpace1);
+  color: var(--colorTextTertiaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelXlSize);
+  font-weight: 400;
+  line-height: var(--floatLabelXlLineHeight);
+}
+.cnh-form .text-field--label-outside .input-label__value,
+.cnh-form .text-field--label-outside .input-label__required,
+.cnh-form .select-wrapper--label-outside .input-label__value,
+.cnh-form .select-wrapper--label-outside .input-label__required,
+.cnh-form .textarea-label__text {
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+.cnh-form {
+  /* 56 is the set; the four free-text fields the file draws at 77 pass their
+     height in on `--cnh-box-h` (G-36). */
+}
+.cnh-form .text-field__input-wrapper {
+  height: var(--cnh-box-h, 56px);
+}
+.cnh-form {
+  /* 🔴 Select takes NO placeholder — the file draws "Select service code" /
+     "Select notification group" in the empty box and the package renders a
+     zero-width space there instead. Drawn as an overlay in the value's own
+     position (24 label + 4 gap + the box's 16/16 padding), removed the day the
+     component takes one. Not a hardcode: the string comes from the field
+     table. */
+}
+.cnh-form__select-placeholder {
+  position: absolute;
+  top: calc(24px + var(--floatGenericSpace1) + var(--floatGenericSpace4));
+  left: var(--floatGenericSpace4);
+  color: var(--colorTextPlaceholderDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodyMSize);
+  font-weight: 400;
+  line-height: var(--floatBodyMLineHeight);
+  pointer-events: none;
+}
+.cnh-form {
+  /* The Text Area's text is Body M 16/22 like every other field's — placeholder
+     and value alike. The package sets its own 14/20 on the element, so both were
+     a step small. */
+}
+.cnh-form .textarea {
+  font-size: var(--floatBodyMSize);
+  line-height: var(--floatBodyMLineHeight);
+}
+.cnh-form {
+  /* QA B-04 — a disabled Text Area drew its placeholder #C8C8CC where a
+     disabled Text Field drew #939399, so one form showed two disabled greys and
+     one of them is on no field the file draws. Both are Text/Tertiary now. */
+}
+.cnh-form .textarea:disabled::placeholder {
+  color: var(--colorTextTertiaryDefault);
+}
+.cnh-form__field {
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--floatGenericSpace1);
+}
+.cnh-form {
+  /* The file's counter row: 16 tall, Body XS, Text/Tertiary, right-aligned.
+     See the note on `counter` in TemplateForm.tsx. */
+}
+.cnh-form__counter {
+  display: flex;
+  /* 🔴 `height`, not `min-height`, was the bug behind the second error line
+     having nowhere to go: `1:172365` grows this row 16 → 32 for a two-line
+     message while the counter itself stays 16 and top-aligned, and the field
+     row grows 104 → 120 with it. */
+  min-height: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--floatGenericSpace1);
+  color: var(--colorTextTertiaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodyXsSize);
+  font-weight: 400;
+  line-height: var(--floatBodyXsLineHeight);
+}
+.cnh-form {
+  /* 🔴 An error must cost the field exactly 20 — the file's `hasHint: false`
+     fields grow 84 → 104 when one appears (`1:198323`: box ends 339, message
+     text at 343, field ends 359) and everything below moves by that 20, no
+     more. The package adds `margin-top: 8` to its footer ON TOP of the field's
+     own 4 gap, so every errored field grew 28 and the whole page drifted 8 per
+     error. */
+  /* `textarea-footer`, one word — the package writes `.textarea-footer` and the
+     BEM-looking `.textarea__footer` this carried until 2026-09-22 matched
+     nothing. Harmless so far only because that footer brings no margin of its
+     own; the TextField one does. */
+}
+.cnh-form .text-field__footer,
+.cnh-form .textarea-footer {
+  margin-top: 0;
+}
+.cnh-form {
+  /* The field's error line is Body XS 12/16 (`1:198323`), the same step as the
+     counter beside it — which is `InlineMessage`'s `size="xs"`, passed at every
+     call site. TextField's own default is `s` (14/20) and TextArea hardcodes
+     `xs`, so the two controls disagree until you say which you want.
+     No font override lives here any more: the size is the component's. */
+  /* 🔴 The package's list ships `gap: 2px` between items, which drew the two
+     error lines 18 apart where `1:172365` draws them 16 — the line-height, with
+     nothing between. */
+}
+.cnh-form .inline-message__list {
+  gap: 0;
+}
+.cnh-form {
+  /* The marker's own placement. The package pads the list 18 and the browser
+     hangs the disc a fixed distance left of the ITEM'S BOX — not of its text —
+     so its ink landed at x363–366 with the text at 379, where the file's render
+     has the ink at 367.5–370 and the text at 378.5: the same text, a dot 4.5
+     closer to it. Padding the item instead of the list moves the text without
+     the marker and makes it worse (measured: 359). So the whole box moves right
+     4.5 and the text is pulled back by the same 4.5.
+     `text-indent` is first-line only, which is exactly right here — an error
+     line is one line (the file's node is 342.7 in a 394.7 field) — and it is
+     the one property that moves text out from under a hung marker. */
+}
+.cnh-form .inline-message__list--bulleted {
+  padding-left: 22.5px;
+}
+.cnh-form .inline-message__list--bulleted > .inline-message__list-item {
+  text-indent: -4.5px;
+}
+.cnh-form {
+  /* The message that replaces the hint inside a counter row keeps the row's own
+     16 inset (`&__hint` below) — `InlineMessage` brings no margin of its own. */
+}
+.cnh-form__counter .inline-message {
+  margin-left: var(--floatGenericSpace4);
+  min-width: 0;
+}
+.cnh-form {
+  /* The stand-in for TextArea's own message when there are two lines. Same 16
+     inset the package gives its `.textarea-message`, and the same 4 the footer
+     sits at below the box. */
+}
+.cnh-form__textarea-message {
+  margin-left: var(--floatGenericSpace4);
+}
+.cnh-form {
+  /* the same 12/16 row carries the error when the field has a counter */
+}
+.cnh-form__hint--error {
+  color: var(--colorTextNegativeDefault);
+}
+.cnh-form {
+  /* The row's left slot is inset 16 from the field, both for the hint and for
+     the error that replaces it (`1:171893` hint at x360 in a field at 344;
+     `1:172363` error likewise). The counter on the right is NOT inset — it
+     ends at the field's own edge. */
+}
+.cnh-form__hint {
+  margin-left: var(--floatGenericSpace4);
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnh-form {
+  /* 🔴 The head row is 32 in the file (Toggle Switch 50 × 30 at y1, title at
+     x66). The package's ToggleSwitch renders at MUI's DEFAULT 58 × 38: its own
+     `.toggle-switch .MuiSwitch-root { width: 51px; height: 31px }` is a
+     descendant selector, and the component puts `toggle-switch` ON the root, so
+     that rule never matches anything. Three cards on this page were 6 tall for
+     it. This block is a PATCH over that defect, sized to the FILE (50 × 30,
+     thumb 18) rather than to the package's own unreached 51 × 31 — delete it the
+     day the selector is fixed, and expect the 1px to argue then. */
+}
+.cnh-form .MuiSwitch-root.toggle-switch {
+  width: 50px;
+  height: 30px;
+  padding: 0;
+  /* Off: the 18 thumb sits 3 in and centred — x +3, y +6 (deployed prototype,
+     347 / 821 on a switch at 344 / 815). */
+}
+.cnh-form .MuiSwitch-root.toggle-switch .MuiSwitch-switchBase {
+  padding: 6px 3px;
+}
+.cnh-form .MuiSwitch-root.toggle-switch .MuiSwitch-thumb {
+  width: 18px;
+  height: 18px;
+}
+.cnh-form .MuiSwitch-root.toggle-switch {
+  /* Their track carries `margin: -12px 0 0 -12px` to cancel MUI's default
+     12 root padding; with the file's 0 padding that margin dragged the track
+     12 up and left of the switch. */
+}
+.cnh-form .MuiSwitch-root.toggle-switch .MuiSwitch-track {
+  width: 50px !important; /* theirs is `56px !important` */
+  height: 30px;
+  /* `!important` because `margin: 0` at four classes of specificity still
+     computed to -12 on the left: the -12 is applied from inside the package
+     in a way no app selector reaches, and with the root's `overflow: hidden`
+     it clipped the pill to 38. */
+  margin: 0 !important;
+  border-radius: 30px;
+}
+.cnh-form .MuiSwitch-root.toggle-switch {
+  /* On: the file's thumb GROWS to 24 and sits 3 from the right edge —
+     367 / 818, i.e. x = 344 + 3 + 20, y = 815 + 3. The package keeps one thumb
+     size in both states; the file does not. */
+}
+.cnh-form .MuiSwitch-root.toggle-switch .MuiSwitch-switchBase.Mui-checked {
+  padding: 3px;
+  transform: translateX(20px);
+}
+.cnh-form
+  .MuiSwitch-root.toggle-switch
+  .MuiSwitch-switchBase.Mui-checked
+  .MuiSwitch-thumb {
+  width: 24px;
+  height: 24px;
+}
+
+/* The form's dialogs — portalled, so at the root. Same shape as the list's
+   download dialog (see Dashboard.scss): radius 12, no paper padding, 44-tall
+   buttons that hug their label at p 0/16 with 16 between.
+   `375:103446` 600 x 170 · `1:198325` / `1:201084` / `1:193900` 600 x 176 ·
+   `1:201082` 600 x 208 (its title wraps to two lines). */
+.cnh-form__dialog .MuiDialog-paper {
+  border-radius: var(--floatRadius3) !important;
+  padding: 0 !important;
+}
+.cnh-form__dialog .MuiDialog-paper .dialog-popup__action-button {
+  height: 44px;
+  min-width: 0;
+  padding: 0 var(--floatGenericSpace4);
+}
+.cnh-form__dialog
+  .MuiDialog-paper
+  .MuiDialogActions-root
+  > :not(:first-of-type) {
+  margin-left: 0;
+}
+
+/* The two bodied dialogs are written at DIFFERENT steps, and the difference is
+   what makes one 170 and the other 176: the leave dialog's line is Body M 16/22
+   (content 16 + 22 + 16 = 54), the three failure dialogs' is 20/28 — which is
+   Heading XXS in this typescale, the only 20/28 step it publishes, used as a
+   body line. The package renders both at its own 14/20. */
+.cnh-form__dialog--body-m .MuiDialogContent-root {
+  font-size: var(--floatBodyMSize);
+  line-height: var(--floatBodyMLineHeight);
+}
+
+.cnh-form__dialog--body-l .MuiDialogContent-root {
+  font-size: var(--floatHeadingXxsSize);
+  line-height: var(--floatHeadingXxsLineHeight);
+}
+
+/* QA U30 again — Component/Scrim/Strong (70%), not MUI's 50%. */
+.cnh-form__dialog .MuiBackdrop-root {
+  background-color: var(--colorComponentScrimStrongDefault);
+}
+
+/* The MULTIselect's panel — Service code, `1:172832` left-hand layer: 394.67
+   wide (it follows the field), rows 40 with a 24 Checkbox at 16 and the label
+   at 48, a full-bleed Divider, and a 56 footer carrying Select all and Clear.
+   The same box the list's filter draws; the rules are the same as
+   Dashboard.scss's `.cnh-list__panel`, two classes deep for the same reason.
+   🔴 The gap under the box is **10** here where the list's filter draws 8 —
+   measured on `1:172832` (first row's text at y474 over a box ending 446), not
+   normalised to the list's 8. Both panels on this row use it. */
+.cnh-form__panel.MuiPaper-root,
+.cnh-form__menu.MuiPaper-root {
+  margin-top: 10px;
+  border-radius: var(--floatRadius2);
+  padding-block: var(--floatGenericSpace2);
+  outline: 1px solid var(--colorBorderPrimaryDefault);
+  outline-offset: -1px;
+  box-shadow:
+    var(--floatShadowOverlayShadowAX) var(--floatShadowOverlayShadowAY)
+      var(--floatShadowOverlayShadowABlur)
+      var(--floatShadowOverlayShadowASpread)
+      var(--colorShadowOverlayShadowAColor),
+    var(--floatShadowOverlayShadowBX) var(--floatShadowOverlayShadowBY)
+      var(--floatShadowOverlayShadowBBlur)
+      var(--floatShadowOverlayShadowBSpread)
+      var(--colorShadowOverlayShadowBColor);
+}
+.cnh-form__panel.MuiPaper-root ul.MuiList-root,
+.cnh-form__menu.MuiPaper-root ul.MuiList-root {
+  padding: 0;
+}
+.cnh-form__panel.MuiPaper-root .cnh-form__option,
+.cnh-form__menu.MuiPaper-root .cnh-form__option {
+  display: flex;
+  height: 40px;
+  min-height: 0;
+  align-items: center;
+  gap: var(--floatGenericSpace2);
+  padding: var(--floatGenericSpace2) var(--floatGenericSpace4);
+}
+.cnh-form__panel.MuiPaper-root,
+.cnh-form__menu.MuiPaper-root {
+  /* the 8 under the last row sits on the ROW — MUI owns the Divider's margin
+     from inside the library at any specificity (see Dashboard.scss) */
+}
+.cnh-form__panel.MuiPaper-root .cnh-form__option:last-of-type,
+.cnh-form__menu.MuiPaper-root .cnh-form__option:last-of-type {
+  margin-bottom: var(--floatGenericSpace2);
+}
+.cnh-form__panel.MuiPaper-root .cnh-form__option-label,
+.cnh-form__menu.MuiPaper-root .cnh-form__option-label {
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  font-weight: 500;
+  line-height: var(--floatBodySLineHeight);
+}
+.cnh-form__panel.MuiPaper-root .cnh-form__panel-foot,
+.cnh-form__menu.MuiPaper-root .cnh-form__panel-foot {
+  display: flex;
+  height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--floatGenericSpace4);
+}
+
+/* The single Select's panel — `1:172832` (Notification group) and `1:189704`
+   (Status) draw the same box: rows 36 tall with a Body S Emphasized 14/20
+   label at 16, 8 of padding top and bottom, 8 below the field. The package
+   leaves MUI's own 46-tall rows at 16/24 and a 12 radius. Two classes so the
+   paper's own rules do not win (see the note in Dashboard.scss). */
+.cnh-form__menu.MuiPaper-root {
+  /* margin-top, radius, padding, outline and shadow come from the shared block
+     above — only the ROWS differ between the two panels. Re-declaring them here
+     is what put the gap back to 8 and the panel 2 high. */
+  box-shadow:
+    var(--floatShadowOverlayShadowAX) var(--floatShadowOverlayShadowAY)
+      var(--floatShadowOverlayShadowABlur)
+      var(--floatShadowOverlayShadowASpread)
+      var(--colorShadowOverlayShadowAColor),
+    var(--floatShadowOverlayShadowBX) var(--floatShadowOverlayShadowBY)
+      var(--floatShadowOverlayShadowBBlur)
+      var(--floatShadowOverlayShadowBSpread)
+      var(--colorShadowOverlayShadowBColor);
+}
+.cnh-form__menu.MuiPaper-root ul.MuiList-root {
+  padding: 0;
+}
+.cnh-form__menu.MuiPaper-root li.MuiMenuItem-root {
+  min-height: 0;
+  height: 36px;
+  padding: var(--floatGenericSpace2) var(--floatGenericSpace4);
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  font-weight: 500;
+  line-height: var(--floatBodySLineHeight);
+}
+
+/* `1:123547` — the create form while its record loads. The header and the two
+   footer buttons stay drawn and the card area holds the list's own spinner;
+   the frame carries no text between them at all. */
+.cnh-form__loading {
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+}
+/* Tokens come from `src/styles/bbl-tokens.css`, generated by webds.
+   `@bbl-web/ui-components` exports only ".", "./index.css" and "./shadows.css";
+   its dist CSS carries 34 custom properties and not one design token, and deep
+   imports of its SCSS are blocked — so `@use '.../theme/float'` cannot resolve
+   from an app. That file is the tokens in THEIR naming, with the opacity intact
+   and px on the geometry. Import it once at the app root.
+
+   Font FAMILY is a token (--stringFontFamily{Heading,Body,Label}) and carries the
+   Thai/Looped axis: the generated file emits the default theme (BBL Sans Office);
+   the Looped theme redefines the same four names. Font WEIGHT is a token in
+   NEITHER system — their typography.scss writes 400/500/700 as literals, so the
+   numbers below are theirs, not a hardcode we introduced. */
+.tpl-drawer {
+  position: fixed;
+  inset-block: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  width: 720px;
+  flex-direction: column;
+  background-color: var(--colorSurfacePrimaryDefault);
+  /* It enters from the right — Korn, 2026-09-22.
+     🔴 Where the numbers come from, because neither obvious source has them:
+     this file has **no Animation Spec** (both pages' SECTION lists were swept:
+     3 sections each, none about motion) and **neither design system publishes a
+     motion token** — webds has 335 tokens in 8 collections, cds 538 in 14, and
+     `duration` matches nothing in either. So the timing is taken from the
+     component the package itself ships for this job: its `Drawer` is a thin
+     wrapper over MUI's, which slides from its anchor on MUI's own constants —
+     `enteringScreen: 225ms`, easing `easeInOut` `cubic-bezier(0.4, 0, 0.2, 1)`
+     (`@mui/material/styles/createTransitions.js`). Using the DS's own drawer
+     motion on a hand-built panel keeps the two consistent the day someone
+     swaps this for `<Drawer>`.
+     Only the ENTRANCE animates: closing unmounts the panel, so there is nothing
+     left to animate out. MUI's `leavingScreen` is 195 if that is ever added.
+     `prefers-reduced-motion` already covers this — `app-reset.css` zeroes every
+     animation and transition under it (QA C-03). */
+  animation: tpl-drawer-enter 225ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* 🔴 The panel takes focus on open so the focus trap has an anchor and so a
+     screen reader announces the dialog's role and name (QA C-02). It must not
+     PAINT that focus: opened after any keyboard use the panel matches
+     `:focus-visible`, and the browser's own ring — `outline: auto 1px` in
+     `-webkit-focus-ring-color` — drew a frame around the whole 720 x 1000
+     panel, which the file draws nowhere (Korn, 2026-09-22).
+     A 1px ring around a full-height panel indicates nothing anyway: the dialog
+     appearing is the indication. Only this element is silenced; every control
+     inside it keeps its own ring, which is where a keyboard user needs one. */
+}
+.tpl-drawer:focus,
+.tpl-drawer:focus-visible {
+  outline: none;
+}
+.tpl-drawer {
+  /* The measured Overlay elevation, assembled from its own tokens rather than
+     written out — the parts are all in bbl-tokens.css.
+
+     ⚠️ Both colours are among the 21 tokens @bbl-web/ui-components ships opaque
+     (bug-report-alpha-tokens.md): its own export gives these as #000000, which
+     would paint two solid black slabs. The values here carry the measured 10%
+     and 4% because webds generated the file. If you swap to the package's own
+     token export before it is fixed, this shadow breaks. */
+  box-shadow:
+    var(--floatShadowOverlayShadowAX) var(--floatShadowOverlayShadowAY)
+      var(--floatShadowOverlayShadowABlur)
+      var(--floatShadowOverlayShadowASpread)
+      var(--colorShadowOverlayShadowAColor),
+    var(--floatShadowOverlayShadowBX) var(--floatShadowOverlayShadowBY)
+      var(--floatShadowOverlayShadowBBlur)
+      var(--floatShadowOverlayShadowBSpread)
+      var(--colorShadowOverlayShadowBColor);
+}
+.tpl-drawer__header {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: var(--floatGenericSpace2);
+  border-bottom: 1px solid var(--colorBorderPrimaryDefault);
+  padding: var(--floatGenericSpace6);
+}
+.tpl-drawer__header-top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--floatGenericSpace2);
+}
+.tpl-drawer__titles {
+  display: flex;
+  min-width: 1px;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--floatGenericSpace1);
+}
+.tpl-drawer {
+  /* 🔴 18/24 — a LITERAL, and the only one in these files. Read this before
+     replacing it with a token, because the obvious fix is the wrong one.
+
+     The text node BINDS `Heading/Heading XS Emphasized` (24/32) and RENDERS
+     18/24. Measured through the bridge on 2026-09-21: that is not an instance
+     override — **all 116 `Sidebar_detail` instances across both pages carry
+     zero overrides on the title**, so the 18/24 is what the LIBRARY component
+     ships (`Sidebar_detail`, key `f003460e1ecff28f42effac7e300320e12e444d4`,
+     node `1:1145`, `remote: true` — it is not in this file and cannot be edited
+     from it). 18/24 is on no step the Core Website roster publishes; it is
+     `Title/Title-M` in Semantic Tokens, the other roster (G-24 again).
+
+     Korn's ruling once the ownership was known: **just match Figma.** So the
+     drawn value is reproduced, the drawer's header keeps the file's 133, and
+     the defect is filed against the library rather than worked around in 116
+     places. docs/file-defects.md D1. */
+}
+.tpl-drawer__title {
+  font-family: var(--stringFontFamilyHeading);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 500; /* see above */
+  color: var(--colorTextPrimaryDefault);
+}
+.tpl-drawer__status {
+  display: flex;
+  align-items: center;
+  gap: var(--floatGenericSpace4);
+}
+.tpl-drawer {
+  /* Body S 14/20 — the drawer's labels, values and meta are all a step below
+     the table's, which this build had at Body M. */
+}
+.tpl-drawer__status-label,
+.tpl-drawer__row-label,
+.tpl-drawer__meta-item {
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  line-height: var(--floatBodySLineHeight);
+  font-weight: 400; /* neither system tokenises weight — dev writes 400/500/700 literally */
+  color: var(--colorTextTertiaryDefault);
+}
+.tpl-drawer__close {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  /* QA U24 — Sidebar Collapse sits at y24 INSIDE the header frame that itself
+     starts at y24, so the icon is at 48, one row under the title's top. */
+  margin-top: var(--floatGenericSpace6);
+  border-radius: var(--floatRadius1);
+  transition: background-color 0.2s;
+}
+.tpl-drawer__close:hover {
+  background-color: var(--colorSurfacePrimarySubtleHovered);
+}
+.tpl-drawer__close {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+.tpl-drawer__meta {
+  display: flex;
+  height: 24px;
+  align-items: center;
+  gap: var(--floatGenericSpace4);
+}
+.tpl-drawer__meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--floatGenericSpace15);
+}
+.tpl-drawer__body-wrap {
+  position: relative;
+  display: flex;
+  min-height: 1px;
+  flex: 1;
+  flex-direction: column;
+}
+.tpl-drawer {
+  /* 🔴 `padding-right: 12`, not the file's 24. The package's ScrollBar is a
+     WRAPPER that reserves a 12px column for its track (`.scrollbar-content
+     { padding-right: 12px }`), where the file draws the bar OVER the content
+     at right 4. With the file's 24 on top of their 12 every row was 660 wide
+     against the measured 672. The 12 here is the difference, not a design
+     value; the track itself lands at right 0 instead of the file's 4. */
+}
+.tpl-drawer__body {
+  display: flex;
+  min-height: 1px;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--floatGenericSpace4);
+  overflow: auto;
+  padding: 0 var(--floatGenericSpace3) var(--floatGenericSpace6)
+    var(--floatGenericSpace6);
+  scrollbar-width: none;
+}
+.tpl-drawer__body::-webkit-scrollbar {
+  display: none;
+}
+.tpl-drawer__scrollbar {
+  position: absolute;
+  inset-block: 0;
+  right: 4px;
+}
+.tpl-drawer__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace2);
+}
+.tpl-drawer__divider--blank {
+  visibility: hidden;
+}
+.tpl-drawer__section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--floatGenericSpace3);
+  padding-block: var(--floatGenericSpace2);
+}
+.tpl-drawer__section-title {
+  min-width: 1px;
+  flex: 1;
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelXlSize);
+  line-height: var(--floatLabelXlLineHeight);
+  font-weight: 500; /* see above */
+  color: var(--colorTextPrimaryDefault);
+}
+.tpl-drawer__rows {
+  display: flex;
+  flex-direction: column;
+}
+.tpl-drawer__row {
+  display: flex;
+  align-items: center;
+  gap: var(--floatGenericSpace4);
+  padding-block: var(--floatGenericSpace1);
+}
+.tpl-drawer__row-label {
+  width: 200px;
+  flex-shrink: 0;
+  padding-top: var(--floatGenericSpace05);
+}
+.tpl-drawer__row-value {
+  min-width: 1px;
+  flex: 1;
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  line-height: var(--floatBodySLineHeight);
+  font-weight: 400; /* neither system tokenises weight — dev writes 400/500/700 literally */
+  color: var(--colorTextPrimaryDefault);
+  word-break: break-word;
+}
+.tpl-drawer__footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--floatGenericSpace4);
+  border-top: 1px solid var(--colorBorderPrimaryDefault);
+  padding: var(--floatGenericSpace4) var(--floatGenericSpace6);
+}
+
+/* The entrance. `translateX(100%)` is the panel's own width, so it starts just
+   off the right edge whatever the width becomes. */
+@keyframes tpl-drawer-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+/* Tokens come from `src/styles/bbl-tokens.css`, generated by webds.
+   `@bbl-web/ui-components` exports only ".", "./index.css" and "./shadows.css";
+   its dist CSS carries 34 custom properties and not one design token, and deep
+   imports of its SCSS are blocked — so `@use '.../theme/float'` cannot resolve
+   from an app. That file is the tokens in THEIR naming, with the opacity intact
+   and px on the geometry. Import it once at the app root.
+
+   Font FAMILY is a token (--stringFontFamily{Heading,Body,Label}) and carries the
+   Thai/Looped axis: the generated file emits the default theme (BBL Sans Office);
+   the Looped theme redefines the same four names. Font WEIGHT is a token in
+   NEITHER system — their typography.scss writes 400/500/700 as literals, so the
+   numbers below are theirs, not a hardcode we introduced. */
+.login {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  background-color: var(--colorSurfacePrimaryDefault);
+  padding-inline: var(--floatGenericSpace20);
+  /* QA U36 — Contents sits flush against the 534 banner; the 80 is its own
+     padding-left. A 24 gap here (the prototype's) pushed everything to 958
+     against the file's 934 and cost the column 24 of width. */
+}
+.login__row {
+  display: flex;
+  width: 1280px;
+  align-items: center;
+}
+.login__banner {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding-block: var(--floatGenericSpace10);
+}
+.login__banner img {
+  border-radius: var(--floatRadius4);
+}
+.login {
+  /* 🔴 The column is CENTRED in the 1000 page and its height is therefore the
+     spec: `1:74070` runs logo 294 → button bottom 706, i.e. 412, which is
+     62 + **36** + 314. A 40 gap and a 40 padding-block made it 496 and pushed
+     every line 2 down — the kind of drift that reads as "close enough" and is
+     the difference between matching and not. */
+}
+.login__contents {
+  display: flex;
+  min-width: 1px;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 36px;
+  padding-left: var(--floatGenericSpace20);
+}
+.login__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace6);
+}
+.login {
+  /* QA U2 — Regular in the board, not Emphasized. */
+}
+.login__welcome {
+  font-family: var(--stringFontFamilyHeading);
+  font-size: var(--floatHeadingXsSize);
+  line-height: var(--floatHeadingXsLineHeight);
+  font-weight: 400; /* neither system tokenises weight — dev writes 400/500/700 literally */
+  color: var(--colorTextPrimaryDefault);
+}
+.login {
+  /* W-09 — 62.02/83 is off the scale and bound to no text style in the file.
+     Reproduced as drawn; it is the Figma file that has to change, not this.
+     The FAMILY is still the token: a literal family would opt this heading out
+     of the Thai / Looped axis. */
+}
+.login__title {
+  font-family: var(--stringFontFamilyHeading);
+  /* Heading L Emphasized — the style the frame binds (QA U37, Korn's ruling);
+     the frame DRAWS 62/83 off-scale (W-09) and the style wins. */
+  font-size: var(--floatHeadingLSize);
+  line-height: var(--floatHeadingLLineHeight);
+  letter-spacing: var(--floatHeadingLLetterSpacing);
+  font-weight: 500; /* see above */
+  color: var(--colorTextPrimaryDefault);
+}
+.login {
+  /* QA U3 — Text/Secondary. */
+}
+.login__contact {
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelXlSize);
+  line-height: var(--floatLabelXlLineHeight);
+  font-weight: 400; /* neither system tokenises weight — dev writes 400/500/700 literally */
+  color: var(--colorTextSecondaryDefault);
+}
+/* Phase 2 — Broadcast message (list, create form, drawer). No Figma frame: every
+   value is a token from bbl-tokens.css on the generic 4-step scale, type on the
+   product's existing steps. Weights 400/500 are literals for the reason given
+   at the top of Dashboard.scss. */
+/* ── list ── */
+.cnh-bc-list__scroll {
+  padding: var(--floatGenericSpace6) 0 0;
+}
+
+.cnh-bc-list__failed {
+  color: var(--colorTextNegativeDefault);
+}
+
+/* ── create form + drawer ── */
+.cnh-bc {
+  position: relative;
+}
+.cnh-bc .cnh-form__header .badge {
+  flex-shrink: 0;
+}
+.cnh-bc {
+  /* The card's own gap is 32 (TemplateForm); a wizard step reads tighter. */
+}
+.cnh-bc__card {
+  gap: var(--floatGenericSpace6);
+}
+.cnh-bc {
+  /* the package's outside label (`.input-label__value`, measured): Label XL
+     16/22, Text/Tertiary, 400 — DatePicker has no outside position, so its
+     label is drawn here to match the Select beside it */
+}
+.cnh-bc__field-label {
+  color: var(--colorTextTertiaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelXlSize);
+  font-weight: 400;
+  line-height: var(--floatLabelXlLineHeight);
+}
+.cnh-bc__label,
+.cnh-bc__channel-label {
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelLSize);
+  font-weight: 500;
+  line-height: var(--floatLabelLLineHeight);
+}
+.cnh-bc__note {
+  margin: 0;
+  color: var(--colorTextSecondaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  font-weight: 400;
+  line-height: var(--floatBodySLineHeight);
+}
+.cnh-bc__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--floatGenericSpace1);
+  color: var(--colorTextLinkDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelMSize);
+  font-weight: 500;
+  line-height: var(--floatLabelMLineHeight);
+  text-decoration: none;
+}
+.cnh-bc__link:hover {
+  color: var(--colorTextLinkHovered);
+  text-decoration: underline;
+}
+.cnh-bc {
+  /* the info line — slide 5's "Upload audience file to continue" boxes */
+}
+.cnh-bc__tip {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--floatGenericSpace3);
+  padding: var(--floatGenericSpace3) var(--floatGenericSpace4);
+  border-radius: var(--floatRadius2);
+  background-color: var(--colorSurfaceHighlightSubtleDefault);
+  color: var(--colorTextPrimaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodyMSize);
+  font-weight: 400;
+  line-height: var(--floatBodyMLineHeight);
+}
+.cnh-bc {
+  /* ── audience ── */
+}
+.cnh-bc__file-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace3);
+}
+.cnh-bc__file {
+  padding-inline: var(--floatGenericSpace4) var(--floatGenericSpace2);
+  border: 1px solid var(--colorBorderPrimaryDefault);
+  border-radius: var(--floatRadius2);
+  box-shadow: none;
+}
+.cnh-bc__file.is-error {
+  border-color: var(--colorBorderNegativeDefault);
+}
+.cnh-bc__checking {
+  display: flex;
+  justify-content: center;
+  padding: var(--floatGenericSpace4);
+}
+.cnh-bc {
+  /* invalid rows — a plain table: the package's Table is a 64-row data grid,
+     too heavy for a validation list inside a card */
+}
+.cnh-bc__errors {
+  display: block;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--colorBorderPrimaryDefault);
+  border-radius: var(--floatRadius2);
+  border-collapse: collapse;
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodySSize);
+  line-height: var(--floatBodySLineHeight);
+}
+.cnh-bc__errors thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--colorSurfaceSecondaryDefault);
+  color: var(--colorTextTertiaryDefault);
+  font-weight: 400;
+  text-align: left;
+}
+.cnh-bc__errors th,
+.cnh-bc__errors td {
+  padding: var(--floatGenericSpace2) var(--floatGenericSpace4);
+  box-shadow: inset 0 -1px 0 0 var(--colorBorderPrimaryDefault);
+  color: var(--colorTextPrimaryDefault);
+}
+.cnh-bc__errors th:first-child,
+.cnh-bc__errors td:first-child {
+  width: 80px;
+}
+.cnh-bc__errors th:nth-child(2),
+.cnh-bc__errors td:nth-child(2) {
+  width: 200px;
+}
+.cnh-bc__errors td:last-child {
+  width: 100%;
+  color: var(--colorTextNegativeDefault);
+}
+.cnh-bc {
+  /* ── channel — three cards in one row, equal height ── */
+}
+.cnh-bc__channel-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--floatGenericSpace6);
+}
+.cnh-bc__channel-row > .cnh-form__card {
+  height: 100%;
+  min-width: 0;
+}
+.cnh-bc {
+  /* ── message ── */
+  /* ── schedule ── */
+}
+.cnh-bc__modes {
+  display: flex;
+  gap: var(--floatGenericSpace4);
+}
+.cnh-bc__mode {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: var(--floatGenericSpace2);
+  padding: var(--floatGenericSpace3) var(--floatGenericSpace4);
+  border: 1px solid var(--colorBorderPrimaryDefault);
+  border-radius: var(--floatRadius2);
+  cursor: pointer;
+}
+.cnh-bc__mode.is-on {
+  border-color: var(--colorBorderHighlightDefault);
+  background-color: var(--colorSurfaceHighlightSubtleDefault);
+}
+.cnh-bc__mode-text {
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--floatGenericSpace2);
+}
+.cnh-bc {
+  /* label → box measured off the package Select beside it: the label starts
+     1 lower and the box 5 under it, so the two rows share a line */
+}
+.cnh-bc__date {
+  gap: calc(var(--floatGenericSpace1) + 1px);
+  padding-top: 1px;
+}
+.cnh-bc__date .MuiFormControl-root,
+.cnh-bc__date .MuiTextField-root {
+  width: 100%;
+}
+.cnh-bc__date {
+  /* 🔴 The package's DatePicker is MUI's FILLED field: 58 tall and the text
+     padded 25 / 8 / 12 to leave room for a label INSIDE the box. With the
+     label moved outside (`label=""`) that left the date sitting low and 4
+     left of the Select beside it. Measured against that Select: 56 tall,
+     text 16/22 centred, 16 from the outer edge — the root carries the 1px
+     border itself, so the text pad is 16 − 1. */
+}
+.cnh-bc__date .MuiPickersInputBase-root {
+  height: 56px;
+  box-sizing: border-box;
+}
+.cnh-bc__date .MuiPickersSectionList-root {
+  padding: 0 0 0 calc(var(--floatGenericSpace4) - 1px);
+  color: var(--colorTextPrimaryDefault);
+  font-size: var(--floatBodyMSize);
+  line-height: var(--floatBodyMLineHeight);
+}
+.cnh-bc__time {
+  width: 220px;
+}
+.cnh-bc__days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--floatGenericSpace6);
+}
+.cnh-bc__time-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--floatGenericSpace4);
+}
+.cnh-bc__to {
+  padding-bottom: var(--floatGenericSpace4);
+  color: var(--colorTextSecondaryDefault);
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodyMSize);
+  line-height: var(--floatBodyMLineHeight);
+}
+.cnh-bc__overlay {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background-color: var(--colorSurfacePrimaryDefault);
+  opacity: 0.9;
+}
+.cnh-bc__pre {
+  white-space: pre-line;
+}
+
+/* The confirm dialog is portalled out of `.cnh-bc`. */
+.MuiDialog-root .cnh-bc__summary {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: var(--floatGenericSpace2) var(--floatGenericSpace4);
+  margin: 0;
+  font-family: var(--stringFontFamilyBody);
+  font-size: var(--floatBodyMSize);
+  line-height: var(--floatBodyMLineHeight);
+}
+.MuiDialog-root .cnh-bc__summary dt {
+  color: var(--colorTextSecondaryDefault);
+}
+.MuiDialog-root .cnh-bc__summary dd {
+  margin: 0;
+  color: var(--colorTextPrimaryDefault);
+}
+
+/* 48 half-hour options — cap the menu so it does not run off the screen. */
+.cnh-bc__time-menu.MuiPaper-root {
+  max-height: 280px;
+}
+
+/* ── 2026-10-06 · the BA draft's parts (recipient type, preview, DND) ──────
+   No frame to measure: sizes are the product's own steps (generic 4-scale,
+   type on the existing Label / Body / Heading steps). */
+.cnh-bc__audience,
+.cnh-bc__rows,
+.cnh-bc__preview,
+.cnh-bc__fields,
+.cnh-bc__field-block {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.cnh-bc__audience,
+.cnh-bc__rows {
+  gap: var(--floatGenericSpace4);
+}
+.cnh-bc__preview,
+.cnh-bc__fields,
+.cnh-bc__field-block {
+  gap: var(--floatGenericSpace2);
+}
+.cnh-bc__samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--floatGenericSpace6);
+}
+.cnh-bc__validated {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--floatGenericSpace1);
+  color: var(--colorTextPositiveDefault);
+  font-family: var(--stringFontFamilyLabel);
+  font-size: var(--floatLabelMSize);
+  font-weight: 500;
+  line-height: var(--floatLabelMLineHeight);
+}
+.cnh-bc__by {
+  color: var(--colorTextSecondaryDefault);
+}
+.cnh-bc {
+  /* the file can be wider than the card: the table scrolls, the page does not */
+}
+.cnh-bc__preview-scroll {
+  overflow-x: auto;
+}
+.cnh-bc {
+  /* the errors table's look without its column rules (fixed 80 / 200 widths,
+     a red last column) — a preview is the file, not a list of problems */
+}
+.cnh-bc__preview-table.cnh-bc__errors th,
+.cnh-bc__preview-table.cnh-bc__errors td,
+.cnh-bc__preview-table.cnh-bc__errors th:first-child,
+.cnh-bc__preview-table.cnh-bc__errors td:first-child,
+.cnh-bc__preview-table.cnh-bc__errors th:nth-child(2),
+.cnh-bc__preview-table.cnh-bc__errors td:nth-child(2),
+.cnh-bc__preview-table.cnh-bc__errors td:last-child {
+  width: auto;
+  white-space: nowrap;
+}
+.cnh-bc__preview-table.cnh-bc__errors td,
+.cnh-bc__preview-table.cnh-bc__errors td:last-child {
+  color: var(--colorTextPrimaryDefault);
+}
+.cnh-bc__preview-table.cnh-bc__errors {
+  /* the table is `display: block` (shared with the errors table) — the last
+     column takes the rest, so the rows span the card like the draft's */
+}
+.cnh-bc__preview-table.cnh-bc__errors th:last-child,
+.cnh-bc__preview-table.cnh-bc__errors td:last-child {
+  width: 100%;
+}
+.cnh-bc__preview-table.cnh-bc__errors .is-id {
+  background-color: var(--colorSurfaceHighlightSubtleDefault);
+}
+.cnh-bc {
+  /* step 3 — recipient type · ID column · channels, side by side (the draft's row) */
+}
+.cnh-bc__mapping {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.6fr);
+  align-items: start;
+  gap: var(--floatGenericSpace6);
+}
+.cnh-bc__mapping .cnh-bc__modes {
+  flex-direction: column;
+}
+.cnh-bc__mapping .cnh-bc__column-select {
+  width: 100%;
+}
+.cnh-bc__channel-picks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace2);
+}
+.cnh-bc__channel-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--floatGenericSpace2);
+}
+.cnh-bc__field-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--floatGenericSpace2);
+}
+.cnh-bc__column-select {
+  position: relative;
+  width: 395px;
+  flex-shrink: 0;
+}
+.cnh-bc {
+  /* Direct offers two channels — two cards share the row */
+}
+.cnh-bc__channel-row--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.cnh-bc__dnd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--floatGenericSpace6);
+}
+.cnh-bc__dnd-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--floatGenericSpace3);
+}
+.cnh-bc__dnd-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--floatGenericSpace6) var(--floatGenericSpace8);
+}
+.cnh-bc__zone {
+  position: relative;
+  width: 260px;
+} /* GENERATED by scripts/build-tokens.ts — do not edit.
+ * Source: figma-extract/tokens/*.json (Figma file LubcBGRIqNoAUD7EAQZ6VT)
+ * Regenerate: npm run tokens     Verify: npm run check:tokens
+ *
+ * One colour mode. There is no dark theme — see CLAUDE.md §4.
+ */
+

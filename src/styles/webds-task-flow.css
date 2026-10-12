@@ -1,0 +1,410 @@
+/* Task flow view (src/tools/task-flow-view.tsx) — HAND-AUTHORED, like webds-docs-flows.css:
+ * the port mints class names by position, so a new file gets names chosen by hand.
+ *
+ * Two vocabularies, kept apart:
+ *  · the view's own CHROME (toolbar, canvas, captions, legend, overlay) is webds — tokens only;
+ *  · the task-flow NOTATION (symbols, arrows, arrow labels) is the BBL Wireframe Guidelines'
+ *    (Figma GtIwnnWSKhpOGACw5p8kJt), measured 2026-10-05. Its colours are wireframe annotation
+ *    colours, not brand colours, and exist only in that Figma file (Korn, 2026-10-05) — so they
+ *    are NOT webds tokens and must never become one. They sit in ONE declared
+ *    `webds-third-party:` region at the end of this file, which verify_code / audit.mjs report
+ *    as info; the same literal anywhere else is still an error.
+ *
+ * Everything here is drawn INSIDE the zoomed board. Captions, connector labels and exit
+ * chips are counter-scaled by the view so they read at a steady size on screen; a
+ * decision's or tag's text scales WITH its shape instead (.webds-tfv-fit), so it never
+ * outgrows it. */
+@layer webds.components {
+  .webds-tfv {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-surface-primary-default);
+    color: var(--color-text-primary-default);
+  }
+
+  /* ── toolbar ─────────────────────────────────────────────────────────────── */
+  .webds-tfv-toolbar {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--color-border-primary-default);
+  }
+  .webds-tfv-title {
+    flex-shrink: 0;
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--type-heading-xxs-size);
+    line-height: var(--type-heading-xxs-line-height);
+    font-weight: var(--type-heading-xxs-weight-emphasized);
+  }
+  .webds-tfv-chips {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .webds-tfv-chips > *,
+  .webds-tfv-group > * {
+    flex: none;
+  }
+  .webds-tfv-group {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .webds-tfv-zoom {
+    min-width: var(--space-12);
+    text-align: center;
+    font-family: var(--font-label);
+    font-size: var(--type-label-m-size);
+    line-height: var(--type-label-m-line-height);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── canvas ──────────────────────────────────────────────────────────────── */
+  .webds-tfv-canvas {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    background-color: var(--color-surface-secondary-default);
+  }
+  .webds-tfv-canvas:active {
+    cursor: grabbing;
+  }
+  .webds-tfv-board {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+  }
+  .webds-tfv-node {
+    position: absolute;
+  }
+  .webds-tfv-node--open {
+    cursor: pointer;
+  }
+
+  /* screens */
+  .webds-tfv-screen {
+    position: relative;
+    overflow: hidden;
+    pointer-events: none;
+    background-color: var(--color-surface-primary-default);
+  }
+  .webds-tfv-placeholder {
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--color-border-primary-default);
+    background-color: var(--color-surface-primary-default);
+  }
+  /* Never a click target: counter-scaled to stay readable, a caption outgrows its node
+     when zoomed out and lies over the node above it — it took that node's clicks. */
+  .webds-tfv-caption {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    pointer-events: none;
+    padding-bottom: var(--space-2);
+    transform-origin: bottom left;
+  }
+  .webds-tfv-caption-route,
+  .webds-tfv-caption-label {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .webds-tfv-caption-route {
+    font-family: var(--font-heading);
+    font-size: var(--type-heading-xs-size);
+    line-height: var(--type-heading-xs-line-height);
+    font-weight: var(--type-heading-xs-weight-emphasized);
+  }
+  .webds-tfv-caption-label {
+    font-family: var(--font-body);
+    font-size: var(--type-body-m-size);
+    line-height: var(--type-body-m-line-height);
+    font-weight: var(--type-body-m-weight);
+    color: var(--color-text-secondary-default);
+  }
+
+  /* notes */
+  .webds-tfv-note {
+    overflow: hidden;
+    border-radius: var(--radius-1);
+    background-color: var(--color-surface-caution-default);
+    box-shadow: var(--shadow-raised);
+  }
+  .webds-tfv-note-text {
+    margin: 0;
+    padding: var(--space-4);
+    transform-origin: top left;
+    font-family: var(--font-body);
+    font-size: var(--type-body-m-size);
+    line-height: var(--type-body-m-line-height);
+  }
+
+  /* connectors */
+  .webds-tfv-edges {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .webds-tfv-edge {
+    fill: none;
+    stroke-linejoin: round;
+  }
+  /* not in the guideline — this view's own "an edge nobody drew" */
+  .webds-tfv-ink--inferred {
+    stroke: var(--color-border-disabled-subtle-default);
+    fill: var(--color-border-disabled-subtle-default);
+  }
+  /* The ink classes also fill the start diamond; a line and the open arrowhead never are. */
+  .webds-tfv-edge.webds-tfv-edge,
+  .webds-tfv-arrowhead.webds-tfv-arrowhead {
+    fill: none;
+  }
+  .webds-tfv-arrowhead {
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .webds-tfv-exits {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    padding-left: var(--space-3);
+    transform-origin: top left;
+  }
+  .webds-tfv-exit {
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-border-highlight-default);
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-primary-default);
+    color: var(--color-text-highlight-default);
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: var(--type-body-xs-size);
+    line-height: var(--type-body-xs-line-height);
+  }
+
+  /* legend */
+  .webds-tfv-legend {
+    position: absolute;
+    bottom: var(--space-3);
+    left: var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface-primary-default);
+    box-shadow: var(--shadow-raised);
+    pointer-events: none;
+  }
+  .webds-tfv-legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-body);
+    font-size: var(--type-body-xs-size);
+    line-height: var(--type-body-xs-line-height);
+  }
+  .webds-tfv-legend-swatch {
+    overflow: visible;
+  }
+  .webds-tfv-legend-meta {
+    margin: 0;
+    color: var(--color-text-secondary-default);
+    font-family: var(--font-body);
+    font-size: var(--type-body-xs-size);
+    line-height: var(--type-body-xs-line-height);
+  }
+
+  /* overlay host */
+  .webds-tfv-trigger {
+    position: fixed;
+    right: var(--space-4);
+    bottom: var(--space-4);
+    z-index: 1400;
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface-primary-default);
+    box-shadow: var(--shadow-overlay);
+  }
+  .webds-tfv-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-surface-primary-default);
+  }
+  .webds-tfv-overlay-head {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4) 0;
+  }
+  .webds-tfv-overlay-body {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Wireframe: greys every painted colour by luminance — tokens and literals alike (see
+     the component's header for why this is a filter and not a token re-map). */
+  .webds-wireframe {
+    filter: grayscale(1);
+  }
+
+  /* A connector is a jump; its partner rings for a moment after one is clicked. */
+  .webds-tfv-jump {
+    border-radius: var(--radius-full);
+  }
+  .webds-tfv-jump--flash {
+    box-shadow: 0 0 0 var(--space-8) var(--color-border-highlight-default);
+    transition: box-shadow 200ms;
+  }
+
+  /* webds-third-party: BBL Wireframe Guidelines task-flow notation (Figma GtIwnnWSKhpOGACw5p8kJt, "Collection 1" + section "02 mar 2026_Final component_Korn") — wireframe annotation colours, not brand, Figma-only */
+  /* Flow+Symbol/Purple #9747FF · Flow+Symbol/Red #EC0038 · Flow+Symbol/Grey #666666 ·
+     Flow+Symbol/Text White #FFFFFF (= webds Text/Primary/Inverse, used as the token). Symbol
+     geometry is the guideline's native units; the view scales each symbol as one box (TEXT_BASE). */
+
+  /* The box a symbol is laid out in at native units and scaled to its node. */
+  .webds-tfv-fit {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+  }
+  .webds-tfv-symbol {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #9747FF;
+    color: var(--color-text-primary-inverse-default);
+    text-align: center;
+  }
+  /* grey off the main flow, as the guideline's own examples draw alternative endpoints */
+  .webds-tfv-symbol--alt {
+    background-color: #666666;
+  }
+  /* Title/Heading3 — BBL Sans Medium 18/25 */
+  .webds-tfv-symbol-text {
+    margin: 0;
+    overflow-wrap: break-word;
+    font-family: var(--font-label);
+    font-size: 18px;
+    line-height: 25px;
+    font-weight: 500;
+  }
+  /* 4.1 Diamond (2820:2753) — 196.77 x 92.75, radius 6.38, a white diamond over the question */
+  .webds-tfv-decision {
+    gap: 7.437px;
+    padding: 8.506px 12.76px;
+    border-radius: 6.38px;
+  }
+  .webds-tfv-decision-mark {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 32.147px;
+    height: 32.147px;
+  }
+  .webds-tfv-decision-mark::before {
+    content: '';
+    width: 22.732px;
+    height: 22.732px;
+    transform: rotate(45deg);
+    background-color: var(--color-text-primary-inverse-default);
+  }
+  /* 4.3 Process (2820:2782) — 178.5 x 93.18, radius 4.49 */
+  .webds-tfv-process {
+    padding: 5.987px 8.981px;
+    border-radius: 4.491px;
+  }
+  .webds-tfv-process .webds-tfv-symbol-text {
+    padding: 3.926px 0;
+  }
+  /* 4.4 Node Connector (2820:2785) — 140 circle, letter BBL Sans Bold 96 */
+  .webds-tfv-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 24px;
+    border-radius: var(--radius-full);
+    background-color: #9747FF;
+  }
+  .webds-tfv-connector-letter {
+    margin: 0;
+    color: var(--color-text-primary-inverse-default);
+    font-family: var(--font-label);
+    font-size: 96px;
+    line-height: normal;
+    font-weight: 700;
+  }
+  /* Arrow (2820:2789–2793): 4 wide; Main purple solid · Negative red dash 8/8 · Back grey dash 8/8 */
+  .webds-tfv-ink--solid {
+    stroke: #9747FF;
+    fill: #9747FF;
+  }
+  .webds-tfv-ink--dashed {
+    stroke: #EC0038;
+    fill: #EC0038;
+  }
+  .webds-tfv-ink--back {
+    stroke: #666666;
+    fill: #666666;
+  }
+  /* connector text: white Bold 24/36 on a pill of the line's colour, radius 3 — drawn at board
+     scale, so it shows once it reads and hides at overview zoom */
+  .webds-tfv-edge-label {
+    position: absolute;
+    margin: 0;
+    padding: 8.5px 12.75px;
+    border-radius: 3px;
+    background-color: #9747FF;
+    color: var(--color-text-primary-inverse-default);
+    pointer-events: none;
+    white-space: nowrap;
+    font-family: var(--font-label);
+    font-size: 24px;
+    line-height: 36px;
+    font-weight: 700;
+  }
+  .webds-tfv-edge-label--dashed {
+    background-color: #EC0038;
+  }
+  .webds-tfv-edge-label--back,
+  .webds-tfv-edge-label--inferred {
+    background-color: #666666;
+  }
+  /* 6. Touch area (3085:9499) — the control a connector leaves from: dashed 2 / 8 8, radius 4,
+     no fill */
+  .webds-tfv-touch {
+    fill: none;
+    stroke: #9747FF;
+  }
+  /* webds-third-party: end */
+}

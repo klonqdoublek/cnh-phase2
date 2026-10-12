@@ -6,10 +6,21 @@
  * overrides the component's own rule. Same chain as the CMS prototype. */
 @layer theme, base, webds, components, utilities;
 
-@import 'tailwindcss';
+@import 'tailwindcss' source('./');
 @import './styles/bbl-fonts.css';
 @import './styles/webds-preflight.css';
 @import './styles/tokens.css';
 @import './styles/webds-foundation.css';
 @import './styles/webds-components.css';
 @import './styles/utilities.css';
+
+/* The console fills the window; screens scroll inside their own regions.
+   Unlayered on purpose: the two webds patterns set `height: 100vh` in
+   `@layer webds`, and this has to win. */
+#root {
+  height: 100vh;
+}
+.webds-pattern-product-shell,
+.webds-pattern-sign-in-split {
+  height: 100%;
+}
