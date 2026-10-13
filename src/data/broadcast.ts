@@ -423,3 +423,41 @@ export const fmtNumber = (n: number) => n.toLocaleString('en-US')
 
 /** The toast the list shows after Create returns — held open on its preset route. */
 export type ListToast = { name: string; draft: boolean }
+
+/* ── delivery report ───────────────────────────────────────────────────── */
+
+/* The drawer's Download report (BA, 2026-10-14). A broadcast here carries
+ * counts, not per-recipient attempts, so the rows are made up from the counts:
+ * one row per recipient, Success then Failed then Waiting to send, keyed by the
+ * file's ID column. The totals always equal the drawer's. Copy is composed —
+ * the original build has no report (docs/broadcast-gaps.md). */
+
+const FAIL_REASONS: Record<Channel, string[]> = {
+  SMS: ['Invalid mobile number', 'Number not reachable'],
+  Email: ['Mailbox not found', 'Message rejected'],
+  'Push notification': ['No active device'],
+}
+
+const recipientId = (column: string, n: number) => {
+  if (/mobile|phone|tel/i.test(column)) return `08${String(10000000 + n * 7919).slice(-8)}`
+  if (/e-?mail/i.test(column)) return `customer${String(n).padStart(4, '0')}@example.com`
+  return `CIS${String(n).padStart(6, '0')}`
+}
+
+const csvCell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value)
+
+export const deliveryReportName = (b: Broadcast) => `${b.id}-delivery-report.csv`
+
+export function deliveryReportCsv(b: Broadcast): string {
+  const waiting = Math.max(0, b.recipients - b.success - b.failed)
+  const reasons = b.channels.flatMap((c) => FAIL_REASONS[c])
+  const rows = [[b.recipientColumn, 'Channel', 'Result', 'Reason']]
+  let n = 0
+  const add = (count: number, result: string, reason: (i: number) => string) => {
+    for (let i = 0; i < count; i++) rows.push([recipientId(b.recipientColumn, ++n), b.channels.join(', '), result, reason(i)])
+  }
+  add(b.success, 'Success', () => '')
+  add(b.failed, 'Failed', (i) => reasons[i % reasons.length])
+  add(waiting, 'Waiting to send', () => '')
+  return rows.map((row) => row.map(csvCell).join(',')).join('\n') + '\n'
+}

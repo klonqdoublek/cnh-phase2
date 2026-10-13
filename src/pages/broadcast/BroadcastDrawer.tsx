@@ -2,9 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/bbl/button'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
+import { OutlineButton } from '@/bbl/outline-button'
 import { DetailDrawer } from '@/patterns/detail-drawer'
-import { firstSend, fmtDateTime, fmtDnd, fmtNumber, type Broadcast, type BroadcastStatus as Status } from '@/data/broadcast'
+import {
+  deliveryReportCsv,
+  deliveryReportName,
+  firstSend,
+  fmtDateTime,
+  fmtDnd,
+  fmtNumber,
+  type Broadcast,
+  type BroadcastStatus as Status,
+} from '@/data/broadcast'
 import { cn } from '@/lib/cn'
+import { downloadText } from '@/lib/download'
 import { BroadcastStatus } from './list/BroadcastStatus'
 import { DrawerSection, Meta, type DrawerSectionSpec } from './list/drawer-parts'
 
@@ -41,6 +52,17 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
               ['Waiting to send', fmtNumber(waiting)],
             ] as [string, string][],
             note: STATUS_LINE[b.status](b),
+            /* Only once something was attempted — Sending, Paused, Completed. */
+            action:
+              b.success + b.failed > 0 ? (
+                <OutlineButton
+                  className="h-[32px]"
+                  onClick={() => downloadText(deliveryReportName(b), deliveryReportCsv(b))}
+                >
+                  Download report
+                  <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
+                </OutlineButton>
+              ) : undefined,
           },
         ]),
     {

@@ -8,13 +8,16 @@ import { cn } from '@/lib/cn'
  * 200), plus the one thing the pattern has no slot for: a status note under a
  * section's rows. GAP: `DetailDrawer.sections` carries rows only, and the note
  * belongs to the FIRST section, so the sections are drawn here through the
- * pattern's `children` with the pattern's own values. */
+ * pattern's `children` with the pattern's own values. A section head can also
+ * carry an action at its right end (Download report) — another slot the
+ * pattern does not have. */
 
 export type DrawerSectionSpec = {
   title: string
   icon: string
   rows: [string, string][]
   note?: string
+  action?: React.ReactNode
 }
 
 export function DrawerSection({ section, first }: { section: DrawerSectionSpec; first: boolean }) {
@@ -25,6 +28,7 @@ export function DrawerSection({ section, first }: { section: DrawerSectionSpec; 
       <div className="flex h-[40px] items-center gap-[var(--space-3)] py-[var(--space-2)]">
         <Icon slug={section.icon} size={24} />
         <span className="type-label-xl-emphasized text-[var(--color-text-primary-default)]">{section.title}</span>
+        {section.action && <span className="ml-auto flex">{section.action}</span>}
       </div>
       {section.rows.map(([label, value]) => (
         <div key={label} className="flex items-center gap-[var(--space-4)] py-[var(--space-1)]">
