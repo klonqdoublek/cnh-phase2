@@ -40,6 +40,7 @@ Same rules as the CMS prototype:
 - No dark mode. Fonts come from webds (`styles/bbl-fonts.css`).
 - CNH's own patterns were measured on this product: `product-shell`, `sign-in-split`, `console-page`, `form-section-card`, `form-field`, `detail-drawer`, `profile-menu`. Prefer them.
 - **File upload is the CMS prototype's** (requester's call, 12 Oct 2026): `src/components/upload/` — `UploadZone` from CMS `EmptyAssetSlot`, `UploadedFile` from CMS `UploadedAssetSlot`. webds ships no upload control (gap). `FilePreviewDialog` from CMS `AssetPreviewModal`. Use these for any new upload; Import shows each picked file as a CMS slot (one column, scrolling) with a Preview.
+- **Borrow from CMS before building.** `docs/cms-components.md` lists what CMS hand-built, what CNH copied (and how it differs) and what is still there to borrow. Broadcast's open requirement questions and composed copy live in `docs/broadcast-gaps.md`.
 - Tailwind scans `src/` only (`source('./')` in `src/index.css`), so the 6 MB reference bundle stays out of the build.
 - `noUnusedParameters` is off because the installed `task-flow-view` has an unused map parameter.
 
