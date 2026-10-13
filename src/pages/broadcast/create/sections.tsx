@@ -517,7 +517,7 @@ export function Delivery({ f }: F) {
           className="w-[604px]"
           value={f.startDate && f.startTime ? `${f.startDate}T${f.startTime}` : ''}
           min={ymd(new Date())}
-          minuteStep={30}
+          minuteStep={5}
           error={!!(f.errors.startDate || f.errors.startTime)}
           message={f.errors.startDate ?? f.errors.startTime}
           onChange={(v) => {
