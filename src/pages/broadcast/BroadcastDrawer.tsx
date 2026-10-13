@@ -3,7 +3,7 @@ import { Button } from '@/bbl/button'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { DetailDrawer } from '@/patterns/detail-drawer'
-import { firstSend, fmtDateTime, fmtDnd, fmtNumber, type Broadcast, type BroadcastStatus as Status } from '@/data/broadcast'
+import { firstSend, fmtDateTime, fmtDnd, fmtNumber, quietUntil, type Broadcast, type BroadcastStatus as Status } from '@/data/broadcast'
 import { cn } from '@/lib/cn'
 import { BroadcastStatus } from './list/BroadcastStatus'
 import { DrawerSection, Meta, type DrawerSectionSpec } from './list/drawer-parts'
@@ -15,11 +15,20 @@ export type BroadcastDrawerProps = {
   onEdit: () => void
 }
 
+/** HH:mm the current quiet period ends, or the first rule's end when now is
+ *  outside every rule (the fixtures are dated, the clock is not). */
+function resumesAt(b: Broadcast) {
+  const end = quietUntil(new Date(), b.dnd)
+  if (end) return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`
+  const rule = b.dnd.rules[0]
+  return rule && !rule.allDay ? rule.to : '00:00'
+}
+
 const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
   Draft: () => 'Not submitted yet. Nothing is sent until the broadcast is submitted.',
   Scheduled: (b) => `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
   Sending: () => 'Messages are being sent.',
-  Paused: (b) => `Inside the quiet period. Sending resumes at ${b.dnd.to}.`,
+  Paused: (b) => `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`,
   Completed: () => 'Every recipient was sent a message.',
 }
 

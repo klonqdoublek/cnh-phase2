@@ -7,9 +7,10 @@ import {
   BROADCAST_COPY,
   EMPTY,
   fmtDateTime,
-  fmtDays,
+  fmtDndRule,
   fmtNumber,
   type Broadcast,
+  type Dnd,
   type ListToast as ListToastValue,
 } from '@/data/broadcast'
 import { BroadcastStatus } from './list/BroadcastStatus'
@@ -30,6 +31,22 @@ export type BroadcastListProps = {
 
 const PAGE_SIZE = 50
 
+/** A rule a line, two lines at most; the rest are counted on the second. */
+function DndCell({ dnd }: { dnd: Dnd }) {
+  const lines = dnd.enabled ? dnd.rules.map(fmtDndRule) : ['Off']
+  const more = lines.length - 2
+  return (
+    <span className="flex min-w-px flex-col type-body-m text-[var(--color-text-primary-default)]">
+      {lines.slice(0, 2).map((line, i) => (
+        <span key={i} className="truncate">
+          {line}
+          {i === 1 && more > 0 && ` +${more} more`}
+        </span>
+      ))}
+    </span>
+  )
+}
+
 const COLUMNS: ListColumn<Broadcast>[] = [
   { key: 'name', label: 'Broadcast name', width: 300, cell: (b) => b.name },
   { key: 'channel', label: 'Channel', width: 260, wrap: true, cell: (b) => b.channels.join(', ') },
@@ -39,7 +56,8 @@ const COLUMNS: ListColumn<Broadcast>[] = [
     key: 'dnd',
     label: 'Do Not Disturb',
     width: 220,
-    cell: (b) => (b.dnd.enabled ? `${fmtDays(b.dnd.days)}, ${b.dnd.from}–${b.dnd.to}` : 'Off'),
+    slot: true,
+    cell: (b) => <DndCell dnd={b.dnd} />,
   },
   {
     key: 'result',
