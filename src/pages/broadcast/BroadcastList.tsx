@@ -5,10 +5,8 @@ import { ConsolePage } from '@/patterns/console-page'
 import { EmptyState } from '@/patterns/empty-state'
 import {
   BROADCAST_COPY,
-  EMPTY,
   fmtDateTime,
   fmtDays,
-  fmtNumber,
   type Broadcast,
   type ListToast as ListToastValue,
 } from '@/data/broadcast'
@@ -31,31 +29,14 @@ export type BroadcastListProps = {
 const PAGE_SIZE = 50
 
 const COLUMNS: ListColumn<Broadcast>[] = [
-  { key: 'name', label: 'Broadcast name', width: 300, cell: (b) => b.name },
-  { key: 'channel', label: 'Channel', width: 260, wrap: true, cell: (b) => b.channels.join(', ') },
-  { key: 'recipients', label: 'Recipients', width: 160, cell: (b) => fmtNumber(b.recipients) },
+  { key: 'name', label: 'Broadcast name', width: 500, cell: (b) => b.name },
+  { key: 'channel', label: 'Channel', width: 360, wrap: true, cell: (b) => b.channels.join(', ') },
   { key: 'start', label: 'Broadcast start', width: 220, cell: (b) => fmtDateTime(new Date(b.start)) },
   {
     key: 'dnd',
     label: 'Do Not Disturb',
-    width: 220,
+    width: 320,
     cell: (b) => (b.dnd.enabled ? `${fmtDays(b.dnd.days)}, ${b.dnd.from}–${b.dnd.to}` : 'Off'),
-  },
-  {
-    key: 'result',
-    label: 'Result',
-    width: 240,
-    cell: (b) =>
-      b.success + b.failed === 0 ? (
-        EMPTY
-      ) : (
-        <>
-          {fmtNumber(b.success)} sent ·{' '}
-          <span className={b.failed ? 'text-[var(--color-text-negative-default)]' : undefined}>
-            {fmtNumber(b.failed)} failed
-          </span>
-        </>
-      ),
   },
   {
     key: 'status',
