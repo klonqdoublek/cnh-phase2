@@ -30,7 +30,7 @@ BA answers on 14 Oct 2026:
 - **Q1:** DND is the model for Broadcast message. Service Window is not used.
 - **Q2:** Broadcast End goes into the prototype (see the table above).
 - **Q5:** Direct recipient stays. The ID column is still chosen from the file.
-- **Q11:** the BA did not follow the question. It is reworded below and asked again.
+- **Q11:** TBC (14 Oct). The BA did not follow the first wording; the question is reworded below and parked until the next review. The prototype keeps the current behaviour.
 
 The rest are still open.
 
@@ -46,7 +46,7 @@ The rest are still open.
 | Q8 | Start fields | Start Date and Start Time (local) as two fields. | One Start date and time field (PR #2). The BA's screenshot shows the older two-field build. | Is one field acceptable? |
 | Q9 | Status | Activated, Sending, Paused outside the window, Completed, Expired. | Draft, Scheduled, Sending, Paused, Completed. | Confirm the status set, and whether Expired is needed (see Q2). |
 | Q10 | SMS counter | `109/160`. | `n characters · n SMS`, with 70 per SMS in Thai. | Which counter? |
-| Q11 | Overnight DND | Not covered. | A period that crosses midnight belongs to the day it starts. Ticking Mon–Fri on 18:00–08:00 covers Monday night to Friday night, so Sunday night into Monday 00:00–08:00 is open. With the BA's example the weekend ends at Monday 00:00 and sending starts at midnight, not 08:00. | Which one: (a) keep this, and tick Sun as well to keep Monday morning quiet; or (b) count the morning part of a period as the day it ends, so ticking Mon also covers Monday 00:00–08:00? |
+| Q11 (TBC) | Overnight DND | Not covered. | A period that crosses midnight belongs to the day it starts. Ticking Mon–Fri on 18:00–08:00 covers Monday night to Friday night, so Sunday night into Monday 00:00–08:00 is open. With the BA's example the weekend ends at Monday 00:00 and sending starts at midnight, not 08:00. | Which one: (a) keep this, and tick Sun as well to keep Monday morning quiet; or (b) count the morning part of a period as the day it ends, so ticking Mon also covers Monday 00:00–08:00? |
 | Q12 | DND limits | Not covered. | Any number of periods; overlapping periods are allowed. | Is there a maximum number of periods? |
 
 Already aligned:

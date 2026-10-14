@@ -4,6 +4,8 @@
 
 Phase 2 of the **Customer Notification Hub (CNH)** console: Import templates and Broadcast message, on top of the Phase 1 notification list. This repo is a **rebuild on webds** of Korn's prototype (https://cnh-tm-phase2.vercel.app, built on `@bbl-web/ui-components`), started 2026-10-12 to enhance it. The original source was not available; `.reference/` holds the deployed build and the app code cut out of it (see `.reference/README.md`).
 
+Start with `docs/requirements.md`: what Phase 2 is, every feature's rules, the BA's rulings and what is still open.
+
 The webds flow archive already records this delivery as `cnh-phase2` (`get_flow`): its routes, rulings, open questions P2-1…P2-20 and gaps. Read it before changing a flow.
 
 ## Commands
