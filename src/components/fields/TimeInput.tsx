@@ -1,10 +1,12 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { FIELD_TEXT, FieldBox, FieldHint, FieldLabel, FieldRoot, toneFor } from '@/bbl/field'
 import { Icon } from '@/bbl/icon'
-import { SelectList } from '@/patterns/select-list'
-import { TIMES } from '@/data/broadcast'
 import { cn } from '@/lib/cn'
+import { padTwo } from './date-parts'
+import { PICKER_STATE_GAPS } from './picker-state-gaps'
 import { useDismissOnOutside } from './useDismissOnOutside'
+
+const HOURS = Array.from({ length: 24 }, (_, index) => padTwo(index))
 
 /** The box of the nearest scrolling ancestor — what the page shows of the
  *  form — or the window. */
@@ -17,13 +19,52 @@ function visibleArea(el: HTMLElement): { top: number; bottom: number } {
   return { top: 0, bottom: window.innerHeight }
 }
 
+/** One scrolling column of the installed Date Time Picker's time half — its
+ *  own `webds-time-column` cells, drawn here because the component does not
+ *  export `TimeColumn`. */
+function Column({
+  label,
+  values,
+  selected,
+  onSelect,
+}: {
+  label: string
+  values: string[]
+  selected?: number
+  onSelect: (index: number) => void
+}) {
+  return (
+    <div role="listbox" aria-label={label} className="webds-time-column overflow-y-auto">
+      {values.map((v, i) => (
+        <span
+          key={v}
+          role="option"
+          aria-selected={i === selected}
+          onClick={() => onSelect(i)}
+          className={cn('webds-time-column-2', 'webds-time-column-2--s1', i === selected && 'webds-time-column-2--s2')}
+        >
+          <span
+            data-part="Date"
+            className={
+              i === selected ? 'webds-date-time-picker--time-cell-selected' : 'webds-date-time-picker--time-cell'
+            }
+          >
+            {v}
+          </span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 /**
  * A time field, `HH:mm`, for the Do Not Disturb quiet period. webds ships no
  * time-only field or picker (a gap), so this is the box of `DateTimeInput`
- * with Time 24 for its mark, opening webds' `SelectList` — the menu the
- * `form-field` select already uses — as one column of the original build's
- * half-hour `TIMES`. It takes the field's width, opens on the chosen time,
- * and a pick applies and closes. A press outside or Escape only closes.
+ * with Time 24 for its mark, opening the time half of webds' Date Time Picker
+ * on its own: the 56-tall "Time" header over an hour and a minute column, in
+ * `minuteStep` steps (5, the BA's step since 2026-10-14). As in
+ * `DateTimeInput`, a pick applies at once (CMS v4.56); choosing the minute
+ * closes it. It opens on the chosen time. A press outside or Escape only closes.
  */
 export function TimeInput({
   label,
@@ -33,6 +74,7 @@ export function TimeInput({
   required,
   disabled,
   placeholder = 'HH:mm',
+  minuteStep = 5,
   className,
 }: {
   label: string
@@ -43,6 +85,7 @@ export function TimeInput({
   required?: boolean
   disabled?: boolean
   placeholder?: string
+  minuteStep?: 1 | 5 | 30
   className?: string
 }) {
   const [open, setOpen] = useState(false)
@@ -62,14 +105,21 @@ export function TimeInput({
     setAbove(box.bottom + menu.offsetHeight > area.bottom && box.top - menu.offsetHeight > area.top)
   }, [open])
 
-  /* Open on the chosen time, not on 00:00. */
+  const minutes = Array.from({ length: 60 / minuteStep }, (_, index) => padTwo(index * minuteStep))
+  const [hour, minute] = value ? value.split(':').map(Number) : [undefined, undefined]
+  const selectedHour = hour
+  const selectedMinute = minute == null ? undefined : Math.floor(minute / minuteStep)
+
+  /* Open on the chosen time, not on 00:00: each column scrolls its chosen cell
+     to the middle. */
   useLayoutEffect(() => {
     const menu = menuRef.current
     if (!open || !menu) return
-    const index = TIMES.indexOf(value)
-    const option = menu.querySelectorAll<HTMLElement>('.webds-pattern-option')[index]
-    if (option) menu.scrollTop = option.offsetTop - (menu.clientHeight - option.offsetHeight) / 2
-  }, [open, value])
+    menu.querySelectorAll<HTMLElement>('[role="listbox"]').forEach((column) => {
+      const cell = column.querySelector<HTMLElement>('[aria-selected="true"]')
+      if (cell) column.scrollTop = cell.offsetTop - column.offsetTop - (column.clientHeight - cell.offsetHeight) / 2
+    })
+  }, [open])
 
   const focusedLook = !disabled && (focused || open)
   const tone = toneFor(
@@ -131,25 +181,41 @@ export function TimeInput({
             </FieldBox>
           </button>
           {open && (
-            /* Eight 36-tall options and the list's py 8 — the rest scrolls. The
-               scroll box carries the list's Overlay elevation, which its own
-               overflow would otherwise clip. */
+            /* The picker's time half, 304 tall: the 56 header and seven and a
+               half 32-tall cells, the rest scrolls. Card and elevation as
+               `DateTimeInput`'s popover. */
             <div
               ref={menuRef}
+              role="dialog"
+              aria-label={label.trim() || placeholder}
               className={cn(
-                'absolute left-0 z-30 max-h-[304px] w-full overflow-y-auto rounded-[var(--radius-2)] shadow-[var(--shadow-overlay)]',
+                'absolute left-0 z-30 flex h-[304px] w-full flex-col overflow-hidden rounded-[var(--radius-3)] bg-[var(--color-surface-primary-default)] shadow-[var(--shadow-overlay)]',
                 above ? 'bottom-[calc(100%+var(--space-2))]' : 'top-[calc(100%+var(--space-2))]',
+                PICKER_STATE_GAPS,
               )}
             >
-              <SelectList
-                width="fill"
-                elevated={false}
-                options={TIMES.map((time) => ({ value: time, label: time, selected: time === value }))}
-                onSelect={(time) => {
-                  onChange(time)
-                  setOpen(false)
-                }}
-              />
+              <div data-part="Header" className="webds-date-time-picker-7">
+                <span data-part="Label" className="webds-date-time-picker-8">
+                  Time
+                </span>
+              </div>
+              <div className="webds-date-time-picker-9">
+                <Column
+                  label="Hour"
+                  values={HOURS}
+                  selected={selectedHour}
+                  onSelect={(h) => onChange(`${padTwo(h)}:${padTwo((selectedMinute ?? 0) * minuteStep)}`)}
+                />
+                <Column
+                  label="Minute"
+                  values={minutes}
+                  selected={selectedMinute}
+                  onSelect={(m) => {
+                    onChange(`${padTwo(selectedHour ?? 0)}:${padTwo(m * minuteStep)}`)
+                    setOpen(false)
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>

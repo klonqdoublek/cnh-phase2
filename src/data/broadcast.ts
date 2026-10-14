@@ -37,6 +37,7 @@ export const BROADCAST_COPY = {
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
   pickField: 'Click in a message field first, then choose a field to insert',
   startPast: 'Start must be later than the current time',
+  endBeforeStart: 'End must be later than the start',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
   submitTitle: 'Submit this broadcast?',
@@ -175,14 +176,36 @@ export const DAYS = [
   { day: 0, label: 'Sun' },
 ]
 
-export const TIMES = Array.from(
-  { length: 48 },
-  (_, i) => `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`,
-)
+/** One quiet period: the days it starts on and its hours, or the whole day.
+ *  `to` before `from` runs overnight into the next day. */
+export type DndRule = { id: string; days: number[]; allDay: boolean; from: string; to: string }
+/** Do Not Disturb holds any number of quiet periods (BA, 2026-10-14 — e.g.
+ *  Mon – Fri 18:00–08:00 and Sat, Sun all day); the original build had one. */
+export type Dnd = { enabled: boolean; rules: DndRule[]; timeZone: string }
 
-export type Dnd = { enabled: boolean; days: number[]; from: string; to: string; timeZone: string }
+export const dndRule = (part: Partial<DndRule> = {}): DndRule => ({
+  id: `dnd-${Math.random().toString(36).slice(2, 8)}`,
+  days: [],
+  allDay: false,
+  from: '20:00',
+  to: '08:00',
+  ...part,
+})
 
-export const DEFAULT_DND: Dnd = { enabled: true, days: [1, 2, 3, 4, 5], from: '20:00', to: '08:00', timeZone: 'Asia/Bangkok' }
+export const DEFAULT_DND: Dnd = {
+  enabled: true,
+  rules: [{ id: 'dnd-weekdays', days: [1, 2, 3, 4, 5], allDay: false, from: '20:00', to: '08:00' }],
+  timeZone: 'Asia/Bangkok',
+}
+/** The BA's own example (2026-10-14): weeknights, and the whole weekend. */
+export const BA_DND: Dnd = {
+  enabled: true,
+  rules: [
+    { id: 'dnd-weeknights', days: [1, 2, 3, 4, 5], allDay: false, from: '18:00', to: '08:00' },
+    { id: 'dnd-weekend', days: [6, 0], allDay: true, from: '00:00', to: '00:00' },
+  ],
+  timeZone: 'Asia/Bangkok',
+}
 export const TIME_ZONES = [{ value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)' }]
 
 const minutes = (hhmm: string) => {
@@ -197,24 +220,37 @@ const at = (base: Date, hhmm: string, addDays = 0) => {
   return d
 }
 
-/** When `t` falls in a quiet period, the moment that period ends; otherwise null. */
-export function quietUntil(t: Date, dnd: Dnd): Date | null {
-  if (!dnd.enabled || !dnd.days.length || dnd.from === dnd.to) return null
-  const overnight = minutes(dnd.from) > minutes(dnd.to)
+/** When `t` falls in one rule's quiet period, the moment that period ends. */
+function ruleUntil(t: Date, rule: DndRule): Date | null {
+  if (!rule.days.length || (!rule.allDay && rule.from === rule.to)) return null
+  const overnight = !rule.allDay && minutes(rule.from) > minutes(rule.to)
   for (const back of [1, 0]) {
     const day = at(t, '00:00', -back)
-    if (!dnd.days.includes(day.getDay())) continue
-    const from = at(day, dnd.from)
-    const to = at(day, dnd.to, overnight ? 1 : 0)
+    if (!rule.days.includes(day.getDay())) continue
+    const from = rule.allDay ? day : at(day, rule.from)
+    const to = rule.allDay ? at(day, '00:00', 1) : at(day, rule.to, overnight ? 1 : 0)
     if (t >= from && t < to) return to
   }
   return null
 }
 
-/** The first moment a broadcast starting at `t` can actually send. */
+/** When `t` falls in a quiet period, the moment that period ends; otherwise
+ *  null. Where rules overlap, the latest end wins. */
+export function quietUntil(t: Date, dnd: Dnd): Date | null {
+  if (!dnd.enabled) return null
+  let end: Date | null = null
+  for (const rule of dnd.rules) {
+    const until = ruleUntil(t, rule)
+    if (until && (!end || until > end)) end = until
+  }
+  return end
+}
+
+/** The first moment a broadcast starting at `t` can actually send — rules
+ *  that run into each other (Fri night, then all of Sat and Sun) chain. */
 export function firstSend(t: Date, dnd: Dnd): Date {
   let next = t
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 64; i++) {
     const end = quietUntil(next, dnd)
     if (!end) return next
     next = end
@@ -232,7 +268,12 @@ export const fmtDays = (days: number[]) => {
   return ordered.map((d) => DAYS.find((x) => x.day === d)!.label).join(', ')
 }
 
-export const fmtDnd = (dnd: Dnd) => (dnd.enabled ? `${fmtDays(dnd.days)}, ${dnd.from}–${dnd.to} (${dnd.timeZone})` : 'Off')
+/** "Mon – Fri, 18:00–08:00" or "Sat, Sun, All day". */
+export const fmtDndRule = (rule: DndRule) => `${fmtDays(rule.days)}, ${rule.allDay ? 'All day' : `${rule.from}–${rule.to}`}`
+
+/** Each rule on a line of its own, the time zone once at the end. */
+export const fmtDnd = (dnd: Dnd) =>
+  dnd.enabled ? `${dnd.rules.map(fmtDndRule).join('\n')} (${dnd.timeZone})` : 'Off'
 
 /* ── records ───────────────────────────────────────────────────────────── */
 
@@ -260,10 +301,15 @@ export type Broadcast = {
   startMode: 'now' | 'schedule'
   /** `YYYY-MM-DDTHH:mm`, local time. */
   start: string
+  /** Broadcast End (optional, BA 2026-10-14): sending stops here, and whoever
+   *  is still waiting is counted as Not sent. `YYYY-MM-DDTHH:mm`. */
+  end?: string
   dnd: Dnd
   status: BroadcastStatus
   success: number
   failed: number
+  /** Recipients still unsent when the end was reached. */
+  notSent?: number
   content: BroadcastContent
   createdBy: string
   createdAt: string
@@ -321,7 +367,8 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-10-12T09:00',
-    dnd: DEFAULT_DND,
+    end: '2026-10-16T18:00',
+    dnd: BA_DND,
     status: 'Scheduled',
     success: 0,
     failed: 0,
@@ -408,6 +455,28 @@ export const BROADCASTS: Broadcast[] = [
     createdBy: 'Naree R.',
     createdAt: '2026-09-19T14:30',
   },
+  /* The deck's scenario F (composed, 2026-10-14): the end came before every
+     recipient was sent, so 174 are Not sent and the broadcast is Completed. */
+  {
+    id: 'BC-0001',
+    name: 'Savings interest rate update',
+    description: 'Tell savings customers about the new interest rate.',
+    channels: ['SMS'],
+    audienceFile: 'savings-customers.csv',
+    recipients: 1000,
+    ...cis,
+    startMode: 'schedule',
+    start: '2026-09-15T10:00',
+    end: '2026-09-15T12:00',
+    dnd: DEFAULT_DND,
+    status: 'Completed',
+    success: 820,
+    failed: 6,
+    notSent: 174,
+    content: content('Dear Customer, effective 1 October 2026, our savings account interest rate will be updated. Thank you.'),
+    createdBy: 'Panisa R.',
+    createdAt: '2026-09-12T09:30',
+  },
 ]
 
 export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'accent' | 'positive'> = {
@@ -417,6 +486,9 @@ export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'acce
   Paused: 'caution',
   Completed: 'positive',
 }
+
+/** Recipients not yet attempted: not sent, not failed, not cut off by the end. */
+export const waitingOf = (b: Broadcast) => Math.max(0, b.recipients - b.success - b.failed - (b.notSent ?? 0))
 
 export const EMPTY = '–'
 export const fmtNumber = (n: number) => n.toLocaleString('en-US')
@@ -449,7 +521,7 @@ const csvCell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/
 export const deliveryReportName = (b: Broadcast) => `${b.id}-delivery-report.csv`
 
 export function deliveryReportCsv(b: Broadcast): string {
-  const waiting = Math.max(0, b.recipients - b.success - b.failed)
+  const waiting = waitingOf(b)
   const reasons = b.channels.flatMap((c) => FAIL_REASONS[c])
   const rows = [[b.recipientColumn, 'Channel', 'Result', 'Reason']]
   let n = 0
@@ -458,6 +530,7 @@ export function deliveryReportCsv(b: Broadcast): string {
   }
   add(b.success, 'Success', () => '')
   add(b.failed, 'Failed', (i) => reasons[i % reasons.length])
+  add(b.notSent ?? 0, 'Not sent', () => 'Broadcast ended')
   add(waiting, 'Waiting to send', () => '')
   return rows.map((row) => row.map(csvCell).join(',')).join('\n') + '\n'
 }

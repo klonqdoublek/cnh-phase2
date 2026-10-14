@@ -33,6 +33,7 @@ export function DateTimeInput({
   onChange,
   label,
   required,
+  optional,
   message,
   error = false,
   disabled = false,
@@ -40,6 +41,7 @@ export function DateTimeInput({
   minuteStep = 5,
   defaultTime = [0, 0],
   min,
+  clearable = false,
   className,
 }: {
   /** `YYYY-MM-DDTHH:mm`, or '' for none. */
@@ -47,6 +49,8 @@ export function DateTimeInput({
   onChange: (value: string) => void
   label: string
   required?: boolean
+  /** The "(optional)" note on the label, as CMS. */
+  optional?: boolean
   message?: React.ReactNode
   error?: boolean
   disabled?: boolean
@@ -57,6 +61,8 @@ export function DateTimeInput({
   defaultTime?: [number, number]
   /** `YYYY-MM-DD`; earlier days are muted and cannot be picked. */
   min?: string
+  /** Adds **Clear** beside **Today**, as CMS's Expiry date (Broadcast End). */
+  clearable?: boolean
   className?: string
 }) {
   const field = useDateTimeField({ value, onChange, disabled, error, minuteStep, defaultTime, min })
@@ -64,7 +70,7 @@ export function DateTimeInput({
   return (
     <div ref={field.rootRef} data-error={error ? 'true' : undefined} className={cn('relative', className)}>
       <FieldRoot>
-        <FieldLabel colour={disabled ? 'disabled' : 'tertiary'} required={required}>
+        <FieldLabel colour={disabled ? 'disabled' : 'tertiary'} required={required} optional={optional}>
           {label}
         </FieldLabel>
         <div className="relative">
@@ -145,6 +151,13 @@ export function DateTimeInput({
                   <OutlineButton key="today" className="h-[32px]" onClick={field.selectToday}>
                     Today
                   </OutlineButton>,
+                  ...(clearable
+                    ? [
+                        <OutlineButton key="clear" className="h-[32px]" onClick={field.clear}>
+                          Clear
+                        </OutlineButton>,
+                      ]
+                    : []),
                 ]}
               />
             </div>
