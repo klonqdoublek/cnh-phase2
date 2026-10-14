@@ -16,15 +16,23 @@ It lists what changed in response, the gaps that are still open as questions for
 | 2 | Add download behaviour to the drawer. | Delivery result has a **Download report** button. It appears once anything was attempted (Sending, Paused, Completed) and saves `{id}-delivery-report.csv`. The CSV has one row per recipient: ID, Channel, Result, Reason. The rows are mock data built from the counts. | `add/broadcast-delivery-report` |
 | 3 | Times in 5-minute steps instead of 30. | Start date and time, and the quiet period from/to, step by 5 minutes. The quiet period field is now an hour column and a minute column, not a 48-row list. | `update/broadcast-time-step` (on PR #2) |
 | 4 | Let the user add Do Not Disturb periods: several days with the same hours, and more than one period, e.g. Mon–Fri 18:00–08:00 and Sat–Sun all day. | Do Not Disturb holds any number of quiet periods. Each has its own days and hours, or All day, and can be removed. **Add period** adds one. One Enabled toggle and one time zone cover all of them. The list shows one period per line, the drawer and the confirm dialog show all of them. The BA's example is on `#/broadcast/create/dnd-rules` and on BC-0006. | `update/broadcast-dnd-rules` |
+| Q2 | Broadcast End may go into the prototype (BA answer, 14 Oct). | Step 5 has an optional **End date and time** beside Start, with Clear. It must be later than the start. When the end comes first, sending stops and the recipients left are counted as **Not sent**; the broadcast still ends **Completed** (no Expired status). The drawer shows Broadcast end and a Not sent row; the report adds Not sent rows; the confirm dialog shows the end. Preset `#/broadcast/create/end`; fixture BC-0001 is the deck's scenario F. | `add/broadcast-end` |
 
 Interpretations made without asking the BA:
 
 - **Download:** "download behaviour" was read as a delivery report, which matches the deck's "summary report" (page 2). The deck does not ask to download the audience file, so the drawer does not offer it.
 - **Overnight periods:** a period that crosses midnight belongs to the day it starts. With the BA's example, Sunday 00:00 to Monday 08:00 is quiet only until Monday 00:00. Mon–Fri 18:00–08:00 starts on Monday evening, so Monday 00:00–08:00 is open. See question Q11.
 
-## Deck vs prototype: open questions for the BA
+## Deck vs prototype: questions for the BA
 
-None of these are built. Each needs a ruling.
+BA answers on 14 Oct 2026:
+
+- **Q1:** DND is the model for Broadcast message. Service Window is not used.
+- **Q2:** Broadcast End goes into the prototype (see the table above).
+- **Q5:** Direct recipient stays. The ID column is still chosen from the file.
+- **Q11:** the BA did not follow the question. It is reworded below and asked again.
+
+The rest are still open.
 
 | # | Topic | Deck | Prototype | Question |
 |---|---|---|---|---|
@@ -38,7 +46,7 @@ None of these are built. Each needs a ruling.
 | Q8 | Start fields | Start Date and Start Time (local) as two fields. | One Start date and time field (PR #2). The BA's screenshot shows the older two-field build. | Is one field acceptable? |
 | Q9 | Status | Activated, Sending, Paused outside the window, Completed, Expired. | Draft, Scheduled, Sending, Paused, Completed. | Confirm the status set, and whether Expired is needed (see Q2). |
 | Q10 | SMS counter | `109/160`. | `n characters · n SMS`, with 70 per SMS in Thai. | Which counter? |
-| Q11 | Overnight DND | Not covered. | A period belongs to the day it starts (see above). | Should Mon–Fri 18:00–08:00 also cover Monday 00:00–08:00? |
+| Q11 | Overnight DND | Not covered. | A period that crosses midnight belongs to the day it starts. Ticking Mon–Fri on 18:00–08:00 covers Monday night to Friday night, so Sunday night into Monday 00:00–08:00 is open. With the BA's example the weekend ends at Monday 00:00 and sending starts at midnight, not 08:00. | Which one: (a) keep this, and tick Sun as well to keep Monday morning quiet; or (b) count the morning part of a period as the day it ends, so ticking Mon also covers Monday 00:00–08:00? |
 | Q12 | DND limits | Not covered. | Any number of periods; overlapping periods are allowed. | Is there a maximum number of periods? |
 
 Already aligned:
@@ -81,3 +89,4 @@ The original build has none of this copy. Change it here if the BA rules otherwi
 | Report reasons | SMS: `Invalid mobile number`, `Number not reachable`. Email: `Mailbox not found`, `Message rejected`. Push: `No active device`. |
 | Do Not Disturb | `Add period`, `All day`. In the list, drawer and dialog: `Sat, Sun, All day`, and `+N more` after two lines. |
 | Quiet period picker | Header `Time`. Screen reader labels: `Hour`, `Minute`, `Remove quiet period N`. |
+| Broadcast End | Field `End date and time (optional)`, button `Clear`. Error `End must be later than the start`. Delivery note: `Sending stops at {end}; recipients not sent by then are counted as Not sent.` Drawer: `Broadcast end`, `Not sent`, `The broadcast ended at {end}. {n} recipients were not sent.` Report: `Not sent` / `Broadcast ended`. Confirm dialog: `No end date`. Fixture BC-0001 *Savings interest rate update*. |

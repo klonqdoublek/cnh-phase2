@@ -12,8 +12,8 @@ The date picker came over on `update/broadcast-date-picker` (PR #2). Until that 
 
 | CNH | CMS source | How it differs |
 |---|---|---|
-| `components/fields/DateTimeInput.tsx` | `components/fields/DateTimeInput.tsx` | No `optional`, no `clearable` (so no Clear), no `labelSize`. `minuteStep` is `1 \| 5 \| 30`; CMS has `1 \| 5`, default 5. Adds `min` (earlier days are muted). Copy is literal, not `FIELDS_COPY`. |
-| `components/fields/useDateTimeField.ts` | `hooks/useDateTimeField.ts` | Today is the real date, not CMS's pinned `TODAY`. Days before `min` cannot be picked. No `clear`. |
+| `components/fields/DateTimeInput.tsx` | `components/fields/DateTimeInput.tsx` | No `labelSize`. `optional` and `clearable` (Clear) were dropped at first and ported back for Broadcast End on `add/broadcast-end`. `minuteStep` is `1 \| 5 \| 30`; CMS has `1 \| 5`, default 5. Adds `min` (earlier days are muted). Copy is literal, not `FIELDS_COPY`. |
+| `components/fields/useDateTimeField.ts` | `hooks/useDateTimeField.ts` | Today is the real date, not CMS's pinned `TODAY`. Days before `min` cannot be picked. `clear` came back with Broadcast End. |
 | `components/fields/PeriodCellButton.tsx` | same | Byte-identical. |
 | `components/fields/picker-state-gaps.ts` | same | Only the header comment differs. |
 | `components/fields/PickerHeaderLabel.tsx`, `period-cells.tsx`, `date-parts.ts` | same | Imports point at the local `date-parts` instead of CMS enums and constants. Same logic. |
