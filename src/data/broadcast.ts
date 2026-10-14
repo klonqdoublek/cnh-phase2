@@ -175,11 +175,6 @@ export const DAYS = [
   { day: 0, label: 'Sun' },
 ]
 
-export const TIMES = Array.from(
-  { length: 48 },
-  (_, i) => `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`,
-)
-
 export type Dnd = { enabled: boolean; days: number[]; from: string; to: string; timeZone: string }
 
 export const DEFAULT_DND: Dnd = { enabled: true, days: [1, 2, 3, 4, 5], from: '20:00', to: '08:00', timeZone: 'Asia/Bangkok' }
