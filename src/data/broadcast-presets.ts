@@ -14,6 +14,7 @@ export const FORM_PRESETS = [
   'filled',
   'quiet',
   'dnd-rules',
+  'end',
   'confirm',
   'submitting',
   'fail-dialog',
@@ -75,6 +76,8 @@ export type FormSeed = {
   mode?: 'now' | 'schedule'
   /** Days from today, and HH:mm. */
   start?: { inDays: number; time: string }
+  /** Broadcast End: days from today, and HH:mm. */
+  end?: { inDays: number; time: string }
   dnd?: Dnd
   /** A dialog open on arrival. */
   open?: 'confirm' | 'submitting' | 'fail' | 'leave'
@@ -129,6 +132,13 @@ export function formSeed(preset: FormPreset): FormSeed {
       return { ...filled, mode: 'schedule', start: { inDays: nextWeekday(), time: '21:00' }, dnd: DEFAULT_DND }
     case 'dnd-rules':
       return { ...filled, mode: 'schedule', start: { inDays: nextSaturday(), time: '10:00' }, dnd: BA_DND }
+    case 'end':
+      return {
+        ...filled,
+        mode: 'schedule',
+        start: { inDays: nextWeekday(), time: '10:00' },
+        end: { inDays: nextWeekday(), time: '12:00' },
+      }
     case 'confirm':
       return { ...filled, open: 'confirm' }
     case 'submitting':
