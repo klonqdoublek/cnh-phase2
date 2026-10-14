@@ -118,6 +118,11 @@ export function useDateTimeField({
     setView({ year: today.year, month: today.month })
     views.resetView()
   }
+  /* CMS "Select Clear": the field empties at once. */
+  const clear = () => {
+    setPendingTime(null)
+    onChange('')
+  }
   const toggle = () => (open ? setOpen(false) : openPicker())
 
   const shownHour = selected ? selected.hour : pendingTime?.[0]
@@ -144,6 +149,7 @@ export function useDateTimeField({
     selectHour,
     selectMinute,
     selectToday,
+    clear,
     toggle,
   }
 }

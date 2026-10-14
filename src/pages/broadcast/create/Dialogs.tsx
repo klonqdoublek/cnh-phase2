@@ -71,8 +71,12 @@ export function Dialogs({ f, onBack }: { f: BroadcastForm; onBack: () => void })
             <dd className="m-0 text-[var(--color-text-primary-default)]">
               {f.mode === 'now' ? 'As soon as possible' : f.start && fmtDateTime(f.start)}
             </dd>
+            <dt className="text-[var(--color-text-secondary-default)]">Broadcast end</dt>
+            <dd className="m-0 text-[var(--color-text-primary-default)]">
+              {f.end ? fmtDateTime(new Date(f.end)) : 'No end date'}
+            </dd>
             <dt className="text-[var(--color-text-secondary-default)]">Do Not Disturb</dt>
-            <dd className="m-0 text-[var(--color-text-primary-default)]">{fmtDnd(f.dnd)}</dd>
+            <dd className="m-0 whitespace-pre-line text-[var(--color-text-primary-default)]">{fmtDnd(f.dnd)}</dd>
           </dl>
         </ConfirmDialog>
       )}

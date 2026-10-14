@@ -2,7 +2,7 @@
  * (`#/broadcast/create/<preset>`, `#/broadcast/<list preset>`), and the seeds
  * each Create preset fills the form with. */
 
-import { DEFAULT_DND, type BroadcastContent, type Dnd, type ListToast, type RecipientType } from './broadcast'
+import { BA_DND, DEFAULT_DND, type BroadcastContent, type Dnd, type ListToast, type RecipientType } from './broadcast'
 import type { Channel } from './templates'
 
 export const FORM_PRESETS = [
@@ -13,6 +13,8 @@ export const FORM_PRESETS = [
   'draft-no-name',
   'filled',
   'quiet',
+  'dnd-rules',
+  'end',
   'confirm',
   'submitting',
   'fail-dialog',
@@ -74,6 +76,8 @@ export type FormSeed = {
   mode?: 'now' | 'schedule'
   /** Days from today, and HH:mm. */
   start?: { inDays: number; time: string }
+  /** Broadcast End: days from today, and HH:mm. */
+  end?: { inDays: number; time: string }
   dnd?: Dnd
   /** A dialog open on arrival. */
   open?: 'confirm' | 'submitting' | 'fail' | 'leave'
@@ -102,6 +106,9 @@ export const nextWeekday = () => {
   return 1
 }
 
+/** Days until the next Saturday, so a start then waits out the weekend rule. */
+export const nextSaturday = () => ((6 - new Date().getDay() + 7) % 7) || 7
+
 export function formSeed(preset: FormPreset): FormSeed {
   switch (preset) {
     case 'file-error':
@@ -123,6 +130,15 @@ export function formSeed(preset: FormPreset): FormSeed {
       return filled
     case 'quiet':
       return { ...filled, mode: 'schedule', start: { inDays: nextWeekday(), time: '21:00' }, dnd: DEFAULT_DND }
+    case 'dnd-rules':
+      return { ...filled, mode: 'schedule', start: { inDays: nextSaturday(), time: '10:00' }, dnd: BA_DND }
+    case 'end':
+      return {
+        ...filled,
+        mode: 'schedule',
+        start: { inDays: nextWeekday(), time: '10:00' },
+        end: { inDays: nextWeekday(), time: '12:00' },
+      }
     case 'confirm':
       return { ...filled, open: 'confirm' }
     case 'submitting':

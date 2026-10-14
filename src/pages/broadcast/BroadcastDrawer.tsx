@@ -11,6 +11,8 @@ import {
   fmtDateTime,
   fmtDnd,
   fmtNumber,
+  quietUntil,
+  waitingOf,
   type Broadcast,
   type BroadcastStatus as Status,
 } from '@/data/broadcast'
@@ -26,17 +28,29 @@ export type BroadcastDrawerProps = {
   onEdit: () => void
 }
 
+/** HH:mm the current quiet period ends, or the first rule's end when now is
+ *  outside every rule (the fixtures are dated, the clock is not). */
+function resumesAt(b: Broadcast) {
+  const end = quietUntil(new Date(), b.dnd)
+  if (end) return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`
+  const rule = b.dnd.rules[0]
+  return rule && !rule.allDay ? rule.to : '00:00'
+}
+
 const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
   Draft: () => 'Not submitted yet. Nothing is sent until the broadcast is submitted.',
   Scheduled: (b) => `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
   Sending: () => 'Messages are being sent.',
-  Paused: (b) => `Inside the quiet period. Sending resumes at ${b.dnd.to}.`,
-  Completed: () => 'Every recipient was sent a message.',
+  Paused: (b) => `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`,
+  Completed: (b) =>
+    b.notSent && b.end
+      ? `The broadcast ended at ${fmtDateTime(new Date(b.end))}. ${fmtNumber(b.notSent)} recipients were not sent.`
+      : 'Every recipient was sent a message.',
 }
 
 function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
   const draft = b.status === 'Draft'
-  const waiting = Math.max(0, b.recipients - b.success - b.failed)
+  const waiting = waitingOf(b)
   const c = b.content
   return [
     ...(draft
@@ -49,6 +63,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
               ['Total recipients', fmtNumber(b.recipients)],
               ['Success', fmtNumber(b.success)],
               ['Failed', fmtNumber(b.failed)],
+              ...(b.notSent ? [['Not sent', fmtNumber(b.notSent)]] : []),
               ['Waiting to send', fmtNumber(waiting)],
             ] as [string, string][],
             note: STATUS_LINE[b.status](b),
@@ -78,6 +93,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
             ? `As soon as possible · ${fmtDateTime(new Date(b.start))}`
             : fmtDateTime(new Date(b.start)),
         ],
+        ['Broadcast end', b.end ? fmtDateTime(new Date(b.end)) : ''],
         ['Do Not Disturb', fmtDnd(b.dnd)],
       ],
       note: draft ? STATUS_LINE.Draft(b) : undefined,

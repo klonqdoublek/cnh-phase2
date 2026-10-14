@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   BROADCAST_COPY,
   DEFAULT_DND,
+  dndRule,
   MESSAGE_MAX,
   checkRecipients,
   fieldsOf,
@@ -15,6 +16,7 @@ import {
   type BroadcastContent,
   type BroadcastStatus,
   type Dnd,
+  type DndRule,
   type RecipientType,
 } from '@/data/broadcast'
 import { formSeed, type FormPreset, type FormSeed } from '@/data/broadcast-presets'
@@ -47,8 +49,9 @@ export type FormErrors = Partial<
     | keyof BroadcastContent
     | 'startDate'
     | 'startTime'
-    | 'dndDays'
-    | 'dndTime',
+    | 'end'
+    | `dndDays:${string}`
+    | `dndTime:${string}`,
     string
   >
 >
@@ -118,6 +121,14 @@ export function useBroadcastForm({
   const [startTime, setStartTime] = useState(() =>
     draftStart ? `${pad(draftStart.getHours())}:${pad(draftStart.getMinutes())}` : (seed.start?.time ?? ''),
   )
+  /** Broadcast End, `YYYY-MM-DDTHH:mm` or '' for none. */
+  const [end, setEnd] = useState(() => {
+    if (initial) return initial.end ?? ''
+    if (!seed.end) return ''
+    const d = new Date()
+    d.setDate(d.getDate() + seed.end.inDays)
+    return `${ymd(d)}T${seed.end.time}`
+  })
   const [dnd, setDnd] = useState<Dnd>(seed.dnd ?? DEFAULT_DND)
   const [leaveOpen, setLeaveOpen] = useState(seed.open === 'leave')
   const [confirmOpen, setConfirmOpen] = useState(seed.open === 'confirm')
@@ -196,9 +207,19 @@ export function useBroadcastForm({
   const first = start ? firstSend(start, dnd) : null
   const waits = !!(start && first && first.getTime() !== start.getTime())
 
-  const setDndPart = (part: Partial<Dnd>) => {
-    setDnd((d) => ({ ...d, ...part }))
-    clear('dndDays', 'dndTime')
+  const setDndEnabled = (enabled: boolean) => {
+    setDnd((d) => ({ ...d, enabled }))
+    clear(...dnd.rules.flatMap((r) => [`dndDays:${r.id}`, `dndTime:${r.id}`] as ErrorKey[]))
+  }
+  const setDndTimeZone = (timeZone: string) => setDnd((d) => ({ ...d, timeZone }))
+  const setDndRule = (id: string, part: Partial<DndRule>) => {
+    setDnd((d) => ({ ...d, rules: d.rules.map((r) => (r.id === id ? { ...r, ...part } : r)) }))
+    clear(`dndDays:${id}`, `dndTime:${id}`)
+  }
+  const addDndRule = () => setDnd((d) => ({ ...d, rules: [...d.rules, dndRule()] }))
+  const removeDndRule = (id: string) => {
+    setDnd((d) => ({ ...d, rules: d.rules.filter((r) => r.id !== id) }))
+    clear(`dndDays:${id}`, `dndTime:${id}`)
   }
 
   const validate = () => {
@@ -221,8 +242,12 @@ export function useBroadcastForm({
       if (!startTime) e.startTime = BROADCAST_COPY.required
       if (start && start <= new Date()) e.startDate = BROADCAST_COPY.startPast
     }
-    if (dnd.enabled && !dnd.days.length) e.dndDays = BROADCAST_COPY.dndNoDay
-    if (dnd.enabled && dnd.from === dnd.to) e.dndTime = BROADCAST_COPY.dndSame
+    if (end && start && new Date(end) <= start) e.end = BROADCAST_COPY.endBeforeStart
+    if (dnd.enabled)
+      for (const rule of dnd.rules) {
+        if (!rule.days.length) e[`dndDays:${rule.id}`] = BROADCAST_COPY.dndNoDay
+        if (!rule.allDay && rule.from === rule.to) e[`dndTime:${rule.id}`] = BROADCAST_COPY.dndSame
+      }
     return e
   }
 
@@ -250,6 +275,7 @@ export function useBroadcastForm({
     recipientColumn: column,
     startMode: mode,
     start: iso(start ?? new Date()),
+    end: end || undefined,
     dnd,
     status,
     success: 0,
@@ -325,8 +351,14 @@ export function useBroadcastForm({
     start,
     first,
     waits,
+    end,
+    setEnd,
     dnd,
-    setDndPart,
+    setDndEnabled,
+    setDndTimeZone,
+    setDndRule,
+    addDndRule,
+    removeDndRule,
     dirty,
     leaveOpen,
     setLeaveOpen,
