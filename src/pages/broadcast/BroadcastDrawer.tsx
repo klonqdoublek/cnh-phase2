@@ -2,9 +2,22 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/bbl/button'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
+import { OutlineButton } from '@/bbl/outline-button'
 import { DetailDrawer } from '@/patterns/detail-drawer'
-import { firstSend, fmtDateTime, fmtDnd, fmtNumber, quietUntil, type Broadcast, type BroadcastStatus as Status } from '@/data/broadcast'
+import {
+  deliveryReportCsv,
+  deliveryReportName,
+  firstSend,
+  fmtDateTime,
+  fmtDnd,
+  fmtNumber,
+  quietUntil,
+  waitingOf,
+  type Broadcast,
+  type BroadcastStatus as Status,
+} from '@/data/broadcast'
 import { cn } from '@/lib/cn'
+import { downloadText } from '@/lib/download'
 import { BroadcastStatus } from './list/BroadcastStatus'
 import { DrawerSection, Meta, type DrawerSectionSpec } from './list/drawer-parts'
 
@@ -29,12 +42,15 @@ const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
   Scheduled: (b) => `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
   Sending: () => 'Messages are being sent.',
   Paused: (b) => `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`,
-  Completed: () => 'Every recipient was sent a message.',
+  Completed: (b) =>
+    b.notSent && b.end
+      ? `The broadcast ended at ${fmtDateTime(new Date(b.end))}. ${fmtNumber(b.notSent)} recipients were not sent.`
+      : 'Every recipient was sent a message.',
 }
 
 function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
   const draft = b.status === 'Draft'
-  const waiting = Math.max(0, b.recipients - b.success - b.failed)
+  const waiting = waitingOf(b)
   const c = b.content
   return [
     ...(draft
@@ -47,9 +63,21 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
               ['Total recipients', fmtNumber(b.recipients)],
               ['Success', fmtNumber(b.success)],
               ['Failed', fmtNumber(b.failed)],
+              ...(b.notSent ? [['Not sent', fmtNumber(b.notSent)]] : []),
               ['Waiting to send', fmtNumber(waiting)],
             ] as [string, string][],
             note: STATUS_LINE[b.status](b),
+            /* Only once something was attempted — Sending, Paused, Completed. */
+            action:
+              b.success + b.failed > 0 ? (
+                <OutlineButton
+                  className="h-[32px]"
+                  onClick={() => downloadText(deliveryReportName(b), deliveryReportCsv(b))}
+                >
+                  Download report
+                  <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
+                </OutlineButton>
+              ) : undefined,
           },
         ]),
     {
@@ -65,6 +93,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
             ? `As soon as possible · ${fmtDateTime(new Date(b.start))}`
             : fmtDateTime(new Date(b.start)),
         ],
+        ['Broadcast end', b.end ? fmtDateTime(new Date(b.end)) : ''],
         ['Do Not Disturb', fmtDnd(b.dnd)],
       ],
       note: draft ? STATUS_LINE.Draft(b) : undefined,

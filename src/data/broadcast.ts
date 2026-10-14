@@ -37,6 +37,7 @@ export const BROADCAST_COPY = {
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
   pickField: 'Click in a message field first, then choose a field to insert',
   startPast: 'Start must be later than the current time',
+  endBeforeStart: 'End must be later than the start',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
   submitTitle: 'Submit this broadcast?',
@@ -300,10 +301,15 @@ export type Broadcast = {
   startMode: 'now' | 'schedule'
   /** `YYYY-MM-DDTHH:mm`, local time. */
   start: string
+  /** Broadcast End (optional, BA 2026-10-14): sending stops here, and whoever
+   *  is still waiting is counted as Not sent. `YYYY-MM-DDTHH:mm`. */
+  end?: string
   dnd: Dnd
   status: BroadcastStatus
   success: number
   failed: number
+  /** Recipients still unsent when the end was reached. */
+  notSent?: number
   content: BroadcastContent
   createdBy: string
   createdAt: string
@@ -361,6 +367,7 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-10-12T09:00',
+    end: '2026-10-16T18:00',
     dnd: BA_DND,
     status: 'Scheduled',
     success: 0,
@@ -448,6 +455,28 @@ export const BROADCASTS: Broadcast[] = [
     createdBy: 'Naree R.',
     createdAt: '2026-09-19T14:30',
   },
+  /* The deck's scenario F (composed, 2026-10-14): the end came before every
+     recipient was sent, so 174 are Not sent and the broadcast is Completed. */
+  {
+    id: 'BC-0001',
+    name: 'Savings interest rate update',
+    description: 'Tell savings customers about the new interest rate.',
+    channels: ['SMS'],
+    audienceFile: 'savings-customers.csv',
+    recipients: 1000,
+    ...cis,
+    startMode: 'schedule',
+    start: '2026-09-15T10:00',
+    end: '2026-09-15T12:00',
+    dnd: DEFAULT_DND,
+    status: 'Completed',
+    success: 820,
+    failed: 6,
+    notSent: 174,
+    content: content('Dear Customer, effective 1 October 2026, our savings account interest rate will be updated. Thank you.'),
+    createdBy: 'Panisa R.',
+    createdAt: '2026-09-12T09:30',
+  },
 ]
 
 export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'accent' | 'positive'> = {
@@ -458,8 +487,50 @@ export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'acce
   Completed: 'positive',
 }
 
+/** Recipients not yet attempted: not sent, not failed, not cut off by the end. */
+export const waitingOf = (b: Broadcast) => Math.max(0, b.recipients - b.success - b.failed - (b.notSent ?? 0))
+
 export const EMPTY = '–'
 export const fmtNumber = (n: number) => n.toLocaleString('en-US')
 
 /** The toast the list shows after Create returns — held open on its preset route. */
 export type ListToast = { name: string; draft: boolean }
+
+/* ── delivery report ───────────────────────────────────────────────────── */
+
+/* The drawer's Download report (BA, 2026-10-14). A broadcast here carries
+ * counts, not per-recipient attempts, so the rows are made up from the counts:
+ * one row per recipient, Success then Failed then Waiting to send, keyed by the
+ * file's ID column. The totals always equal the drawer's. Copy is composed —
+ * the original build has no report (docs/broadcast-gaps.md). */
+
+const FAIL_REASONS: Record<Channel, string[]> = {
+  SMS: ['Invalid mobile number', 'Number not reachable'],
+  Email: ['Mailbox not found', 'Message rejected'],
+  'Push notification': ['No active device'],
+}
+
+const recipientId = (column: string, n: number) => {
+  if (/mobile|phone|tel/i.test(column)) return `08${String(10000000 + n * 7919).slice(-8)}`
+  if (/e-?mail/i.test(column)) return `customer${String(n).padStart(4, '0')}@example.com`
+  return `CIS${String(n).padStart(6, '0')}`
+}
+
+const csvCell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value)
+
+export const deliveryReportName = (b: Broadcast) => `${b.id}-delivery-report.csv`
+
+export function deliveryReportCsv(b: Broadcast): string {
+  const waiting = waitingOf(b)
+  const reasons = b.channels.flatMap((c) => FAIL_REASONS[c])
+  const rows = [[b.recipientColumn, 'Channel', 'Result', 'Reason']]
+  let n = 0
+  const add = (count: number, result: string, reason: (i: number) => string) => {
+    for (let i = 0; i < count; i++) rows.push([recipientId(b.recipientColumn, ++n), b.channels.join(', '), result, reason(i)])
+  }
+  add(b.success, 'Success', () => '')
+  add(b.failed, 'Failed', (i) => reasons[i % reasons.length])
+  add(b.notSent ?? 0, 'Not sent', () => 'Broadcast ended')
+  add(waiting, 'Waiting to send', () => '')
+  return rows.map((row) => row.map(csvCell).join(',')).join('\n') + '\n'
+}

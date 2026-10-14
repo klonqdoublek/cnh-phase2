@@ -49,6 +49,7 @@ export type FormErrors = Partial<
     | keyof BroadcastContent
     | 'startDate'
     | 'startTime'
+    | 'end'
     | `dndDays:${string}`
     | `dndTime:${string}`,
     string
@@ -120,6 +121,14 @@ export function useBroadcastForm({
   const [startTime, setStartTime] = useState(() =>
     draftStart ? `${pad(draftStart.getHours())}:${pad(draftStart.getMinutes())}` : (seed.start?.time ?? ''),
   )
+  /** Broadcast End, `YYYY-MM-DDTHH:mm` or '' for none. */
+  const [end, setEnd] = useState(() => {
+    if (initial) return initial.end ?? ''
+    if (!seed.end) return ''
+    const d = new Date()
+    d.setDate(d.getDate() + seed.end.inDays)
+    return `${ymd(d)}T${seed.end.time}`
+  })
   const [dnd, setDnd] = useState<Dnd>(seed.dnd ?? DEFAULT_DND)
   const [leaveOpen, setLeaveOpen] = useState(seed.open === 'leave')
   const [confirmOpen, setConfirmOpen] = useState(seed.open === 'confirm')
@@ -233,6 +242,7 @@ export function useBroadcastForm({
       if (!startTime) e.startTime = BROADCAST_COPY.required
       if (start && start <= new Date()) e.startDate = BROADCAST_COPY.startPast
     }
+    if (end && start && new Date(end) <= start) e.end = BROADCAST_COPY.endBeforeStart
     if (dnd.enabled)
       for (const rule of dnd.rules) {
         if (!rule.days.length) e[`dndDays:${rule.id}`] = BROADCAST_COPY.dndNoDay
@@ -265,6 +275,7 @@ export function useBroadcastForm({
     recipientColumn: column,
     startMode: mode,
     start: iso(start ?? new Date()),
+    end: end || undefined,
     dnd,
     status,
     success: 0,
@@ -340,6 +351,8 @@ export function useBroadcastForm({
     start,
     first,
     waits,
+    end,
+    setEnd,
     dnd,
     setDndEnabled,
     setDndTimeZone,

@@ -511,25 +511,48 @@ export function Delivery({ f }: F) {
           onSelect={() => f.setMode('schedule')}
         />
       </div>
-      {f.mode === 'schedule' && (
-        /* One field, as CMS's Effective date: webds' Date Time Picker. The
-           form still keeps the date and the time apart. */
+      {/* Start under Schedule delivery, End under the second card's column:
+          each field is one mode card wide. */}
+      <div className="flex items-start gap-[var(--space-4)]">
+        {f.mode === 'schedule' ? (
+          /* One field, as CMS's Effective date: webds' Date Time Picker. The
+             form still keeps the date and the time apart. */
+          <DateTimeInput
+            label="Start date and time"
+            required
+            className="w-[604px]"
+            value={f.startDate && f.startTime ? `${f.startDate}T${f.startTime}` : ''}
+            min={ymd(new Date())}
+            minuteStep={5}
+            error={!!(f.errors.startDate || f.errors.startTime)}
+            message={f.errors.startDate ?? f.errors.startTime}
+            onChange={(v) => {
+              f.setStartDate(v.slice(0, 10))
+              f.setStartTime(v.slice(11, 16))
+              f.clear('startDate', 'startTime', 'end')
+            }}
+          />
+        ) : (
+          <span className="w-[604px] shrink-0" />
+        )}
+        {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
+            Expiry date. Sending stops here; whoever is left is Not sent. */}
         <DateTimeInput
-          label="Start date and time"
-          required
+          label="End date and time"
+          optional
+          clearable
           className="w-[604px]"
-          value={f.startDate && f.startTime ? `${f.startDate}T${f.startTime}` : ''}
-          min={ymd(new Date())}
+          value={f.end}
+          min={f.mode === 'schedule' && f.startDate ? f.startDate : ymd(new Date())}
           minuteStep={5}
-          error={!!(f.errors.startDate || f.errors.startTime)}
-          message={f.errors.startDate ?? f.errors.startTime}
+          error={!!f.errors.end}
+          message={f.errors.end}
           onChange={(v) => {
-            f.setStartDate(v.slice(0, 10))
-            f.setStartTime(v.slice(11, 16))
-            f.clear('startDate', 'startTime')
+            f.setEnd(v)
+            f.clear('end')
           }}
         />
-      )}
+      </div>
       <Outlook f={f} />
     </div>
   )
@@ -548,6 +571,7 @@ function Outlook({ f }: F) {
             ? 'Sending starts right after you submit.'
             : `Sending starts at ${fmtDateTime(f.start)}.`}
         {f.dnd.enabled && ' Sending pauses during the quiet period and resumes after it.'}
+        {f.end && ` Sending stops at ${fmtDateTime(new Date(f.end))}; recipients not sent by then are counted as Not sent.`}
       </span>
     </div>
   )
