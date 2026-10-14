@@ -32,6 +32,10 @@ BA answers on 14 Oct 2026:
 - **Q5:** Direct recipient stays. The ID column is still chosen from the file.
 - **Q11:** TBC (14 Oct). The BA did not follow the first wording; the question is reworded below and parked until the next review. The prototype keeps the current behaviour.
 
+From the BA meeting recording (reviewed 14 Oct; to confirm with the BA on 15 Oct):
+
+- **Free headers.** The file does not need a header called CIS ID. The Field select says which column holds the data; CIS IDs may sit in a column called `Recipient`. The prototype already works this way: it guesses the column from the header and asks the user when the guess fails. This leaves Q13 and Q14 open.
+
 The rest are still open.
 
 | # | Topic | Deck | Prototype | Question |
@@ -48,6 +52,8 @@ The rest are still open.
 | Q10 | SMS counter | `109/160`. | `n characters · n SMS`, with 70 per SMS in Thai. | Which counter? |
 | Q11 (TBC) | Overnight DND | Not covered. | A period that crosses midnight belongs to the day it starts. Ticking Mon–Fri on 18:00–08:00 covers Monday night to Friday night, so Sunday night into Monday 00:00–08:00 is open. With the BA's example the weekend ends at Monday 00:00 and sending starts at midnight, not 08:00. | Which one: (a) keep this, and tick Sun as well to keep Monday morning quiet; or (b) count the morning part of a period as the day it ends, so ticking Mon also covers Monday 00:00–08:00? |
 | Q12 | DND limits | Not covered. | Any number of periods; overlapping periods are allowed. | Is there a maximum number of periods? |
+| Q13 | Contacts in CIS mode | "The system uses the available contact for each channel": the master file holds Mobile number and Email address. | CIS mode maps one column, CIS ID. | Do SMS and Email in CIS mode send to the file's mobile and email, or to the contacts in the CIS master? If the file's, the user must also map the mobile and email columns, since headers are free. |
+| Q14 | CIS ID format | Example `CIS000123`. | Sample file uses `100001`. Only "required" and "no duplicates" are checked. | Does a CIS ID have a fixed format? With free headers, the format is the only way to catch a wrong column, such as account numbers picked as CIS IDs. |
 
 Already aligned:
 

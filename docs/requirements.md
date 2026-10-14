@@ -103,6 +103,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 3. **Recipient mapping and channels.**
    - Recipient type **CIS** (CIS ID column; any of Push, Email, SMS) or **Direct recipient** (a mobile or email column; Email *or* SMS only).
    - The ID column is chosen from the file's headers. The BA confirmed on 14 Oct that Direct recipient stays.
+   - The header's name does not matter. The field only says which column holds the data, so CIS IDs may sit in a column called `Recipient` (BA meeting recording, reviewed 14 Oct; **to confirm with the BA on 15 Oct**).
 4. **Manual content.**
    - The file's columns become chips that insert `{{COLUMN}}`.
    - One card per channel: Push title and message, Email subject and body, SMS message with an SMS segment counter.
@@ -137,7 +138,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 ### Recipient file (from the BA deck; not every rule is in the prototype)
 
 - One row per recipient (CIS).
-- Columns: CIS ID\*, Mobile number, Email address, First name, Last name, Tier.
+- Columns: CIS ID\*, Mobile number, Email address, First name, Last name, Tier. These names are the deck's example, not required headers (see step 3).
 - **Prototype checks:** ID required; mobile and email well formed; no duplicate IDs.
 - **Deck checks the prototype does not:** at least one contact method per row; no duplicate mobile or email in the file; data "valid and active". This is Q7.
 - **Push:** finds device tokens from CIS ID.
@@ -154,10 +155,11 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 | 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2). |
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
+| 14 Oct 2026 | From the meeting recording, to confirm with the BA on 15 Oct: the file's headers are free. The Field select says which column holds the recipient data; it does not check the header's name. |
 
 ## Open items
 
-- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC) and Q12. See [broadcast-gaps.md](broadcast-gaps.md).
+- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12, Q13 and Q14. See [broadcast-gaps.md](broadcast-gaps.md).
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy).
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.
