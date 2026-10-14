@@ -1,10 +1,9 @@
-import { useId, useState } from 'react'
+import { useState } from 'react'
 import { Checkbox } from '@/bbl/checkbox'
-import { FIELD_TEXT, FieldBox, FieldHint, FieldLabel, FieldRoot, toneFor } from '@/bbl/field'
 import { RadioButton } from '@/bbl/radio-button'
 import { TextArea } from '@/bbl/text-area'
 import { FormField } from '@/patterns/form-field'
-import { TIMES, smsInfo } from '@/data/broadcast'
+import { smsInfo } from '@/data/broadcast'
 import { cn } from '@/lib/cn'
 
 /* The Create form's fields. Text, text area and select are webds `form-field`
@@ -106,8 +105,8 @@ export function SmsField({
   )
 }
 
-/** Select — webds `form-field`'s select. The menu is capped so the 48 half-hour
- *  times do not run off the screen (Select List has no height of its own). */
+/** Select — webds `form-field`'s select. The menu is capped so a long list
+ *  does not run off the screen (Select List has no height of its own). */
 export function Select({
   label,
   value,
@@ -151,64 +150,6 @@ export function Select({
         selectOutsideLabel="xl"
         onChange={(l) => onChange(items.find((o) => o.label === l)?.value ?? l)}
       />
-    </div>
-  )
-}
-
-export function TimeSelect(props: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  error?: string
-  required?: boolean
-  disabled?: boolean
-}) {
-  return <Select {...props} options={TIMES} placeholder="HH:mm" className="w-[220px]" />
-}
-
-/** Start date — webds field primitives around a native date control: the
- *  library's Date Field is a spec render with no editable state (a GAP). */
-export function DateInput({
-  label,
-  value,
-  onChange,
-  error,
-  min,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  error?: string
-  min?: string
-}) {
-  const [focused, setFocused] = useState(false)
-  const id = useId()
-  const state = error ? (value ? 'Error - Completed' : 'Error') : focused ? 'Focused' : value ? 'Completed' : 'Default'
-  const tone = toneFor(state)
-  return (
-    <div data-error={error ? 'true' : undefined} className="min-w-0">
-      <FieldRoot>
-        <label htmlFor={id} className="contents">
-          <FieldLabel colour="tertiary" required>
-            {label}
-          </FieldLabel>
-        </label>
-        <FieldBox part="Input Field Container" tone={tone} className="h-[56px] items-center p-[var(--space-4)]">
-          <input
-            id={id}
-            type="date"
-            value={value}
-            min={min}
-            aria-required
-            aria-invalid={!!error}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            onChange={(e) => onChange(e.target.value)}
-            className={cn('type-body-m w-full bg-transparent outline-none', value ? FIELD_TEXT.primary : FIELD_TEXT.placeholder)}
-          />
-        </FieldBox>
-        <FieldHint message={error} tone={tone} />
-      </FieldRoot>
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
+import { DateTimeInput } from '@/components/fields/DateTimeInput'
+import { TimeInput } from '@/components/fields/TimeInput'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
@@ -14,7 +16,7 @@ import { FormStep } from '@/patterns/console-page'
 import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import { Choice, DateInput, LABEL, ModeOption, NOTE, Select, SmsField, Text, TimeSelect } from './fields'
+import { Choice, LABEL, ModeOption, NOTE, Select, SmsField, Text } from './fields'
 import { ymd, type BroadcastForm } from './useBroadcastForm'
 
 type F = { f: BroadcastForm }
@@ -507,30 +509,23 @@ export function Delivery({ f }: F) {
         />
       </div>
       {f.mode === 'schedule' && (
-        <div className="flex w-full items-start gap-[var(--space-6)]">
-          <div className="w-[604px]">
-            <DateInput
-              label="Start date"
-              value={f.startDate}
-              min={ymd(new Date())}
-              error={f.errors.startDate}
-              onChange={(v) => {
-                f.setStartDate(v)
-                f.clear('startDate')
-              }}
-            />
-          </div>
-          <TimeSelect
-            label="Start time"
-            required
-            value={f.startTime}
-            error={f.errors.startTime}
-            onChange={(v) => {
-              f.setStartTime(v)
-              f.clear('startTime', 'startDate')
-            }}
-          />
-        </div>
+        /* One field, as CMS's Effective date: webds' Date Time Picker. The
+           form still keeps the date and the time apart. */
+        <DateTimeInput
+          label="Start date and time"
+          required
+          className="w-[604px]"
+          value={f.startDate && f.startTime ? `${f.startDate}T${f.startTime}` : ''}
+          min={ymd(new Date())}
+          minuteStep={30}
+          error={!!(f.errors.startDate || f.errors.startTime)}
+          message={f.errors.startDate ?? f.errors.startTime}
+          onChange={(v) => {
+            f.setStartDate(v.slice(0, 10))
+            f.setStartTime(v.slice(11, 16))
+            f.clear('startDate', 'startTime')
+          }}
+        />
       )}
       <Outlook f={f} />
     </div>
@@ -592,7 +587,7 @@ export function DndPanel({ f }: F) {
         </div>
         <div data-error={f.errors.dndTime ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
           <div className="flex items-end gap-[var(--space-4)]">
-            <TimeSelect
+            <TimeInput
               label="Quiet period from"
               value={dnd.from}
               disabled={!dnd.enabled}
@@ -601,7 +596,7 @@ export function DndPanel({ f }: F) {
             <span className="pb-[var(--space-4)] type-body-m text-[var(--color-text-secondary-default)]">to</span>
             {/* The original draws no label here, only the room for one, so the two
                 boxes share a line. */}
-            <TimeSelect label=" " value={dnd.to} disabled={!dnd.enabled} onChange={(v) => f.setDndPart({ to: v })} />
+            <TimeInput label=" " value={dnd.to} disabled={!dnd.enabled} onChange={(v) => f.setDndPart({ to: v })} />
           </div>
           {f.errors.dndTime && (
             <InlineMessage appearance="negative" size="xs">
