@@ -175,9 +175,36 @@ export const DAYS = [
   { day: 0, label: 'Sun' },
 ]
 
-export type Dnd = { enabled: boolean; days: number[]; from: string; to: string; timeZone: string }
+/** One quiet period: the days it starts on and its hours, or the whole day.
+ *  `to` before `from` runs overnight into the next day. */
+export type DndRule = { id: string; days: number[]; allDay: boolean; from: string; to: string }
+/** Do Not Disturb holds any number of quiet periods (BA, 2026-10-14 — e.g.
+ *  Mon – Fri 18:00–08:00 and Sat, Sun all day); the original build had one. */
+export type Dnd = { enabled: boolean; rules: DndRule[]; timeZone: string }
 
-export const DEFAULT_DND: Dnd = { enabled: true, days: [1, 2, 3, 4, 5], from: '20:00', to: '08:00', timeZone: 'Asia/Bangkok' }
+export const dndRule = (part: Partial<DndRule> = {}): DndRule => ({
+  id: `dnd-${Math.random().toString(36).slice(2, 8)}`,
+  days: [],
+  allDay: false,
+  from: '20:00',
+  to: '08:00',
+  ...part,
+})
+
+export const DEFAULT_DND: Dnd = {
+  enabled: true,
+  rules: [{ id: 'dnd-weekdays', days: [1, 2, 3, 4, 5], allDay: false, from: '20:00', to: '08:00' }],
+  timeZone: 'Asia/Bangkok',
+}
+/** The BA's own example (2026-10-14): weeknights, and the whole weekend. */
+export const BA_DND: Dnd = {
+  enabled: true,
+  rules: [
+    { id: 'dnd-weeknights', days: [1, 2, 3, 4, 5], allDay: false, from: '18:00', to: '08:00' },
+    { id: 'dnd-weekend', days: [6, 0], allDay: true, from: '00:00', to: '00:00' },
+  ],
+  timeZone: 'Asia/Bangkok',
+}
 export const TIME_ZONES = [{ value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)' }]
 
 const minutes = (hhmm: string) => {
@@ -192,24 +219,37 @@ const at = (base: Date, hhmm: string, addDays = 0) => {
   return d
 }
 
-/** When `t` falls in a quiet period, the moment that period ends; otherwise null. */
-export function quietUntil(t: Date, dnd: Dnd): Date | null {
-  if (!dnd.enabled || !dnd.days.length || dnd.from === dnd.to) return null
-  const overnight = minutes(dnd.from) > minutes(dnd.to)
+/** When `t` falls in one rule's quiet period, the moment that period ends. */
+function ruleUntil(t: Date, rule: DndRule): Date | null {
+  if (!rule.days.length || (!rule.allDay && rule.from === rule.to)) return null
+  const overnight = !rule.allDay && minutes(rule.from) > minutes(rule.to)
   for (const back of [1, 0]) {
     const day = at(t, '00:00', -back)
-    if (!dnd.days.includes(day.getDay())) continue
-    const from = at(day, dnd.from)
-    const to = at(day, dnd.to, overnight ? 1 : 0)
+    if (!rule.days.includes(day.getDay())) continue
+    const from = rule.allDay ? day : at(day, rule.from)
+    const to = rule.allDay ? at(day, '00:00', 1) : at(day, rule.to, overnight ? 1 : 0)
     if (t >= from && t < to) return to
   }
   return null
 }
 
-/** The first moment a broadcast starting at `t` can actually send. */
+/** When `t` falls in a quiet period, the moment that period ends; otherwise
+ *  null. Where rules overlap, the latest end wins. */
+export function quietUntil(t: Date, dnd: Dnd): Date | null {
+  if (!dnd.enabled) return null
+  let end: Date | null = null
+  for (const rule of dnd.rules) {
+    const until = ruleUntil(t, rule)
+    if (until && (!end || until > end)) end = until
+  }
+  return end
+}
+
+/** The first moment a broadcast starting at `t` can actually send — rules
+ *  that run into each other (Fri night, then all of Sat and Sun) chain. */
 export function firstSend(t: Date, dnd: Dnd): Date {
   let next = t
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 64; i++) {
     const end = quietUntil(next, dnd)
     if (!end) return next
     next = end
@@ -227,7 +267,12 @@ export const fmtDays = (days: number[]) => {
   return ordered.map((d) => DAYS.find((x) => x.day === d)!.label).join(', ')
 }
 
-export const fmtDnd = (dnd: Dnd) => (dnd.enabled ? `${fmtDays(dnd.days)}, ${dnd.from}–${dnd.to} (${dnd.timeZone})` : 'Off')
+/** "Mon – Fri, 18:00–08:00" or "Sat, Sun, All day". */
+export const fmtDndRule = (rule: DndRule) => `${fmtDays(rule.days)}, ${rule.allDay ? 'All day' : `${rule.from}–${rule.to}`}`
+
+/** Each rule on a line of its own, the time zone once at the end. */
+export const fmtDnd = (dnd: Dnd) =>
+  dnd.enabled ? `${dnd.rules.map(fmtDndRule).join('\n')} (${dnd.timeZone})` : 'Off'
 
 /* ── records ───────────────────────────────────────────────────────────── */
 
@@ -316,7 +361,7 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-10-12T09:00',
-    dnd: DEFAULT_DND,
+    dnd: BA_DND,
     status: 'Scheduled',
     success: 0,
     failed: 0,
