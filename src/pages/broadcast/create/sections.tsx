@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
@@ -12,6 +12,7 @@ import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
 import { PillChip } from '@/bbl/pill-chip'
+import { ScrollBar } from '@/bbl/scroll-bar'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
 import { ToggleSwitch } from '@/bbl/toggle-switch'
@@ -250,19 +251,91 @@ function Preview({ f }: F) {
   )
 }
 
-/** Bars that always show and can be dragged, drawn as webds Scroll Bar
- *  (12 track, 8 pill thumb, Component/Scroll Bar fills). webds' `ScrollBar`
- *  only draws a position, it cannot be dragged (gap), and the browser's own
- *  overlay bar on macOS stays hidden until a scroll starts — with a mouse
- *  wheel, nothing says the table goes on to the right. */
-const SCROLL_BARS = cn(
-  '[&::-webkit-scrollbar]:size-[12px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-corner]:bg-transparent',
-  '[&::-webkit-scrollbar-thumb]:rounded-[var(--radius-full)] [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-padding',
-  '[&::-webkit-scrollbar-thumb]:bg-[var(--color-component-scroll-bar-default)] [&::-webkit-scrollbar-thumb:active]:bg-[var(--color-component-scroll-bar-pressed)]',
-  /* A 100-row file makes a 200-tall box's thumb about 11 long — too short to
-     see. Both axes get a floor. */
-  '[&::-webkit-scrollbar-thumb:vertical]:min-h-[40px] [&::-webkit-scrollbar-thumb:horizontal]:min-w-[40px]',
-)
+/** A box that scrolls both ways under the library's Scroll Bars instead of
+ *  the browser's. The browser's are hidden: on macOS they are overlays that
+ *  stay out of sight until a scroll starts, so a freshly uploaded preview
+ *  said nothing about the rows below or the columns to the right. The bars
+ *  show as soon as the content overflows. webds' `ScrollBar` only draws a
+ *  position (gap), so pressing or dragging a track is wired here: the thumb
+ *  centres on the pointer. */
+function ScrollBox({ maxHeight, children }: { maxHeight: string; children: React.ReactNode }) {
+  const view = useRef<HTMLDivElement>(null)
+  type Thumb = { size: number; offset: number } | null
+  const [bars, setBars] = useState<{ x: Thumb; y: Thumb }>({ x: null, y: null })
+
+  const measure = useCallback(() => {
+    const el = view.current
+    if (!el) return
+    const thumb = (client: number, total: number, pos: number): Thumb => {
+      if (total <= client + 1) return null
+      /* A floor of 15%, or a 100-row file draws a thumb too short to see. */
+      const size = Math.max(15, (client / total) * 100)
+      return { size, offset: (pos / (total - client)) * (100 - size) }
+    }
+    setBars({
+      x: thumb(el.clientWidth, el.scrollWidth, el.scrollLeft),
+      y: thumb(el.clientHeight, el.scrollHeight, el.scrollTop),
+    })
+  }, [])
+
+  useLayoutEffect(() => {
+    const el = view.current
+    if (!el) return
+    measure()
+    el.addEventListener('scroll', measure, { passive: true })
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    if (el.firstElementChild) ro.observe(el.firstElementChild)
+    return () => {
+      el.removeEventListener('scroll', measure)
+      ro.disconnect()
+    }
+  }, [measure])
+
+  const press = (axis: 'x' | 'y') => (e: React.PointerEvent<HTMLDivElement>) => {
+    const track = e.currentTarget
+    const el = view.current
+    if (!el) return
+    e.preventDefault()
+    track.setPointerCapture(e.pointerId)
+    const to = (ev: PointerEvent) => {
+      const r = track.getBoundingClientRect()
+      if (axis === 'x') el.scrollLeft = ((ev.clientX - r.left) / r.width) * el.scrollWidth - el.clientWidth / 2
+      else el.scrollTop = ((ev.clientY - r.top) / r.height) * el.scrollHeight - el.clientHeight / 2
+    }
+    to(e.nativeEvent)
+    const up = () => {
+      track.removeEventListener('pointermove', to)
+      track.removeEventListener('pointerup', up)
+    }
+    track.addEventListener('pointermove', to)
+    track.addEventListener('pointerup', up)
+  }
+
+  return (
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] overflow-hidden rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]">
+      <div
+        ref={view}
+        className="min-w-0 overflow-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ maxHeight }}
+      >
+        {children}
+      </div>
+      {bars.y ? (
+        <div className="flex cursor-pointer touch-none" onPointerDown={press('y')}>
+          <ScrollBar appearance="thick" orientation="vertical" thumbSize={`${bars.y.size}%`} thumbOffset={`${bars.y.offset}%`} />
+        </div>
+      ) : (
+        <span />
+      )}
+      {bars.x && (
+        <div className="flex cursor-pointer touch-none flex-col" onPointerDown={press('x')}>
+          <ScrollBar appearance="thick" orientation="horizontal" thumbSize={`${bars.x.size}%`} thumbOffset={`${bars.x.offset}%`} />
+        </div>
+      )}
+    </div>
+  )
+}
 
 /** webds Table Header / Data Cells at a compact row height in a bordered grid.
  *  The cells' own 64 row is the data grid's; a validation list inside a card
@@ -331,17 +404,11 @@ function MiniTable({
     </div>
   )
   if (!visibleRows) return table
-  /* A row is a Body S line, py 8 and a 1px rule; the header is one more row,
-     and the 12 under them is the horizontal bar's track. */
+  /* A row is a Body S line, py 8 and a 1px rule; the header is one more row. */
   return (
-    <div
-      className={cn('min-w-0 overflow-auto rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]', SCROLL_BARS)}
-      style={{
-        maxHeight: `calc(${visibleRows + 1} * (var(--type-body-s-line-height) + 2 * var(--space-2) + 1px) + 12px)`,
-      }}
-    >
+    <ScrollBox maxHeight={`calc(${visibleRows + 1} * (var(--type-body-s-line-height) + 2 * var(--space-2) + 1px))`}>
       {table}
-    </div>
+    </ScrollBox>
   )
 }
 
