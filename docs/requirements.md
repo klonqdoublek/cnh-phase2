@@ -93,25 +93,28 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
   - **Edit** on a Draft only.
 - **Create and Edit broadcast:** one page with six steps, a sticky footer with **Save draft** and **Submit**, then a confirm dialog.
 
-### Create: the six steps
+### Create: the five steps
 
-1. **Basic information.** Broadcast name\* (max 100) and Description (max 250).
-2. **Audience file.**
-   - `.csv` or `.xlsx`, at most 10 MB and 1,000 recipients.
-   - After upload: a 5-row preview, a valid / invalid count, and a table of invalid rows. Invalid rows are skipped.
-   - Two sample files.
-3. **Recipient mapping and channels.**
-   - Recipient type **CIS** (CIS ID column; any of Push, Email, SMS) or **Direct recipient** (a mobile or email column; Email *or* SMS only).
+Layout and step copy follow draft 2.2 ([Figma 70:6699](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=70-6699), 15 Oct 2026). The draft's own numbering skips Step 4; the build numbers the steps 1–5.
+
+1. **Basic information.** One card, "General information": Broadcast name\* (max 100) above Description (max 250).
+2. **Validate Audience file.** One card, "Upload Audience file":
+   - Recipient type **CIS** (CIS ID column; any of Push, Email, SMS) or **Direct recipient** (a mobile or email column; Email *or* SMS only), side by side.
+   - Upload File\*: `.csv` or `.xlsx`, at most 10 MB and 1,000 recipients. After upload: a 5-row preview, a valid / invalid count, and a table of invalid rows. Invalid rows are skipped. Two sample files.
    - The ID column is chosen from the file's headers. The BA confirmed on 14 Oct that Direct recipient stays.
-4. **Manual content.**
-   - The file's columns become chips that insert `{{COLUMN}}`.
-   - One card per channel: Push title and message, Email subject and body, SMS message with an SMS segment counter.
-5. **Delivery.**
+   - Available fields: the file's columns as chips.
+3. **Manual content.**
+   - One card per channel, switched on and off in its own title row. The switches replace Step 3's channel checkboxes and Direct recipient's Email / SMS radio. Under Direct recipient, switching one on switches the other off. A card that is off keeps what was typed and disables it.
+   - Each card carries the file's columns as chips that insert `{{COLUMN}}` into that card.
+   - Fields are the Template form's TH fields: Push title (TH)\* (255) and Push message (TH)\* (2048); Email subject (TH)\* (255) and Email content (TH)\* (2048); SMS message (TH)\* (800).
+   - No channel on: an Alert above the cards and a red stroke on each card.
+4. **Delivery.**
    - **Send as soon as possible**, or **Schedule delivery** with Start date and time\* (5-minute steps, later than now).
    - Optional **End date and time**, later than the start, with Clear.
-6. **Do Not Disturb.**
-   - On or off.
-   - Any number of quiet periods. Each has its days and hours (5-minute steps) or **All day**.
+   - End sits on the left and Start on the right (draft 2.2; the requester kept it on 15 Oct).
+5. **DND** ("Prevent sending messages during quiet hours.").
+   - A "Do Not Disturb (DND)" card, on or off by its switch.
+   - Any number of quiet periods. Each has its days, then its hours (5-minute steps), then **All day**.
    - One time zone (Asia/Bangkok).
    - **Add period** adds one; a trash removes one when there are two or more.
 
@@ -154,6 +157,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 | 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2). |
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
+| 15 Oct 2026 | Create broadcast follows draft 2.2 (Figma 70:6699): five steps; channels switched on their own cards; content fields and limits from the Template form's TH fields; End left of Start. See "Create: the five steps". |
 
 ## Open items
 

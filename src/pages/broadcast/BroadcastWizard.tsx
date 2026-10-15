@@ -6,7 +6,7 @@ import { ConsolePage } from '@/patterns/console-page'
 import { BROADCAST_COPY, type Broadcast } from '@/data/broadcast'
 import type { FormPreset } from '@/data/broadcast-presets'
 import { Dialogs } from './create/Dialogs'
-import { AudienceFile, BasicInfo, ChannelCards, Delivery, DndPanel, FieldChips, Mapping, Section, type FocusRef } from './create/sections'
+import { AudienceFile, BasicInfo, ChannelAlert, ChannelCards, Delivery, DndPanel, Section, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
 
 export type SaveKind = 'draft' | 'submit'
@@ -21,11 +21,12 @@ export type BroadcastWizardProps = {
 }
 
 /**
- * Create / Edit broadcast — one page, six steps, the actions pinned below.
+ * Create / Edit broadcast — one page, five steps, the actions pinned below.
  * The frame is webds `console-page` (CNH's own: 82 header with a back mark,
  * a 1280 column scrolling in px 80 / py 32, a 76 footer); each step is its
- * `FormStep`. No Figma frame exists for this page; layout and copy are the
- * cnh-tm-phase2 build's.
+ * `FormStep`. Layout and step copy are draft 2.2 (Figma 70:6699, 15 Oct 2026):
+ * the channels moved from Step 3's checkboxes onto their own cards' switches,
+ * so Recipient mapping folded into the audience step.
  */
 export function BroadcastWizard({ onBack, onCreate, failNext, preset, initial }: BroadcastWizardProps) {
   const f = useBroadcastForm({ onCreate, failNext, preset, initial })
@@ -62,20 +63,20 @@ export function BroadcastWizard({ onBack, onCreate, failNext, preset, initial }:
         <Section title="Step 1: Basic information">
           <BasicInfo f={f} />
         </Section>
-        <Section title="Step 2: Audience file">
-          <AudienceFile f={f} />
+        <Section title="Step 2: Validate Audience file">
+          <AudienceFile f={f} focus={focus} />
         </Section>
-        <Section title="Step 3: Recipient mapping & channels">
-          <Mapping f={f} />
-        </Section>
-        <Section title="Step 4: Manual content" bare>
-          <FieldChips f={f} focus={focus} />
+        <Section
+          title="Step 3: Manual content"
+          note={f.fields.length ? undefined : 'Available fields appear here once the audience file is uploaded.'}
+          alert={<ChannelAlert f={f} />}
+        >
           <ChannelCards f={f} focus={focus} />
         </Section>
-        <Section title="Step 5: Delivery">
+        <Section title="Step 4: Delivery">
           <Delivery f={f} />
         </Section>
-        <Section title="Step 6: Do Not Disturb (DND)">
+        <Section title="Step 5: DND" note="Prevent sending messages during quiet hours.">
           <DndPanel f={f} />
         </Section>
       </ConsolePage>

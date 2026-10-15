@@ -154,8 +154,6 @@ export function checkRecipients(audience: Audience, column: string, kind: IdKind
 export const fieldsOf = (audience: Audience | null | undefined, idColumn: string) =>
   (audience?.headers ?? []).filter((h) => h && h !== idColumn).map((column) => ({ column, token: `{{${column}}}` }))
 
-export const MESSAGE_MAX = 1000
-
 export function smsInfo(text: string) {
   const unicode = /[^\x00-\x7F]/.test(text)
   const single = unicode ? 70 : 160

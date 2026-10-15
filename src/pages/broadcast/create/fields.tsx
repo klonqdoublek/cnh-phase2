@@ -1,9 +1,6 @@
-import { useState } from 'react'
 import { Checkbox } from '@/bbl/checkbox'
 import { RadioButton } from '@/bbl/radio-button'
-import { TextArea } from '@/bbl/text-area'
 import { FormField } from '@/patterns/form-field'
-import { smsInfo } from '@/data/broadcast'
 import { cn } from '@/lib/cn'
 
 /* The Create form's fields. Text, text area and select are webds `form-field`
@@ -15,8 +12,9 @@ export const NOTE = 'type-body-s text-[var(--color-text-secondary-default)]'
 /** Label L Emphasized, Text/Primary — the original's `cnh-bc__label`. */
 export const LABEL = 'type-label-l-emphasized text-[var(--color-text-primary-default)]'
 
-/** One text or text-area field. `data-field` lets Step 4's chips find the
- *  message box the cursor was last in; `data-error` is what Submit scrolls to. */
+/** One text or text-area field. `data-field` lets the field chips find the
+ *  message box the cursor was last in; `data-error` is what Submit scrolls to.
+ *  `boxHeight` is the Template form's taller one-line box (Push message). */
 export function Text({
   id,
   label,
@@ -27,6 +25,7 @@ export function Text({
   placeholder,
   required,
   multiline,
+  boxHeight,
   disabled,
   className,
 }: {
@@ -39,6 +38,7 @@ export function Text({
   placeholder?: string
   required?: boolean
   multiline?: boolean
+  boxHeight?: 77
   disabled?: boolean
   className?: string
 }) {
@@ -50,57 +50,12 @@ export function Text({
       className={cn('min-w-0', multiline && 'whitespace-pre-line', className)}
     >
       <FormField
-        spec={{ label, kind: multiline ? 'textarea' : 'text', required, max, placeholder: placeholder ?? '' }}
+        spec={{ label, kind: multiline ? 'textarea' : 'text', required, max, boxHeight, placeholder: placeholder ?? '' }}
         value={value}
         error={error}
         disabled={disabled}
         onChange={onChange}
       />
-    </div>
-  )
-}
-
-/** SMS message — a text area whose counter is characters and SMS parts, not a max. */
-export function SmsField({
-  value,
-  error,
-  onChange,
-  disabled,
-}: {
-  value: string
-  error?: string
-  onChange: (v: string) => void
-  disabled?: boolean
-}) {
-  const [focused, setFocused] = useState(false)
-  const info = smsInfo(value)
-  const state = disabled
-    ? 'Disabled'
-    : error
-      ? value
-        ? 'Error - Completed'
-        : 'Error'
-      : focused
-        ? value
-          ? 'Typing'
-          : 'Focused'
-        : value
-          ? 'Completed'
-          : 'Default'
-  return (
-    <div data-field="smsMessage" data-error={error ? 'true' : undefined}>
-      <label className="flex w-full flex-col" onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}>
-        <TextArea
-          state={state}
-          label="SMS message"
-          required
-          value={value}
-          onChange={disabled ? undefined : onChange}
-          placeholder=""
-          message={error ?? (info.unicode ? 'Thai · 70 per SMS' : 'English · 160 per SMS')}
-          counter={`${info.length} characters · ${info.segments} SMS`}
-        />
-      </label>
     </div>
   )
 }

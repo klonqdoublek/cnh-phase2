@@ -3,7 +3,6 @@ import {
   BROADCAST_COPY,
   DEFAULT_DND,
   dndRule,
-  MESSAGE_MAX,
   checkRecipients,
   fieldsOf,
   firstSend,
@@ -36,6 +35,15 @@ export const CHANNEL_FIELDS: Record<Channel, (keyof BroadcastContent)[]> = {
   SMS: ['smsMessage'],
 }
 export const DIRECT_CHANNELS: Channel[] = ['Email', 'SMS']
+/** Each message box's maximum — the Template form's TH fields, which draft 2.2
+ *  (Figma 70:6699, 15 Oct 2026) copies into the channel cards. */
+export const CONTENT_MAX: Record<keyof BroadcastContent, number> = {
+  pushTitle: 255,
+  pushBody: 2048,
+  emailSubject: 255,
+  emailBody: 2048,
+  smsMessage: 800,
+}
 
 const EMPTY_CONTENT: BroadcastContent = { smsMessage: '', emailSubject: '', emailBody: '', pushTitle: '', pushBody: '' }
 
@@ -202,6 +210,10 @@ export function useBroadcastForm({
     if (audience && k) setColumn(guessColumn(audience.headers, k) || column)
     clear('channels', 'column', 'file', ...CHANNEL_FIELDS[channel === 'SMS' ? 'Email' : 'SMS'])
   }
+  /** A channel card's switch. Direct recipient sends by Email or SMS, never
+   *  both, so switching one on there switches the other off. */
+  const setChannel = (channel: Channel, on: boolean) =>
+    recipientType === 'direct' && on ? chooseDirect(channel) : toggleChannel(channel, on)
 
   const start = mode === 'now' ? new Date() : combine(startDate, startTime)
   const first = start ? firstSend(start, dnd) : null
@@ -233,10 +245,10 @@ export function useBroadcastForm({
     else if (!channels.length) e.channels = BROADCAST_COPY.noChannel
     if (audience && kind && !column) e.column = BROADCAST_COPY.noColumn
     if (check && check.valid === 0) e.file = BROADCAST_COPY.noValidRows
-    for (const c of channels) for (const k of CHANNEL_FIELDS[c]) if (!content[k].trim()) e[k] = BROADCAST_COPY.required
-    if (channels.includes('Push notification') && content.pushBody.length > 250) e.pushBody = BROADCAST_COPY.msgMax(250)
-    if (channels.includes('Email') && content.emailSubject.length > 100) e.emailSubject = BROADCAST_COPY.msgMax(100)
-    if (channels.includes('Email') && content.emailBody.length > 1000) e.emailBody = BROADCAST_COPY.msgMax(MESSAGE_MAX)
+    for (const c of channels)
+      for (const k of CHANNEL_FIELDS[c])
+        if (!content[k].trim()) e[k] = BROADCAST_COPY.required
+        else if (content[k].length > CONTENT_MAX[k]) e[k] = BROADCAST_COPY.msgMax(CONTENT_MAX[k])
     if (mode === 'schedule') {
       if (!startDate) e.startDate = BROADCAST_COPY.required
       if (!startTime) e.startTime = BROADCAST_COPY.required
@@ -340,6 +352,7 @@ export function useBroadcastForm({
     channels,
     toggleChannel,
     chooseDirect,
+    setChannel,
     content,
     fields,
     mode,

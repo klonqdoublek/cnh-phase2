@@ -3,6 +3,7 @@ import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
+import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { Divider } from '@/bbl/divider'
 import { GhostButton } from '@/bbl/ghost-button'
@@ -13,14 +14,16 @@ import { InlineMessage } from '@/bbl/inline-message'
 import { PillChip } from '@/bbl/pill-chip'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
-import { ToggleSwitch } from '@/bbl/toggle-switch'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { FormStep } from '@/patterns/console-page'
-import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type DndRule } from '@/data/broadcast'
+import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import { Choice, LABEL, ModeOption, NOTE, Select, SmsField, Text } from './fields'
-import { ymd, type BroadcastForm } from './useBroadcastForm'
+import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
+import { CHANNEL_FIELDS, CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
+
+/* The Create broadcast steps, laid out as draft 2.2 (Figma 70:6699, 15 Oct
+ * 2026): five steps, channels switched on their own cards in Step 3. */
 
 type F = { f: BroadcastForm }
 /** The message box the cursor was last in, so a field chip knows where to insert. */
@@ -30,23 +33,47 @@ const n = (v: number) => v.toLocaleString('en-US')
 const sizeLabel = (bytes: number) =>
   bytes < 1048576 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
-const CHANNEL_ICON: Record<Channel, string> = { Email: 'mail', SMS: 'message', 'Push notification': 'alert' }
-
-/** One "Step N" — webds `FormStep` over a white card (or bare, for Step 4). */
-export function Section({ title, bare, children }: { title: string; bare?: boolean; children: React.ReactNode }) {
+/** One "Step N" — webds `FormStep`, its note under the heading. The step's
+ *  card is the caller's: a titled `FormSectionCard` or a plain `StepSurface`. */
+export function Section({
+  title,
+  note,
+  alert,
+  children,
+}: {
+  title: string
+  note?: string
+  alert?: React.ReactNode
+  children: React.ReactNode
+}) {
   return (
-    <FormStep title={title}>
-      {bare ? (
-        children
-      ) : (
-        <CardSurface
-          tabIndex={-1}
-          className="flex h-auto w-full flex-col items-stretch gap-[var(--space-6)] p-[var(--space-6)] hover:bg-[var(--color-surface-primary-default)] active:bg-[var(--color-surface-primary-default)]"
-        >
-          {children}
-        </CardSurface>
-      )}
+    <FormStep
+      title={
+        note ? (
+          <span className="flex flex-col gap-[var(--space-1)]">
+            <span>{title}</span>
+            <span className={NOTE}>{note}</span>
+          </span>
+        ) : (
+          title
+        )
+      }
+      alert={alert}
+    >
+      {children}
     </FormStep>
+  )
+}
+
+/** A step's card with no title of its own (Delivery). */
+function StepSurface({ children }: { children: React.ReactNode }) {
+  return (
+    <CardSurface
+      tabIndex={-1}
+      className="flex h-auto w-full flex-col items-stretch gap-[var(--space-6)] p-[var(--space-6)] hover:bg-[var(--color-surface-primary-default)] active:bg-[var(--color-surface-primary-default)]"
+    >
+      {children}
+    </CardSurface>
   )
 }
 
@@ -54,7 +81,7 @@ export function Section({ title, bare, children }: { title: string; bare?: boole
 
 export function BasicInfo({ f }: F) {
   return (
-    <div className="flex w-full items-start gap-[var(--space-6)]">
+    <FormSectionCard title="General information" rowGap={4}>
       <Text
         id="name"
         label="Broadcast name"
@@ -64,7 +91,6 @@ export function BasicInfo({ f }: F) {
         error={f.errors.name}
         placeholder="e.g. October Customer Campaign"
         onChange={f.edit('name', f.setName)}
-        className="flex-1"
       />
       <Text
         id="description"
@@ -74,40 +100,46 @@ export function BasicInfo({ f }: F) {
         error={f.errors.description}
         placeholder="What this broadcast is for"
         onChange={f.edit('description', f.setDescription)}
-        className="flex-1"
       />
-    </div>
+    </FormSectionCard>
   )
 }
 
 /* ── Step 2 ─────────────────────────────────────────────────────────────── */
 
-/** The CMS prototype's upload zone and file slot (components/upload) —
+/** Recipient type, the file, its ID column and the fields it brings. The
+ *  upload is the CMS prototype's zone and file slot (components/upload) —
  *  webds ships no upload control (gap). */
-export function AudienceFile({ f }: F) {
+export function AudienceFile({ f, focus }: F & { focus: FocusRef }) {
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
-      {f.file ? (
-        <FileResult f={f} />
-      ) : (
-        <UploadZone
-          buttonLabel={BROADCAST_COPY.browse}
-          hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
-          accept=".csv,.xlsx,text/csv"
-          error={!!f.errors.file}
-          onFiles={f.pick}
-        />
-      )}
-      {f.errors.file && (
-        <InlineMessage appearance="negative" size="s">
-          {f.errors.file}
-        </InlineMessage>
-      )}
-      <div className="flex flex-wrap gap-[var(--space-6)]">
-        <SampleLink href="/samples/audience-cis.csv">Sample file · CIS</SampleLink>
-        <SampleLink href="/samples/audience-direct.csv">Sample file · Direct recipient</SampleLink>
+    <FormSectionCard title="Upload Audience file">
+      <RecipientType f={f} />
+      <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
+        <span className={LABEL}>Upload File*</span>
+        {f.file ? (
+          <FileResult f={f} />
+        ) : (
+          <UploadZone
+            buttonLabel={BROADCAST_COPY.browse}
+            hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
+            accept=".csv,.xlsx,text/csv"
+            error={!!f.errors.file}
+            onFiles={f.pick}
+          />
+        )}
+        {f.errors.file && (
+          <InlineMessage appearance="negative" size="s">
+            {f.errors.file}
+          </InlineMessage>
+        )}
+        <div className="flex flex-wrap gap-[var(--space-6)] pt-[var(--space-2)]">
+          <SampleLink href="/samples/audience-cis.csv">Sample file · CIS</SampleLink>
+          <SampleLink href="/samples/audience-direct.csv">Sample file · Direct recipient</SampleLink>
+        </div>
       </div>
-    </div>
+      <ColumnSelect f={f} />
+      {f.fields.length > 0 && <FieldChips f={f} focus={focus} />}
+    </FormSectionCard>
   )
 }
 
@@ -267,23 +299,11 @@ function MiniTable({
   )
 }
 
-/* ── Step 3 ─────────────────────────────────────────────────────────────── */
-
-export function Mapping({ f }: F) {
-  return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.6fr)] items-start gap-[var(--space-6)]">
-      <RecipientType f={f} />
-      <ColumnSelect f={f} />
-      <ChannelPicker f={f} />
-    </div>
-  )
-}
-
 function RecipientType({ f }: F) {
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
       <span className={LABEL}>Recipient type*</span>
-      <div role="radiogroup" aria-label="Recipient type" className="flex flex-col gap-[var(--space-4)]">
+      <div role="radiogroup" aria-label="Recipient type" className="grid grid-cols-2 gap-[var(--space-4)]">
         <ModeOption
           on={f.recipientType === 'cis'}
           label="CIS"
@@ -311,6 +331,7 @@ function ColumnSelect({ f }: F) {
   return (
     <Select
       label={label}
+      className="w-[456px]"
       required
       value={f.column}
       options={f.audience?.headers ?? []}
@@ -326,45 +347,28 @@ function ColumnSelect({ f }: F) {
   )
 }
 
-function ChannelPicker({ f }: F) {
-  const direct = f.recipientType === 'direct'
-  return (
-    <div data-error={f.errors.channels ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <span className={LABEL}>Channels*</span>
-      <div role={direct ? 'radiogroup' : 'group'} aria-label="Channels" className="flex flex-col gap-[var(--space-2)]">
-        {f.offered.map((c) => (
-          <Choice
-            key={c}
-            kind={direct ? 'radio' : 'checkbox'}
-            on={f.channels.includes(c)}
-            ariaLabel={c}
-            onChange={(on) => (direct ? f.chooseDirect(c) : f.toggleChannel(c, on))}
-            label={
-              <span className="inline-flex items-center gap-[var(--space-2)]">
-                <Icon slug={CHANNEL_ICON[c]} size={16} color="var(--color-icon-secondary-default)" />
-                {c}
-              </span>
-            }
-          />
-        ))}
-      </div>
-      {f.errors.channels && (
-        <InlineMessage appearance="negative" size="xs">
-          {f.errors.channels}
-        </InlineMessage>
-      )}
-    </div>
-  )
-}
+/* ── Step 3 ─────────────────────────────────────────────────────────────── */
 
-/* ── Step 4 ─────────────────────────────────────────────────────────────── */
-
-export function FieldChips({ f, focus }: F & { focus: FocusRef }) {
+/** The file's columns as chips that insert `{{COLUMN}}`. On a channel card
+ *  (`scope`) a chip writes into that card: the box the cursor was last in if
+ *  it is one of the card's, else the card's first box. */
+export function FieldChips({
+  f,
+  focus,
+  scope,
+  disabled,
+}: F & { focus: FocusRef; scope?: (keyof BroadcastContent)[]; disabled?: boolean }) {
   const [needsField, setNeedsField] = useState(false)
-  if (!f.fields.length) return <p className={NOTE}>Available fields appear here once the audience file is uploaded.</p>
   const insert = (token: string) => {
-    const target = focus.current
-    if (!target || target.el.disabled || !target.el.isConnected) return setNeedsField(true)
+    const last = focus.current
+    let target = last && last.el.isConnected && !last.el.disabled && (!scope || scope.includes(last.key as never)) ? last : null
+    if (!target && scope) {
+      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `[data-field="${scope[0]}"] input, [data-field="${scope[0]}"] textarea`,
+      )
+      if (el && !el.disabled) target = { key: scope[0], el }
+    }
+    if (!target) return setNeedsField(true)
     setNeedsField(false)
     const { el, key } = target
     const from = el.selectionStart ?? el.value.length
@@ -382,7 +386,12 @@ export function FieldChips({ f, focus }: F & { focus: FocusRef }) {
         {f.fields.map((field) => (
           /* mousedown would blur the message box and lose the caret first */
           <span key={field.column} onMouseDown={(e) => e.preventDefault()}>
-            <PillChip appearance="highlight" aria-label={`Insert ${field.token}`} onClick={() => insert(field.token)}>
+            <PillChip
+              appearance="highlight"
+              state={disabled ? 'disabled' : 'default'}
+              aria-label={`Insert ${field.token}`}
+              onClick={() => insert(field.token)}
+            >
               {field.column}
             </PillChip>
           </span>
@@ -397,12 +406,31 @@ export function FieldChips({ f, focus }: F & { focus: FocusRef }) {
   )
 }
 
-/** One card per channel offered — webds `form-section-card`. A channel not
- *  ticked in Step 3 keeps its card, disabled, and says why. */
+/** "Turn on at least one channel" has no field of its own: the cards carry
+ *  the stroke and this Alert carries the message (webds `form-section-card`). */
+export function ChannelAlert({ f }: F) {
+  if (!f.errors.channels) return null
+  return (
+    <Alert
+      appearance="negative"
+      title={f.errors.channels}
+      icon={<Icon slug="close-circle" size={24} color="var(--color-icon-negative-default)" />}
+    />
+  )
+}
+
+const EMAIL_HINT =
+  'To send both Thai and English content in the same email, please enter content in both Thai and English for every placeholder'
+
+/** One card per channel offered, switched on its own title row (webds
+ *  `form-section-card`): off keeps what was typed and disables it. Direct
+ *  recipient offers Email and SMS, one at a time. */
 export function ChannelCards({ f, focus }: F & { focus: FocusRef }) {
+  const invalid = !!f.errors.channels
   return (
     <div
-      className={cn('grid items-stretch gap-[var(--space-6)]', f.offered.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}
+      data-error={invalid ? 'true' : undefined}
+      className="flex flex-col gap-[var(--space-8)]"
       onFocusCapture={(e) => {
         const el = e.target as HTMLInputElement | HTMLTextAreaElement
         const key = el.closest('[data-field]')?.getAttribute('data-field')
@@ -414,74 +442,25 @@ export function ChannelCards({ f, focus }: F & { focus: FocusRef }) {
         return (
           <FormSectionCard
             key={c}
-            className="h-full min-w-0"
             title={
-              <span className="flex items-center gap-[var(--space-4)]">
-                <Icon
-                  slug={CHANNEL_ICON[c]}
-                  size={24}
-                  color={on ? 'var(--color-icon-highlight-default)' : 'var(--color-icon-disabled-default)'}
-                />
-                <span className="flex min-w-0 flex-col">
+              c === 'Email' ? (
+                <span className="flex flex-col">
                   <span>{c}</span>
-                  {!on && <span className={NOTE}>Not selected in step 3</span>}
+                  <span className={NOTE}>{EMAIL_HINT}</span>
                 </span>
-              </span>
+              ) : (
+                c
+              )
             }
+            toggle={{ on, onToggle: (v) => f.setChannel(c, v) }}
+            invalid={invalid}
           >
-            {c === 'Push notification' && (
-              <>
-                <Text
-                  id="pushTitle"
-                  label="Push title"
-                  required
-                  disabled={!on}
-                  value={f.content.pushTitle}
-                  max={100}
-                  error={f.errors.pushTitle}
-                  onChange={f.setC('pushTitle')}
-                />
-                <Text
-                  id="pushBody"
-                  label="Push message"
-                  required
-                  multiline
-                  disabled={!on}
-                  value={f.content.pushBody}
-                  max={250}
-                  error={f.errors.pushBody}
-                  onChange={f.setC('pushBody')}
-                />
-              </>
-            )}
-            {c === 'Email' && (
-              <>
-                <Text
-                  id="emailSubject"
-                  label="Email subject"
-                  required
-                  disabled={!on}
-                  value={f.content.emailSubject}
-                  max={100}
-                  error={f.errors.emailSubject}
-                  onChange={f.setC('emailSubject')}
-                />
-                <Text
-                  id="emailBody"
-                  label="Email body"
-                  required
-                  multiline
-                  disabled={!on}
-                  value={f.content.emailBody}
-                  max={1000}
-                  error={f.errors.emailBody}
-                  onChange={f.setC('emailBody')}
-                />
-              </>
-            )}
-            {c === 'SMS' && (
-              <SmsField disabled={!on} value={f.content.smsMessage} error={f.errors.smsMessage} onChange={f.setC('smsMessage')} />
-            )}
+            <div className="flex min-w-0 flex-col gap-[var(--space-8)]">
+              {f.fields.length > 0 && <FieldChips f={f} focus={focus} scope={CHANNEL_FIELDS[c]} disabled={!on} />}
+              <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
+                <ChannelFields f={f} channel={c} on={on} />
+              </div>
+            </div>
           </FormSectionCard>
         )
       })}
@@ -489,12 +468,45 @@ export function ChannelCards({ f, focus }: F & { focus: FocusRef }) {
   )
 }
 
-/* ── Step 5 ─────────────────────────────────────────────────────────────── */
+/** A channel's message boxes — the Template form's TH fields. */
+function ChannelFields({ f, channel, on }: F & { channel: Channel; on: boolean }) {
+  const box = (id: keyof BroadcastContent, label: string, placeholder: string, extra?: { multiline?: boolean; boxHeight?: 77 }) => (
+    <Text
+      id={id}
+      label={label}
+      required
+      disabled={!on}
+      value={f.content[id]}
+      max={CONTENT_MAX[id]}
+      error={f.errors[id]}
+      placeholder={placeholder}
+      onChange={f.setC(id)}
+      {...extra}
+    />
+  )
+  if (channel === 'Push notification')
+    return (
+      <>
+        {box('pushTitle', 'Push title (TH)', 'Enter push title in Thai')}
+        {box('pushBody', 'Push message (TH)', 'Enter push message in Thai', { boxHeight: 77 })}
+      </>
+    )
+  if (channel === 'Email')
+    return (
+      <>
+        {box('emailSubject', 'Email subject (TH)', 'Enter email subject')}
+        {box('emailBody', 'Email content (TH)', 'Enter email content', { multiline: true })}
+      </>
+    )
+  return box('smsMessage', 'SMS message (TH)', 'Enter SMS message in Thai', { multiline: true })
+}
+
+/* ── Step 4 ─────────────────────────────────────────────────────────────── */
 
 export function Delivery({ f }: F) {
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
-      <div role="radiogroup" aria-label="When to send" className="flex gap-[var(--space-4)]">
+    <StepSurface>
+      <div role="radiogroup" aria-label="When to send" className="grid w-[calc(50%-var(--space-2))] gap-[var(--space-4)]">
         <ModeOption
           on={f.mode === 'now'}
           label="Send as soon as possible"
@@ -511,16 +523,33 @@ export function Delivery({ f }: F) {
           onSelect={() => f.setMode('schedule')}
         />
       </div>
-      {/* Start under Schedule delivery, End under the second card's column:
-          each field is one mode card wide. */}
-      <div className="flex items-start gap-[var(--space-4)]">
-        {f.mode === 'schedule' ? (
+      {/* End on the left, Start on the right (draft 2.2; kept by the requester,
+          15 Oct 2026). Start shows only for Schedule delivery. */}
+      <div className="grid grid-cols-2 items-start gap-[var(--space-6)]">
+        {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
+            Expiry date. Sending stops here; whoever is left is Not sent. */}
+        <DateTimeInput
+          label="End date and time"
+          optional
+          clearable
+          className="w-full"
+          value={f.end}
+          min={f.mode === 'schedule' && f.startDate ? f.startDate : ymd(new Date())}
+          minuteStep={5}
+          error={!!f.errors.end}
+          message={f.errors.end}
+          onChange={(v) => {
+            f.setEnd(v)
+            f.clear('end')
+          }}
+        />
+        {f.mode === 'schedule' && (
           /* One field, as CMS's Effective date: webds' Date Time Picker. The
              form still keeps the date and the time apart. */
           <DateTimeInput
             label="Start date and time"
             required
-            className="w-[604px]"
+            className="w-full"
             value={f.startDate && f.startTime ? `${f.startDate}T${f.startTime}` : ''}
             min={ymd(new Date())}
             minuteStep={5}
@@ -532,29 +561,10 @@ export function Delivery({ f }: F) {
               f.clear('startDate', 'startTime', 'end')
             }}
           />
-        ) : (
-          <span className="w-[604px] shrink-0" />
         )}
-        {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
-            Expiry date. Sending stops here; whoever is left is Not sent. */}
-        <DateTimeInput
-          label="End date and time"
-          optional
-          clearable
-          className="w-[604px]"
-          value={f.end}
-          min={f.mode === 'schedule' && f.startDate ? f.startDate : ymd(new Date())}
-          minuteStep={5}
-          error={!!f.errors.end}
-          message={f.errors.end}
-          onChange={(v) => {
-            f.setEnd(v)
-            f.clear('end')
-          }}
-        />
       </div>
       <Outlook f={f} />
-    </div>
+    </StepSurface>
   )
 }
 
@@ -577,17 +587,17 @@ function Outlook({ f }: F) {
   )
 }
 
-/* ── Step 6 ─────────────────────────────────────────────────────────────── */
+/* ── Step 5 ─────────────────────────────────────────────────────────────── */
 
-/** One quiet period: its days, its hours or All day, and — when there is more
- *  than one — a trash to remove it. */
+/** One quiet period, top to bottom as draft 2.2: its days, its hours, All
+ *  day — and, when there is more than one, a trash to remove it. */
 function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const off = !f.dnd.enabled
   const daysError = f.errors[`dndDays:${rule.id}`]
   const timeError = f.errors[`dndTime:${rule.id}`]
   const which = f.dnd.rules.length > 1 ? ` ${index + 1}` : ''
   return (
-    <div className="flex flex-wrap items-start gap-x-[var(--space-8)] gap-y-[var(--space-6)]">
+    <div className="flex flex-col gap-[var(--space-6)]">
       <div data-error={daysError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
         <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Weekdays</span>
         <div className="flex h-[56px] flex-wrap items-center gap-[var(--space-6)]">
@@ -611,7 +621,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
           </InlineMessage>
         )}
       </div>
-      <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
+      <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-4)]">
         <div className="flex items-end gap-[var(--space-4)]">
           <TimeInput
             label="Quiet period from"
@@ -620,24 +630,13 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
             onChange={(v) => f.setDndRule(rule.id, { from: v })}
           />
           <span className="pb-[var(--space-4)] type-body-m text-[var(--color-text-secondary-default)]">to</span>
-          {/* The original draws no label here, only the room for one, so the two
-              boxes share a line. */}
+          {/* No label of its own, only the room for one, so the two boxes share a line. */}
           <TimeInput
             label=" "
             value={rule.allDay ? '' : rule.to}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { to: v })}
           />
-          <span className="flex h-[56px] items-center">
-            <Choice
-              kind="checkbox"
-              label="All day"
-              ariaLabel={`Quiet period${which} all day`}
-              disabled={off}
-              on={rule.allDay}
-              onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
-            />
-          </span>
           {f.dnd.rules.length > 1 && (
             <span className="flex h-[56px] items-center pl-[var(--space-4)]">
               <IconButton
@@ -660,6 +659,16 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
             {timeError}
           </InlineMessage>
         )}
+        <span className="flex">
+          <Choice
+            kind="checkbox"
+            label="All day"
+            ariaLabel={`Quiet period${which} all day`}
+            disabled={off}
+            on={rule.allDay}
+            onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
+          />
+        </span>
       </div>
     </div>
   )
@@ -668,14 +677,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
 export function DndPanel({ f }: F) {
   const dnd = f.dnd
   return (
-    <div className="flex flex-col gap-[var(--space-6)]">
-      <div className="flex items-start gap-[var(--space-3)]">
-        <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
-        <div className="flex flex-col pt-[var(--space-2)]">
-          <span className={LABEL}>{dnd.enabled ? 'Enabled' : 'Disabled'}</span>
-          <span className={NOTE}>Prevent sending messages during quiet hours.</span>
-        </div>
-      </div>
+    <FormSectionCard title="Do Not Disturb (DND)" toggle={{ on: dnd.enabled, onToggle: f.setDndEnabled }}>
       {/* Any number of quiet periods (BA, 2026-10-14): each its own days and
           hours, divided by a rule; a day may sit in more than one. */}
       {dnd.rules.map((rule, i) => (
@@ -698,6 +700,6 @@ export function DndPanel({ f }: F) {
         disabled={!dnd.enabled}
         onChange={f.setDndTimeZone}
       />
-    </div>
+    </FormSectionCard>
   )
 }
