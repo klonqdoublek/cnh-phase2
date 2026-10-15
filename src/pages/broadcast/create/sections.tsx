@@ -14,6 +14,7 @@ import { InlineMessage } from '@/bbl/inline-message'
 import { PillChip } from '@/bbl/pill-chip'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
+import { ToggleSwitch } from '@/bbl/toggle-switch'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { FormStep } from '@/patterns/console-page'
 import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
@@ -544,6 +545,7 @@ export function Delivery({ f }: F) {
         </div>
       )}
       <Outlook f={f} />
+      <DndBlock f={f} />
     </FormSectionCard>
   )
 }
@@ -567,17 +569,17 @@ function Outlook({ f }: F) {
   )
 }
 
-/* ── DND ────────────────────────────────────────────────────────────────── */
+/* ── DND (inside Delivery Date) ────────────────────────────────────────────────────────── */
 
-/** One quiet period, top to bottom as draft 2.2: its days, its hours, All
- *  day — and, when there is more than one, a trash to remove it. */
+/** One quiet period on one row: its days, its hours or All day, and — when
+ *  there is more than one — a trash to remove it (draft 2.2, Figma 89:4665). */
 function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const off = !f.dnd.enabled
   const daysError = f.errors[`dndDays:${rule.id}`]
   const timeError = f.errors[`dndTime:${rule.id}`]
   const which = f.dnd.rules.length > 1 ? ` ${index + 1}` : ''
   return (
-    <div className="flex flex-col gap-[var(--space-6)]">
+    <div className="flex flex-wrap items-start gap-x-[var(--space-8)] gap-y-[var(--space-6)]">
       <div data-error={daysError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
         <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Weekdays</span>
         <div className="flex h-[56px] flex-wrap items-center gap-[var(--space-6)]">
@@ -601,7 +603,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
           </InlineMessage>
         )}
       </div>
-      <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-4)]">
+      <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
         <div className="flex items-end gap-[var(--space-4)]">
           <TimeInput
             label="Quiet period from"
@@ -610,13 +612,24 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
             onChange={(v) => f.setDndRule(rule.id, { from: v })}
           />
           <span className="pb-[var(--space-4)] type-body-m text-[var(--color-text-secondary-default)]">to</span>
-          {/* No label of its own, only the room for one, so the two boxes share a line. */}
+          {/* The original draws no label here, only the room for one, so the two
+              boxes share a line. */}
           <TimeInput
             label=" "
             value={rule.allDay ? '' : rule.to}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { to: v })}
           />
+          <span className="flex h-[56px] items-center">
+            <Choice
+              kind="checkbox"
+              label="All day"
+              ariaLabel={`Quiet period${which} all day`}
+              disabled={off}
+              on={rule.allDay}
+              onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
+            />
+          </span>
           {f.dnd.rules.length > 1 && (
             <span className="flex h-[56px] items-center pl-[var(--space-4)]">
               <IconButton
@@ -639,25 +652,26 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
             {timeError}
           </InlineMessage>
         )}
-        <span className="flex">
-          <Choice
-            kind="checkbox"
-            label="All day"
-            ariaLabel={`Quiet period${which} all day`}
-            disabled={off}
-            on={rule.allDay}
-            onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
-          />
-        </span>
       </div>
     </div>
   )
 }
 
-export function DndPanel({ f }: F) {
+/** Do Not Disturb, inside the Delivery Date card (Figma 89:4665): the
+ *  switch and title, the quiet periods divided by a rule, Add period, and the
+ *  one time zone there is, shown as text. */
+function DndBlock({ f }: F) {
   const dnd = f.dnd
   return (
-    <FormSectionCard title="Do Not Disturb (DND)" toggle={{ on: dnd.enabled, onToggle: f.setDndEnabled }}>
+    <div className="flex min-w-0 flex-col gap-[var(--space-6)]">
+      <span className="flex flex-col gap-[var(--space-1)]">
+        <span className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">Select DND</span>
+        <span className={NOTE}>Prevent sending messages during quiet hours.</span>
+      </span>
+      <span className="flex items-center gap-[var(--space-3)]">
+        <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
+        <span className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">Do Not Disturb (DND)</span>
+      </span>
       {/* Any number of quiet periods (BA, 2026-10-14): each its own days and
           hours, divided by a rule; a day may sit in more than one. */}
       {dnd.rules.map((rule, i) => (
@@ -672,14 +686,13 @@ export function DndPanel({ f }: F) {
           Add period
         </GhostButton>
       </span>
-      <Select
-        label="Time zone"
-        className="w-[260px]"
-        value={dnd.timeZone}
-        options={TIME_ZONES}
-        disabled={!dnd.enabled}
-        onChange={f.setDndTimeZone}
-      />
-    </FormSectionCard>
+      {/* One time zone only, so no select (Figma 89:4665). */}
+      <span className="flex flex-col gap-[var(--space-1)]">
+        <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Time zone</span>
+        <span className="type-body-m text-[var(--color-text-primary-default)]">
+          {TIME_ZONES.find((z) => z.value === dnd.timeZone)?.label ?? dnd.timeZone}
+        </span>
+      </span>
+    </div>
   )
 }

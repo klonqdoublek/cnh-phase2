@@ -93,9 +93,9 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
   - **Edit** on a Draft only.
 - **Create and Edit broadcast:** one page with six steps, a sticky footer with **Save draft** and **Submit**, then a confirm dialog.
 
-### Create: the four steps
+### Create: the three steps
 
-Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=85-19401), 15 Oct 2026). The draft numbers its steps 1, 2, 5, 6; the build numbers them 1–4.
+Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=85-19401), 15 Oct 2026). The draft numbers its steps 1, 2, 5, 6; the build numbers them 1–3, with Do Not Disturb inside Delivery Date (Figma 89:4665).
 
 1. **Basic information.** One card, "General information": Broadcast name\* (max 100) above Description (max 250).
 2. **Validate Audience file.** Two cards.
@@ -107,14 +107,10 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
      - Each card is switched on and off in its own title row. The switches replace the channel checkboxes and Direct recipient's Email / SMS radio. Under Direct recipient, switching one on switches the other off. A card that is off keeps what was typed and disables it.
      - Fields are the Template form's TH fields: Push title (TH)\* (255) and Push message (TH)\* (2048); Email subject (TH)\* (255) and Email content (TH)\* (2048); SMS message (TH)\* (800).
      - No channel on: an Alert above the cards and a red stroke on each card.
-3. **Delivery Date.** One card, "Select Delivery Date":
+3. **Delivery Date.** One card, "Select Delivery Date", that also holds Do Not Disturb ([Figma 89:4665](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=89-4665), 15 Oct 2026):
    - **Send as soon as possible**, or **Schedule delivery** with Start date and time\* (5-minute steps, later than now).
    - Optional **End date and time**, later than the start, with Clear, **for Schedule delivery only**. Send as soon as possible has no end (requester, 15 Oct, following the draft; the BA's Q2 answer on 14 Oct did not say which modes). End sits on the left and Start on the right (the requester kept it on 15 Oct).
-4. **DND** ("Prevent sending messages during quiet hours.").
-   - A "Do Not Disturb (DND)" card, on or off by its switch.
-   - Any number of quiet periods. Each has its days, then its hours (5-minute steps), then **All day**.
-   - One time zone (Asia/Bangkok).
-   - **Add period** adds one; a trash removes one when there are two or more. The draft draws Add period above the hours; the build keeps it under the periods, since there can be several.
+   - **Select DND** ("Prevent sending messages during quiet hours."): the Do Not Disturb (DND) switch, then any number of quiet periods, one row each: days, hours (5-minute steps) or **All day**, and a trash when there are two or more. **Add period** under the periods. The one time zone, Asia/Bangkok (GMT+7), shows as text.
 
 ### Delivery rules
 
@@ -155,8 +151,9 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2). |
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
+| 15 Oct 2026 | Do Not Disturb moves into the Delivery Date step (Figma 89:4665): three steps. |
 | 15 Oct 2026 | Broadcast End is for Schedule delivery only; Send as soon as possible has no end (requester, following draft 2.2). |
-| 15 Oct 2026 | Create broadcast follows draft 2.2 webds-matched (Figma 85:19401): four steps; message content under the audience step; channels switched on their own cards; content fields and limits from the Template form's TH fields; End left of Start. See "Create: the four steps". |
+| 15 Oct 2026 | Create broadcast follows draft 2.2 webds-matched (Figma 85:19401): four steps (three since DND joined Delivery Date); message content under the audience step; channels switched on their own cards; content fields and limits from the Template form's TH fields; End left of Start. See "Create: the three steps". |
 
 ## Open items
 
