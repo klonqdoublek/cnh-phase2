@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@/bbl/icon'
+import { Scrim } from '@/bbl/building-block-scrim'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import {
@@ -154,20 +155,6 @@ export function ImportDialog({
         className="relative z-50"
       >
         <div className="flex flex-col gap-[var(--space-4)]">
-          {uploading && (
-            /* Uploading covers the whole dialog — title, body and actions (Korn, 2026-10-05). */
-            <div
-              role="status"
-              aria-live="polite"
-              className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-[var(--space-3)] rounded-[var(--radius-3)] bg-[var(--color-surface-primary-default)]"
-            >
-              <SpinnerLoader size="l" />
-              <p className="mt-[var(--space-2)] type-heading-xxs-emphasized text-[var(--color-text-primary-default)]">
-                {IMPORT_COPY.uploading}
-              </p>
-            </div>
-          )}
-
           {phase === 'failed' && (
             <div
               role="alert"
@@ -230,6 +217,21 @@ export function ImportDialog({
         >
           <p className="type-body-m text-[var(--color-text-primary-default)]">{IMPORT_COPY.replaceBody}</p>
         </ConfirmDialog>
+      )}
+      {uploading && (
+        /* Uploading covers the whole page (requester, 15 Oct 2026; was the dialog only,
+           Korn 2026-10-05): CMS's SubmitOverlay — Scrim Strong and an on-inverse spinner, above the dialog layer (z 100). */
+        <Scrim
+          appearance="strong"
+          role="status"
+          aria-live="polite"
+          className="fixed inset-0 z-[200] flex-col items-center justify-center gap-[var(--space-3)] px-0"
+        >
+          <SpinnerLoader size="l" appearance="on-inverse" label={IMPORT_COPY.uploading} />
+          <p className="mt-[var(--space-2)] type-heading-xxs-emphasized text-[var(--color-text-primary-inverse-default)]">
+            {IMPORT_COPY.uploading}
+          </p>
+        </Scrim>
       )}
       <FilePreviewDialog file={previewing} onClose={() => setPreviewing(null)} />
     </>

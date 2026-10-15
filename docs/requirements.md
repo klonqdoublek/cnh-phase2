@@ -72,7 +72,7 @@ From the kick-off deck. `*` means required in the deck.
 | Duplicate file | A file whose **name** was imported before asks first, in a dialog over Import: **Import over \<file name\>?** · *This file has already been imported. Its templates will be replaced with the ones in this file.* · Cancel / **Import**. Import removes the templates that file's last import added and adds the new ones (requester, 15 Oct 2026). Open: what happens to those templates once they are edited or Published; whether the check should be by name or by content. |
 | Required per line | `recordType: "TEMPLATE"`, `templateName`, `description`, `serviceCodes` (from the value list), `channels` (PUSH, EMAIL, SMS) and `templateLanguages`. |
 | Result | Every imported template is a **Draft** and lands on page 1; the list sorts by Last updated, newest first. |
-| States | Initial; no file; more than one file; file over 10 MB; invalid format; invalid structure; file selected; duplicate (import over?); uploading (covers the whole dialog); failure with Import again; success (back on the list, toast for 3 s). Each has a route, `#/list/import/<state>`. |
+| States | Initial; no file; more than one file; file over 10 MB; invalid format; invalid structure; file selected; duplicate (import over?); uploading (a Scrim Strong and spinner over the whole page, as CMS `SubmitOverlay`; before 15 Oct it covered the dialog only); failure with Import again; success (back on the list, toast for 3 s). Each has a route, `#/list/import/<state>`. |
 | Upload UI | CMS upload slot: `UploadZone` until a file is picked, then `UploadedFile` in its place with **Preview** (`FilePreviewDialog`). |
 
 Still open from the original build (P2-1…P2-9): the schema, size limits, duplicates, and all copy.
@@ -150,6 +150,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 
 | Date | Ruling |
 |---|---|
+| 15 Oct 2026 | Import uploading: the spinner covers the whole page (Scrim Strong, on-inverse spinner, CMS `SubmitOverlay`), not only the dialog. Requester's call. |
 | 15 Oct 2026 | Import: one file per import; 10 MB (CMS's limit, pending BA); duplicate file name asks "Import over …?" and replaces that file's earlier templates. Requester's call, not the BA's. |
 | 14 Oct 2026 | Remove Recipients and Result from the broadcast list; the drawer shows them. |
 | 14 Oct 2026 | Add a download to the drawer, built as the Delivery report. |
