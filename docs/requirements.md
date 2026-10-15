@@ -109,7 +109,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
      - No channel on: an Alert above the cards and a red stroke on each card.
 3. **Delivery Date.** One card, "Select Delivery Date":
    - **Send as soon as possible**, or **Schedule delivery** with Start date and time\* (5-minute steps, later than now).
-   - Optional **End date and time**, later than the start, with Clear. End sits on the left and Start on the right (the requester kept it on 15 Oct). The draft draws Send as soon as possible with no End field; the build keeps End there because the BA made it optional for both modes on 14 Oct (Q2).
+   - Optional **End date and time**, later than the start, with Clear, **for Schedule delivery only**. Send as soon as possible has no end (requester, 15 Oct, following the draft; the BA's Q2 answer on 14 Oct did not say which modes). End sits on the left and Start on the right (the requester kept it on 15 Oct).
 4. **DND** ("Prevent sending messages during quiet hours.").
    - A "Do Not Disturb (DND)" card, on or off by its switch.
    - Any number of quiet periods. Each has its days, then its hours (5-minute steps), then **All day**.
@@ -155,6 +155,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2). |
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
+| 15 Oct 2026 | Broadcast End is for Schedule delivery only; Send as soon as possible has no end (requester, following draft 2.2). |
 | 15 Oct 2026 | Create broadcast follows draft 2.2 webds-matched (Figma 85:19401): four steps; message content under the audience step; channels switched on their own cards; content fields and limits from the Template form's TH fields; End left of Start. See "Create: the four steps". |
 
 ## Open items

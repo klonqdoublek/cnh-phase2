@@ -216,6 +216,10 @@ export function useBroadcastForm({
     recipientType === 'direct' && on ? chooseDirect(channel) : toggleChannel(channel, on)
 
   const start = mode === 'now' ? new Date() : combine(startDate, startTime)
+  /** Broadcast End belongs to Schedule delivery only (requester, 15 Oct 2026):
+   *  Send as soon as possible has no end. The typed value is kept, so
+   *  switching back to Schedule delivery brings it back. */
+  const endUsed = mode === 'schedule' ? end : ''
   const first = start ? firstSend(start, dnd) : null
   const waits = !!(start && first && first.getTime() !== start.getTime())
 
@@ -254,7 +258,7 @@ export function useBroadcastForm({
       if (!startTime) e.startTime = BROADCAST_COPY.required
       if (start && start <= new Date()) e.startDate = BROADCAST_COPY.startPast
     }
-    if (end && start && new Date(end) <= start) e.end = BROADCAST_COPY.endBeforeStart
+    if (endUsed && start && new Date(endUsed) <= start) e.end = BROADCAST_COPY.endBeforeStart
     if (dnd.enabled)
       for (const rule of dnd.rules) {
         if (!rule.days.length) e[`dndDays:${rule.id}`] = BROADCAST_COPY.dndNoDay
@@ -287,7 +291,7 @@ export function useBroadcastForm({
     recipientColumn: column,
     startMode: mode,
     start: iso(start ?? new Date()),
-    end: end || undefined,
+    end: endUsed || undefined,
     dnd,
     status,
     success: 0,
@@ -364,7 +368,7 @@ export function useBroadcastForm({
     start,
     first,
     waits,
-    end,
+    end: endUsed,
     setEnd,
     dnd,
     setDndEnabled,
