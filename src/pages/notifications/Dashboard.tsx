@@ -45,7 +45,10 @@ export type DashboardProps = {
   onDownloadRequestHandled: () => void
   /** Present on `#/list/import[/<preset>]` — the Import dialog opens in that state. */
   importPreset?: ImportPreset
-  onImport: (templates: Template[]) => void
+  /** File names imported before; importing one again asks first. */
+  importedNames: string[]
+  /** `replace`: the user chose to import over an earlier import of `fileName`. */
+  onImport: (templates: Template[], fileName?: string, replace?: boolean) => void
 }
 
 const TONE: Record<TemplateStatus, BadgeType> = { Published: 'positive', Inactive: 'disabled', Draft: 'caution' }
@@ -91,6 +94,7 @@ export function Dashboard({
   onDownloadRequestHandled,
   onImport,
   importPreset,
+  importedNames,
 }: DashboardProps) {
   const [query, setQuery] = useState('')
   const [serviceCodes, setServiceCodes] = useState<string[]>([...SERVICE_CODE_LOV])
@@ -514,12 +518,13 @@ export function Dashboard({
       <ImportDialog
         open={importOpen}
         preset={importPreset === 'success' ? undefined : importPreset}
+        importedNames={importedNames}
         onClose={() => setImportOpen(false)}
-        onImported={(list) => {
+        onImported={(list, fileName, replace) => {
           setImportOpen(false)
           setPage(0)
           clearSelection()
-          onImport?.(list)
+          onImport?.(list, fileName, replace)
           setImported(list.length)
         }}
       />
