@@ -250,6 +250,17 @@ function Preview({ f }: F) {
   )
 }
 
+/** Bars that always show and can be dragged, drawn as webds Scroll Bar
+ *  (12 track, 8 pill thumb, Component/Scroll Bar fills). webds' `ScrollBar`
+ *  only draws a position, it cannot be dragged (gap), and the browser's own
+ *  overlay bar on macOS stays hidden until a scroll starts — with a mouse
+ *  wheel, nothing says the table goes on to the right. */
+const SCROLL_BARS = cn(
+  '[&::-webkit-scrollbar]:size-[12px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-corner]:bg-transparent',
+  '[&::-webkit-scrollbar-thumb]:rounded-[var(--radius-full)] [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-padding',
+  '[&::-webkit-scrollbar-thumb]:bg-[var(--color-component-scroll-bar-default)] [&::-webkit-scrollbar-thumb:active]:bg-[var(--color-component-scroll-bar-pressed)]',
+)
+
 /** webds Table Header / Data Cells at a compact row height in a bordered grid.
  *  The cells' own 64 row is the data grid's; a validation list inside a card
  *  reads at 36 — the original's own reason for not using its Table. */
@@ -314,12 +325,13 @@ function MiniTable({
     </div>
   )
   if (!visibleRows) return table
-  /* A row is a Body S line, py 8 and a 1px rule; the header is one more row. */
+  /* A row is a Body S line, py 8 and a 1px rule; the header is one more row,
+     and the 12 under them is the horizontal bar's track. */
   return (
     <div
-      className="min-w-0 overflow-auto rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]"
+      className={cn('min-w-0 overflow-auto rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]', SCROLL_BARS)}
       style={{
-        maxHeight: `calc(${visibleRows + 1} * (var(--type-body-s-line-height) + 2 * var(--space-2) + 1px))`,
+        maxHeight: `calc(${visibleRows + 1} * (var(--type-body-s-line-height) + 2 * var(--space-2) + 1px) + 12px)`,
       }}
     >
       {table}

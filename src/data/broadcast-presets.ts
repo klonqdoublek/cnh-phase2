@@ -59,15 +59,20 @@ export const DIRECT_CSV = `MOBILE_NO,EMAIL,CUSTOMER_NAME,AMOUNT,PROMOTION_CODE
 +66812223333,kanya@email.com,Kanya Thongdee,1999.00,OCT24
 `
 
-/** A file too big for the preview box: 100 recipients × 25 columns, so the
+/** A file too big for the preview box: 100 recipients × 55 columns, so the
  *  preview scrolls both ways (`#/broadcast/create/large-file`). Made up,
  *  repeating from short lists. */
 const LARGE_COLUMNS = [
   'CIS_ID', 'CUSTOMER_NAME', 'ACCOUNT_NO', 'AMOUNT', 'PROMOTION_CODE', 'MOBILE_NO', 'EMAIL',
   'FIRST_NAME', 'LAST_NAME', 'TIER', 'BRANCH', 'PRODUCT', 'CARD_TYPE', 'CARD_LAST4', 'DUE_DATE',
   'MIN_PAYMENT', 'POINTS', 'POINTS_EXPIRY', 'SEGMENT', 'PREFERRED_LANG', 'CITY', 'PROVINCE',
-  'POSTCODE', 'OPEN_DATE', 'RM_NAME',
+  'POSTCODE', 'OPEN_DATE', 'RM_NAME', 'DATE_OF_BIRTH', 'GENDER', 'OCCUPATION', 'INCOME_RANGE',
+  'MARITAL_STATUS', 'EMPLOYER',
 ]
+const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+const OCCUPATIONS = ['Engineer', 'Teacher', 'Business owner', 'Nurse', 'Accountant']
+const INCOMES = ['<30K', '30K-50K', '50K-100K', '>100K']
+const EMPLOYERS = ['Siam Trading', 'Chao Phraya Logistics', 'Lanna Foods', 'Andaman Resorts']
 const FIRST = ['Somchai', 'Araya', 'Nattapong', 'Siriporn', 'Thanapol', 'Kanya', 'Piti', 'Mana', 'Wipa', 'Chai']
 const LAST = ['Yimdee', 'Chaisri', 'Wongsa', 'Klaykeaw', 'Suksai', 'Thongdee', 'Chaiyo', 'Deejai', 'Srisuk', 'Boonma']
 const TIERS = ['Gold', 'Silver', 'Platinum', 'Classic']
@@ -81,7 +86,7 @@ const CITIES: [string, string, string][] = [
   ['Kathu', 'Phuket', '83120'],
 ]
 export const LARGE_CSV = [
-  LARGE_COLUMNS.join(','),
+  [...LARGE_COLUMNS, ...MONTHS.map((m) => `BALANCE_${m}`), ...MONTHS.map((m) => `SPEND_${m}`)].join(','),
   ...Array.from({ length: 100 }, (_, i) => {
     const first = FIRST[i % FIRST.length]
     const last = LAST[(i * 3) % LAST.length]
@@ -113,6 +118,14 @@ export const LARGE_CSV = [
       postcode,
       `20${String(10 + (i % 16)).padStart(2, '0')}-0${(i % 9) + 1}-${day}`,
       `${FIRST[(i + 4) % FIRST.length]} ${LAST[(i + 7) % LAST.length]}`,
+      `19${70 + (i % 30)}-0${(i % 9) + 1}-${day}`,
+      i % 2 ? 'F' : 'M',
+      OCCUPATIONS[i % OCCUPATIONS.length],
+      INCOMES[i % INCOMES.length],
+      i % 3 ? 'Married' : 'Single',
+      EMPLOYERS[i % EMPLOYERS.length],
+      ...MONTHS.map((_, m) => (5000 + ((i * 911 + m * 487) % 95000)).toFixed(2)),
+      ...MONTHS.map((_, m) => (((i * 313 + m * 197) % 30000)).toFixed(2)),
     ].join(',')
   }),
   '',
