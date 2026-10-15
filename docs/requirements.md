@@ -35,6 +35,7 @@ The **Customer Notification Hub (CNH)** is Bangkok Bank's back-office console fo
 Where the sources live:
 
 - **Original prototype:** https://cnh-tm-phase2.vercel.app. The mirrored build is in `.reference/`.
+- **Import design (Figma):** [CNH Phase 2 Import Template](https://www.figma.com/design/Yd9yyAx8ko3q2Atg0kfxe2/-CNH-Phase-2--Import-Template?node-id=54-890), page *Flow [15 Oct 2026] Single file*: all 12 states of the one-file Import as webds-library screens, with the task flow. The CMS upload slot is a local component set there (webds gap).
 - **Flow archive:** webds `get_flow("cnh-phase2")`. It holds routes, rulings and gaps. Its open questions P2-1…P2-20 are in the original repo's `docs/open-questions.md`, which is not on this machine.
 - **Decks:** in the BA's hands. Summaries are in the Obsidian vault under `BBL/CNH - Requirement - …`.
 - **Gap detail:** [broadcast-gaps.md](broadcast-gaps.md). Borrowed components: [cms-components.md](cms-components.md).
