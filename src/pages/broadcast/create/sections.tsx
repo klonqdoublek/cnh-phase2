@@ -301,8 +301,11 @@ function MiniTable({
           key={`h${i}`}
           className={cn(
             cell,
-            'sticky top-0 bg-[var(--color-surface-secondary-default)] [&>span]:text-[var(--color-text-tertiary-default)]',
-            i === highlight && 'bg-[var(--color-surface-highlight-subtle-default)]',
+            'sticky top-0 z-[1] bg-[var(--color-surface-secondary-default)] [&>span]:text-[var(--color-text-tertiary-default)]',
+            /* Highlight Subtle is 10% blue: lay it over the opaque header fill,
+               or the rows scrolling under the header show through. */
+            i === highlight &&
+              'bg-[image:linear-gradient(var(--color-surface-highlight-subtle-default),var(--color-surface-highlight-subtle-default))]',
           )}
         >
           {c}

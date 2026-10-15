@@ -39,17 +39,6 @@ export const LIST_TOAST: Record<ListPreset, ListToast> = {
 /* ── the Create form's seeds — `formSeed` in the original build ─────────── */
 
 
-export const CIS_CSV = `CIS_ID,CUSTOMER_NAME,ACCOUNT_NO,AMOUNT,PROMOTION_CODE
-100001,Somchai Yimdee,1234567890,1250.00,OCT24
-100002,Araya Chaisri,9876543210,860.50,OCT24
-100003,Nattapong Wongsa,4567891230,2100.00,OCT24
-100004,Siriporn Klaykeaw,3216549870,750.25,OCT24
-100005,Thanapol Suksai,1597534860,433.00,OCT24
-100006,Kanya Thongdee,7531598520,1999.00,OCT24
-100007,Piti Chaiyo,8524569630,320.00,OCT24
-100008,Mana Deejai,9638527410,1500.75,OCT24
-`
-
 export const DIRECT_CSV = `MOBILE_NO,EMAIL,CUSTOMER_NAME,AMOUNT,PROMOTION_CODE
 0812345678,somchai@email.com,Somchai Yimdee,1250.00,OCT24
 0898765432,araya@email.com,Araya Chaisri,860.50,OCT24
@@ -159,7 +148,8 @@ export type FormSeed = {
 }
 
 export const filled: FormSeed = {
-  file: { name: 'audience-cis.csv', text: CIS_CSV },
+  /* The wide file, so every Create preset shows the preview scrolling both ways (requester, 15 Oct 2026). */
+  file: { name: 'audience-cis-large.csv', text: LARGE_CSV },
   recipientType: 'cis',
   column: 'CIS_ID',
   channels: ['Email', 'SMS'],
