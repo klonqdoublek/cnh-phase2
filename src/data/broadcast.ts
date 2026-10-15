@@ -30,6 +30,9 @@ export const BROADCAST_COPY = {
   invalidCount: (n: number) => `${n} invalid`,
   invalidNote: 'Invalid recipients are skipped. Only valid recipients will receive the broadcast.',
   previewTitle: 'Preview (first 5 rows)',
+  /** Beside the preview title (Figma 89:4665). */
+  previewSize: (rows: number, columns: number) =>
+    `${rows.toLocaleString('en-US')} Rows • ${columns.toLocaleString('en-US')} Columns`,
   required: 'This field is required',
   noColumn: 'Select the column that identifies each recipient',
   noChannel: 'Please enable at least 1 notification channel',

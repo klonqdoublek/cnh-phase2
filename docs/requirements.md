@@ -101,7 +101,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 2. **Validate Audience file.** Two cards.
    - "Upload Audience file":
      - Select Recipient type\*: **CIS** (CIS ID column; any of Push, Email, SMS) or **Direct recipient** (a mobile or email column; Email *or* SMS only), as plain radios side by side.
-     - Upload File\* beside the ID column. The file is `.csv` or `.xlsx`, at most 10 MB and 1,000 recipients. After upload: a 5-row preview, a valid / invalid count, and a table of invalid rows. Invalid rows are skipped. Two sample files.
+     - Upload File\* beside the ID column. The file is `.csv` or `.xlsx`, at most 10 MB and 1,000 recipients. After upload: a preview of the whole file in a box five rows tall at the column's width, scrolling both ways under a fixed header, with the file's size beside its title ("100 Rows • 25 Columns", Figma 89:4665); a valid / invalid count; and a table of invalid rows. Preset `#/broadcast/create/large-file` loads 100 rows × 25 columns. Invalid rows are skipped. Two sample files.
      - The ID column is chosen from the file's headers. The BA confirmed on 14 Oct that Direct recipient stays.
    - Message content: the file's columns as chips that insert `{{COLUMN}}` into the box the cursor was last in, over one card per channel, three across.
      - Each card is switched on and off in its own title row. The switches replace the channel checkboxes and Direct recipient's Email / SMS radio. Under Direct recipient, switching one on switches the other off. A card that is off keeps what was typed and disables it.
@@ -151,6 +151,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2). |
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
+| 15 Oct 2026 | The file preview shows every row and column, five rows tall at the column's width, scrolling both ways (requester). |
 | 15 Oct 2026 | Do Not Disturb moves into the Delivery Date step (Figma 89:4665): three steps. |
 | 15 Oct 2026 | Broadcast End is for Schedule delivery only; Send as soon as possible has no end (requester, following draft 2.2). |
 | 15 Oct 2026 | Create broadcast follows draft 2.2 webds-matched (Figma 85:19401): four steps (three since DND joined Delivery Date); message content under the audience step; channels switched on their own cards; content fields and limits from the Template form's TH fields; End left of Start. See "Create: the three steps". |

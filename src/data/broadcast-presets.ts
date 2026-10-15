@@ -15,6 +15,7 @@ export const FORM_PRESETS = [
   'quiet',
   'dnd-rules',
   'end',
+  'large-file',
   'confirm',
   'submitting',
   'fail-dialog',
@@ -57,6 +58,65 @@ export const DIRECT_CSV = `MOBILE_NO,EMAIL,CUSTOMER_NAME,AMOUNT,PROMOTION_CODE
 08-1234,,Thanapol Suksai,433.00,OCT24
 +66812223333,kanya@email.com,Kanya Thongdee,1999.00,OCT24
 `
+
+/** A file too big for the preview box: 100 recipients × 25 columns, so the
+ *  preview scrolls both ways (`#/broadcast/create/large-file`). Made up,
+ *  repeating from short lists. */
+const LARGE_COLUMNS = [
+  'CIS_ID', 'CUSTOMER_NAME', 'ACCOUNT_NO', 'AMOUNT', 'PROMOTION_CODE', 'MOBILE_NO', 'EMAIL',
+  'FIRST_NAME', 'LAST_NAME', 'TIER', 'BRANCH', 'PRODUCT', 'CARD_TYPE', 'CARD_LAST4', 'DUE_DATE',
+  'MIN_PAYMENT', 'POINTS', 'POINTS_EXPIRY', 'SEGMENT', 'PREFERRED_LANG', 'CITY', 'PROVINCE',
+  'POSTCODE', 'OPEN_DATE', 'RM_NAME',
+]
+const FIRST = ['Somchai', 'Araya', 'Nattapong', 'Siriporn', 'Thanapol', 'Kanya', 'Piti', 'Mana', 'Wipa', 'Chai']
+const LAST = ['Yimdee', 'Chaisri', 'Wongsa', 'Klaykeaw', 'Suksai', 'Thongdee', 'Chaiyo', 'Deejai', 'Srisuk', 'Boonma']
+const TIERS = ['Gold', 'Silver', 'Platinum', 'Classic']
+const BRANCHES = ['Silom', 'Sathorn', 'Chiang Mai', 'Khon Kaen', 'Phuket']
+const PRODUCTS = ['Savings', 'Current', 'Credit card', 'Home loan']
+const CARDS = ['Visa', 'Mastercard', 'JCB']
+const CITIES: [string, string, string][] = [
+  ['Bang Rak', 'Bangkok', '10500'],
+  ['Mueang', 'Chiang Mai', '50000'],
+  ['Mueang', 'Khon Kaen', '40000'],
+  ['Kathu', 'Phuket', '83120'],
+]
+export const LARGE_CSV = [
+  LARGE_COLUMNS.join(','),
+  ...Array.from({ length: 100 }, (_, i) => {
+    const first = FIRST[i % FIRST.length]
+    const last = LAST[(i * 3) % LAST.length]
+    const [city, province, postcode] = CITIES[i % CITIES.length]
+    const day = String((i % 28) + 1).padStart(2, '0')
+    return [
+      100001 + i,
+      `${first} ${last}`,
+      String(1234567890 + i * 7919).slice(0, 10),
+      (250 + ((i * 137) % 4750)).toFixed(2),
+      'OCT24',
+      `08${String(10000000 + i * 4567).slice(0, 8)}`,
+      `${first.toLowerCase()}.${last.toLowerCase()}${i}@email.com`,
+      first,
+      last,
+      TIERS[i % TIERS.length],
+      BRANCHES[i % BRANCHES.length],
+      PRODUCTS[i % PRODUCTS.length],
+      CARDS[i % CARDS.length],
+      String(1000 + ((i * 373) % 9000)),
+      `2026-11-${day}`,
+      (100 + ((i * 61) % 900)).toFixed(2),
+      (i * 250) % 20000,
+      `2027-12-${day}`,
+      i % 3 ? 'Retail' : 'Affluent',
+      i % 4 ? 'TH' : 'EN',
+      city,
+      province,
+      postcode,
+      `20${String(10 + (i % 16)).padStart(2, '0')}-0${(i % 9) + 1}-${day}`,
+      `${FIRST[(i + 4) % FIRST.length]} ${LAST[(i + 7) % LAST.length]}`,
+    ].join(',')
+  }),
+  '',
+].join('\n')
 
 export const MESSAGE = `Dear {{CUSTOMER_NAME}},
 Your payment of THB {{AMOUNT}} was successful.
@@ -139,6 +199,8 @@ export function formSeed(preset: FormPreset): FormSeed {
         start: { inDays: nextWeekday(), time: '10:00' },
         end: { inDays: nextWeekday(), time: '12:00' },
       }
+    case 'large-file':
+      return { ...filled, file: { name: 'audience-cis-large.csv', text: LARGE_CSV } }
     case 'confirm':
       return { ...filled, open: 'confirm' }
     case 'submitting':

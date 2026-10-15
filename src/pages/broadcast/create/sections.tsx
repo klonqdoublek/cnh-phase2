@@ -226,21 +226,26 @@ function FileResult({ f }: F) {
   )
 }
 
-/** The first five rows of the file, the ID column marked. */
+/** The whole file in a box five rows tall at the column's width; the rest
+ *  scrolls, both ways, under a header that stays put. The ID column is marked. */
 function Preview({ f }: F) {
   const a = f.audience!
   const idIndex = a.headers.indexOf(f.column)
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <span className={LABEL}>{BROADCAST_COPY.previewTitle}</span>
-      <div className="overflow-x-auto">
-        <MiniTable
-          columns={a.headers}
-          widths={a.headers.map((_, i) => (i === a.headers.length - 1 ? 'minmax(max-content,1fr)' : 'max-content')).join(' ')}
-          rows={a.rows.slice(0, 5).map((r) => a.headers.map((_, i) => r[i] ?? ''))}
-          highlight={idIndex}
-        />
-      </div>
+      <span className="flex items-baseline gap-[var(--space-4)]">
+        <span className={LABEL}>{BROADCAST_COPY.previewTitle}</span>
+        <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">
+          {BROADCAST_COPY.previewSize(a.rows.length, a.headers.length)}
+        </span>
+      </span>
+      <MiniTable
+        columns={a.headers}
+        widths={a.headers.map((_, i) => (i === a.headers.length - 1 ? 'minmax(max-content,1fr)' : 'max-content')).join(' ')}
+        rows={a.rows.map((r) => a.headers.map((_, i) => r[i] ?? ''))}
+        highlight={idIndex}
+        visibleRows={5}
+      />
     </div>
   )
 }
@@ -255,6 +260,7 @@ function MiniTable({
   highlight = -1,
   negativeLast,
   maxHeight,
+  visibleRows,
 }: {
   columns: string[]
   rows: string[][]
@@ -262,14 +268,19 @@ function MiniTable({
   highlight?: number
   negativeLast?: boolean
   maxHeight?: boolean
+  /** Show this many rows under the header and scroll the rest, both ways. */
+  visibleRows?: number
 }) {
   const cell =
     'h-auto min-h-0 whitespace-nowrap border-b border-[var(--color-border-primary-default)] px-[var(--space-4)] py-[var(--space-2)] [&>span]:type-body-s'
-  return (
+  const table = (
     <div
       role="table"
       className={cn(
-        'grid min-w-full rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]',
+        'grid',
+        visibleRows
+          ? 'w-max min-w-full'
+          : 'min-w-full rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]',
         maxHeight && 'max-h-[280px] overflow-y-auto',
       )}
       style={{ gridTemplateColumns: widths }}
@@ -300,6 +311,18 @@ function MiniTable({
           </TableDataCell>
         )),
       )}
+    </div>
+  )
+  if (!visibleRows) return table
+  /* A row is a Body S line, py 8 and a 1px rule; the header is one more row. */
+  return (
+    <div
+      className="min-w-0 overflow-auto rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]"
+      style={{
+        maxHeight: `calc(${visibleRows + 1} * (var(--type-body-s-line-height) + 2 * var(--space-2) + 1px))`,
+      }}
+    >
+      {table}
     </div>
   )
 }
