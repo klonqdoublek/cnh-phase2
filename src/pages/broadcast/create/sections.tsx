@@ -259,6 +259,9 @@ const SCROLL_BARS = cn(
   '[&::-webkit-scrollbar]:size-[12px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-corner]:bg-transparent',
   '[&::-webkit-scrollbar-thumb]:rounded-[var(--radius-full)] [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-padding',
   '[&::-webkit-scrollbar-thumb]:bg-[var(--color-component-scroll-bar-default)] [&::-webkit-scrollbar-thumb:active]:bg-[var(--color-component-scroll-bar-pressed)]',
+  /* A 100-row file makes a 200-tall box's thumb about 11 long — too short to
+     see. Both axes get a floor. */
+  '[&::-webkit-scrollbar-thumb:vertical]:min-h-[40px] [&::-webkit-scrollbar-thumb:horizontal]:min-w-[40px]',
 )
 
 /** webds Table Header / Data Cells at a compact row height in a bordered grid.
