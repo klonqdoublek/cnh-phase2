@@ -109,27 +109,25 @@ export function Select({
   )
 }
 
-/** A bordered radio option with a title and a note — recipient type, delivery. */
+/** A radio with a title and a note under it — recipient type, delivery.
+ *  Plain, no box around it (draft 2.2 webds-matched, Figma 85:19401). */
 export function ModeOption({
   on,
   label,
   description,
   onSelect,
+  className,
 }: {
   on: boolean
   label: string
   description: string
   onSelect: () => void
+  className?: string
 }) {
   return (
-    <label
-      className={cn(
-        'flex flex-1 cursor-pointer items-start gap-[var(--space-2)] rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)] px-[var(--space-4)] py-[var(--space-3)]',
-        on && 'border-[var(--color-border-highlight-default)] bg-[var(--color-surface-highlight-subtle-default)]',
-      )}
-    >
+    <label className={cn('flex min-w-0 cursor-pointer items-start gap-[var(--space-2)]', className)}>
       <RadioButton selected={on} onClick={onSelect} aria-label={label} />
-      <span className="flex flex-col pt-[var(--space-2)]">
+      <span className="flex flex-col">
         <span className={LABEL}>{label}</span>
         <span className={NOTE}>{description}</span>
       </span>

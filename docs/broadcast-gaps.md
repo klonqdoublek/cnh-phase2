@@ -45,7 +45,7 @@ The rest are still open.
 | Q7 | File validation | CIS ID unique; mobile and email well formed; at least one contact per row; no duplicate mobile or email in the file; data "valid and active". | Duplicate IDs, mobile format and email format are checked on the chosen ID column. | Which of the deck's rules apply in CIS mode? "Active" cannot be checked in a prototype. |
 | Q8 | Start fields | Start Date and Start Time (local) as two fields. | One Start date and time field (PR #2). The BA's screenshot shows the older two-field build. | Is one field acceptable? |
 | Q9 | Status | Activated, Sending, Paused outside the window, Completed, Expired. | Draft, Scheduled, Sending, Paused, Completed. | Confirm the status set, and whether Expired is needed (see Q2). |
-| Q10 | SMS counter | `109/160`. | `n/800`, the Template form's SMS message (TH), from draft 2.2 (15 Oct). The SMS segment counter is gone. | Which counter? |
+| Q10 | SMS counter | `109/160`. | `n/800`, the Template form's SMS message (TH), from draft 2.2 webds-matched (Figma 85:19401, 15 Oct). The SMS segment counter is gone. | Which counter? |
 | Q11 (TBC) | Overnight DND | Not covered. | A period that crosses midnight belongs to the day it starts. Ticking Mon–Fri on 18:00–08:00 covers Monday night to Friday night, so Sunday night into Monday 00:00–08:00 is open. With the BA's example the weekend ends at Monday 00:00 and sending starts at midnight, not 08:00. | Which one: (a) keep this, and tick Sun as well to keep Monday morning quiet; or (b) count the morning part of a period as the day it ends, so ticking Mon also covers Monday 00:00–08:00? |
 | Q12 | DND limits | Not covered. | Any number of periods; overlapping periods are allowed. | Is there a maximum number of periods? |
 

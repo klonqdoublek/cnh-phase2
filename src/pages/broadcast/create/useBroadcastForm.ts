@@ -36,7 +36,7 @@ export const CHANNEL_FIELDS: Record<Channel, (keyof BroadcastContent)[]> = {
 }
 export const DIRECT_CHANNELS: Channel[] = ['Email', 'SMS']
 /** Each message box's maximum — the Template form's TH fields, which draft 2.2
- *  (Figma 70:6699, 15 Oct 2026) copies into the channel cards. */
+ *  (Figma 85:19401, 15 Oct 2026) copies into the channel cards. */
 export const CONTENT_MAX: Record<keyof BroadcastContent, number> = {
   pushTitle: 255,
   pushBody: 2048,

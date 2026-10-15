@@ -20,10 +20,12 @@ import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type Broadcast
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
-import { CHANNEL_FIELDS, CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
+import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
-/* The Create broadcast steps, laid out as draft 2.2 (Figma 70:6699, 15 Oct
- * 2026): five steps, channels switched on their own cards in Step 3. */
+/* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
+ * 85:19401, 15 Oct 2026): the audience step carries the message content —
+ * one set of field chips over three channel cards — and channels are
+ * switched on their own cards. */
 
 type F = { f: BroadcastForm }
 /** The message box the cursor was last in, so a field chip knows where to insert. */
@@ -107,38 +109,40 @@ export function BasicInfo({ f }: F) {
 
 /* ── Step 2 ─────────────────────────────────────────────────────────────── */
 
-/** Recipient type, the file, its ID column and the fields it brings. The
- *  upload is the CMS prototype's zone and file slot (components/upload) —
- *  webds ships no upload control (gap). */
-export function AudienceFile({ f, focus }: F & { focus: FocusRef }) {
+/** Recipient type, then the file beside its ID column. The upload is the
+ *  CMS prototype's zone and file slot (components/upload) — webds ships no
+ *  upload control (gap). */
+export function AudienceFile({ f }: F) {
   return (
     <FormSectionCard title="Upload Audience file">
       <RecipientType f={f} />
-      <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
-        <span className={LABEL}>Upload File*</span>
-        {f.file ? (
-          <FileResult f={f} />
-        ) : (
-          <UploadZone
-            buttonLabel={BROADCAST_COPY.browse}
-            hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
-            accept=".csv,.xlsx,text/csv"
-            error={!!f.errors.file}
-            onFiles={f.pick}
-          />
-        )}
-        {f.errors.file && (
-          <InlineMessage appearance="negative" size="s">
-            {f.errors.file}
-          </InlineMessage>
-        )}
-        <div className="flex flex-wrap gap-[var(--space-6)] pt-[var(--space-2)]">
-          <SampleLink href="/samples/audience-cis.csv">Sample file · CIS</SampleLink>
-          <SampleLink href="/samples/audience-direct.csv">Sample file · Direct recipient</SampleLink>
+      <div className="flex items-start gap-[var(--space-6)]">
+        <div className="flex w-[672px] min-w-0 shrink-0 flex-col gap-[var(--space-2)]">
+          <span className={LABEL}>Upload File*</span>
+          {f.file ? (
+            <FileResult f={f} />
+          ) : (
+            <UploadZone
+              buttonLabel={BROADCAST_COPY.browse}
+              hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
+              accept=".csv,.xlsx,text/csv"
+              error={!!f.errors.file}
+              onFiles={f.pick}
+              className="min-h-[164px]"
+            />
+          )}
+          {f.errors.file && (
+            <InlineMessage appearance="negative" size="s">
+              {f.errors.file}
+            </InlineMessage>
+          )}
+          <div className="flex flex-wrap gap-[var(--space-6)] pt-[var(--space-2)]">
+            <SampleLink href="/samples/audience-cis.csv">Sample file · CIS</SampleLink>
+            <SampleLink href="/samples/audience-direct.csv">Sample file · Direct recipient</SampleLink>
+          </div>
         </div>
+        <ColumnSelect f={f} />
       </div>
-      <ColumnSelect f={f} />
-      {f.fields.length > 0 && <FieldChips f={f} focus={focus} />}
     </FormSectionCard>
   )
 }
@@ -302,18 +306,20 @@ function MiniTable({
 function RecipientType({ f }: F) {
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <span className={LABEL}>Recipient type*</span>
-      <div role="radiogroup" aria-label="Recipient type" className="grid grid-cols-2 gap-[var(--space-4)]">
+      <span className={LABEL}>Select Recipient type*</span>
+      <div role="radiogroup" aria-label="Recipient type" className="flex gap-[var(--space-2)] py-[var(--space-3)]">
         <ModeOption
           on={f.recipientType === 'cis'}
           label="CIS"
           description="Send to customers using CIS ID from file"
+          className="w-[377px]"
           onSelect={() => f.setRecipientType('cis')}
         />
         <ModeOption
           on={f.recipientType === 'direct'}
           label="Direct recipient"
           description="Send to phone / email from file · Email or SMS only"
+          className="w-[377px]"
           onSelect={() => f.setRecipientType('direct')}
         />
       </div>
@@ -347,28 +353,16 @@ function ColumnSelect({ f }: F) {
   )
 }
 
-/* ── Step 3 ─────────────────────────────────────────────────────────────── */
+/* ── Message content (under the audience step) ─────────────────────────── */
 
-/** The file's columns as chips that insert `{{COLUMN}}`. On a channel card
- *  (`scope`) a chip writes into that card: the box the cursor was last in if
- *  it is one of the card's, else the card's first box. */
-export function FieldChips({
-  f,
-  focus,
-  scope,
-  disabled,
-}: F & { focus: FocusRef; scope?: (keyof BroadcastContent)[]; disabled?: boolean }) {
+/** The file's columns as chips that insert `{{COLUMN}}` into the message box
+ *  the cursor was last in. */
+export function FieldChips({ f, focus }: F & { focus: FocusRef }) {
   const [needsField, setNeedsField] = useState(false)
+  if (!f.fields.length) return <p className={NOTE}>Available fields appear here once the audience file is uploaded.</p>
   const insert = (token: string) => {
-    const last = focus.current
-    let target = last && last.el.isConnected && !last.el.disabled && (!scope || scope.includes(last.key as never)) ? last : null
-    if (!target && scope) {
-      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-        `[data-field="${scope[0]}"] input, [data-field="${scope[0]}"] textarea`,
-      )
-      if (el && !el.disabled) target = { key: scope[0], el }
-    }
-    if (!target) return setNeedsField(true)
+    const target = focus.current
+    if (!target || target.el.disabled || !target.el.isConnected) return setNeedsField(true)
     setNeedsField(false)
     const { el, key } = target
     const from = el.selectionStart ?? el.value.length
@@ -386,12 +380,7 @@ export function FieldChips({
         {f.fields.map((field) => (
           /* mousedown would blur the message box and lose the caret first */
           <span key={field.column} onMouseDown={(e) => e.preventDefault()}>
-            <PillChip
-              appearance="highlight"
-              state={disabled ? 'disabled' : 'default'}
-              aria-label={`Insert ${field.token}`}
-              onClick={() => insert(field.token)}
-            >
+            <PillChip appearance="highlight" aria-label={`Insert ${field.token}`} onClick={() => insert(field.token)}>
               {field.column}
             </PillChip>
           </span>
@@ -408,7 +397,7 @@ export function FieldChips({
 
 /** "Turn on at least one channel" has no field of its own: the cards carry
  *  the stroke and this Alert carries the message (webds `form-section-card`). */
-export function ChannelAlert({ f }: F) {
+function ChannelAlert({ f }: F) {
   if (!f.errors.channels) return null
   return (
     <Alert
@@ -419,52 +408,42 @@ export function ChannelAlert({ f }: F) {
   )
 }
 
-const EMAIL_HINT =
-  'To send both Thai and English content in the same email, please enter content in both Thai and English for every placeholder'
-
-/** One card per channel offered, switched on its own title row (webds
- *  `form-section-card`): off keeps what was typed and disables it. Direct
- *  recipient offers Email and SMS, one at a time. */
-export function ChannelCards({ f, focus }: F & { focus: FocusRef }) {
+/** The chips over one card per channel offered, three across. Each card is
+ *  switched on its own title row (webds `form-section-card`): off keeps what
+ *  was typed and disables it. Direct recipient offers Email and SMS, one at a
+ *  time. */
+export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   const invalid = !!f.errors.channels
   return (
-    <div
-      data-error={invalid ? 'true' : undefined}
-      className="flex flex-col gap-[var(--space-8)]"
-      onFocusCapture={(e) => {
-        const el = e.target as HTMLInputElement | HTMLTextAreaElement
-        const key = el.closest('[data-field]')?.getAttribute('data-field')
-        if (key && key in f.content) focus.current = { key, el }
-      }}
-    >
-      {f.offered.map((c) => {
-        const on = f.channels.includes(c)
-        return (
-          <FormSectionCard
-            key={c}
-            title={
-              c === 'Email' ? (
-                <span className="flex flex-col">
-                  <span>{c}</span>
-                  <span className={NOTE}>{EMAIL_HINT}</span>
-                </span>
-              ) : (
-                c
-              )
-            }
-            toggle={{ on, onToggle: (v) => f.setChannel(c, v) }}
-            invalid={invalid}
-          >
-            <div className="flex min-w-0 flex-col gap-[var(--space-8)]">
-              {f.fields.length > 0 && <FieldChips f={f} focus={focus} scope={CHANNEL_FIELDS[c]} disabled={!on} />}
-              <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
-                <ChannelFields f={f} channel={c} on={on} />
-              </div>
-            </div>
-          </FormSectionCard>
-        )
-      })}
-    </div>
+    <StepSurface>
+      <FieldChips f={f} focus={focus} />
+      <ChannelAlert f={f} />
+      <div
+        data-error={invalid ? 'true' : undefined}
+        className="grid grid-cols-3 items-stretch gap-[var(--space-8)]"
+        onFocusCapture={(e) => {
+          const el = e.target as HTMLInputElement | HTMLTextAreaElement
+          const key = el.closest('[data-field]')?.getAttribute('data-field')
+          if (key && key in f.content) focus.current = { key, el }
+        }}
+      >
+        {f.offered.map((c) => {
+          const on = f.channels.includes(c)
+          return (
+            <FormSectionCard
+              key={c}
+              className="min-w-0 border border-[var(--color-border-primary-default)]"
+              title={c}
+              toggle={{ on, onToggle: (v) => f.setChannel(c, v) }}
+              invalid={invalid}
+              rowGap={4}
+            >
+              <ChannelFields f={f} channel={c} on={on} />
+            </FormSectionCard>
+          )
+        })}
+      </div>
+    </StepSurface>
   )
 }
 
@@ -501,12 +480,12 @@ function ChannelFields({ f, channel, on }: F & { channel: Channel; on: boolean }
   return box('smsMessage', 'SMS message (TH)', 'Enter SMS message in Thai', { multiline: true })
 }
 
-/* ── Step 4 ─────────────────────────────────────────────────────────────── */
+/* ── Delivery ───────────────────────────────────────────────────────────── */
 
 export function Delivery({ f }: F) {
   return (
-    <StepSurface>
-      <div role="radiogroup" aria-label="When to send" className="grid w-[calc(50%-var(--space-2))] gap-[var(--space-4)]">
+    <FormSectionCard title="Select Delivery Date">
+      <div role="radiogroup" aria-label="When to send" className="flex flex-col gap-[var(--space-10)] py-[var(--space-3)]">
         <ModeOption
           on={f.mode === 'now'}
           label="Send as soon as possible"
@@ -564,7 +543,7 @@ export function Delivery({ f }: F) {
         )}
       </div>
       <Outlook f={f} />
-    </StepSurface>
+    </FormSectionCard>
   )
 }
 
@@ -587,7 +566,7 @@ function Outlook({ f }: F) {
   )
 }
 
-/* ── Step 5 ─────────────────────────────────────────────────────────────── */
+/* ── DND ────────────────────────────────────────────────────────────────── */
 
 /** One quiet period, top to bottom as draft 2.2: its days, its hours, All
  *  day — and, when there is more than one, a trash to remove it. */

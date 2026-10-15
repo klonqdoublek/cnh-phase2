@@ -6,7 +6,7 @@ import { ConsolePage } from '@/patterns/console-page'
 import { BROADCAST_COPY, type Broadcast } from '@/data/broadcast'
 import type { FormPreset } from '@/data/broadcast-presets'
 import { Dialogs } from './create/Dialogs'
-import { AudienceFile, BasicInfo, ChannelAlert, ChannelCards, Delivery, DndPanel, Section, type FocusRef } from './create/sections'
+import { AudienceFile, BasicInfo, Delivery, DndPanel, MessageContent, Section, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
 
 export type SaveKind = 'draft' | 'submit'
@@ -21,12 +21,12 @@ export type BroadcastWizardProps = {
 }
 
 /**
- * Create / Edit broadcast — one page, five steps, the actions pinned below.
+ * Create / Edit broadcast — one page, four steps, the actions pinned below.
  * The frame is webds `console-page` (CNH's own: 82 header with a back mark,
  * a 1280 column scrolling in px 80 / py 32, a 76 footer); each step is its
- * `FormStep`. Layout and step copy are draft 2.2 (Figma 70:6699, 15 Oct 2026):
- * the channels moved from Step 3's checkboxes onto their own cards' switches,
- * so Recipient mapping folded into the audience step.
+ * `FormStep`. Layout and step copy are draft 2.2 webds-matched (Figma
+ * 85:19401, 15 Oct 2026): the channels moved from checkboxes onto their own
+ * cards' switches, and the message content sits under the audience step.
  */
 export function BroadcastWizard({ onBack, onCreate, failNext, preset, initial }: BroadcastWizardProps) {
   const f = useBroadcastForm({ onCreate, failNext, preset, initial })
@@ -64,19 +64,15 @@ export function BroadcastWizard({ onBack, onCreate, failNext, preset, initial }:
           <BasicInfo f={f} />
         </Section>
         <Section title="Step 2: Validate Audience file">
-          <AudienceFile f={f} focus={focus} />
+          <div className="flex flex-col gap-[var(--space-8)]">
+            <AudienceFile f={f} />
+            <MessageContent f={f} focus={focus} />
+          </div>
         </Section>
-        <Section
-          title="Step 3: Manual content"
-          note={f.fields.length ? undefined : 'Available fields appear here once the audience file is uploaded.'}
-          alert={<ChannelAlert f={f} />}
-        >
-          <ChannelCards f={f} focus={focus} />
-        </Section>
-        <Section title="Step 4: Delivery">
+        <Section title="Step 3: Delivery Date">
           <Delivery f={f} />
         </Section>
-        <Section title="Step 5: DND" note="Prevent sending messages during quiet hours.">
+        <Section title="Step 4: DND" note="Prevent sending messages during quiet hours.">
           <DndPanel f={f} />
         </Section>
       </ConsolePage>
