@@ -154,7 +154,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 | 14 Oct 2026 | Times in 5-minute steps, for Start and for DND. |
 | 14 Oct 2026 | DND can hold several quiet periods that the user adds; All day per period. |
 | 14 Oct 2026 | Broadcast message uses DND, not Service Window (Q1). |
-| 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2). |
+| 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2; Published since 16 Oct). |
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
 | 16 Oct 2026 | Broadcast statuses follow the list of values: Draft, Queue, Processing, Published; Paused folds into Processing. Failed and Cancelled are on hold (Q13). |
