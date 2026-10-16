@@ -124,12 +124,15 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
   - Overlapping periods are allowed.
 - **Overnight periods** belong to the day they start. Whether Monday 00:00–08:00 should also be quiet is **TBC** (Q11).
 - **Broadcast End** (BA, 14 Oct):
-  - At the end, sending stops. Recipients left are counted as **Not sent**, and the broadcast still ends **Completed**.
+  - At the end, sending stops. Recipients left are counted as **Not sent**, and the broadcast still ends **Published**.
   - There is no Expired status.
   - The end does not appear in the list.
-- **Status on submit:** **Sending** if it is sent now and not inside a quiet period, otherwise **Scheduled**.
-- **Statuses:** Draft, Scheduled, Sending, Paused (inside a quiet period), Completed.
-- **Edit:** a Draft reopens in Edit and saves under the same ID. Scheduled and later cannot be edited (P2-20).
+- **Status on submit:** **Processing** if it is sent now and not inside a quiet period, otherwise **Queue**.
+- **Statuses** (list of values, 16 Oct 2026): Draft, Queue, Processing, Published. The badge shows them in title case (DRAFT, QUEUE, PROCESSING, PUBLISHED in the list of values).
+  - The old Scheduled is Queue, Sending is Processing, Completed is Published.
+  - The old Paused is Processing; the drawer still says it is inside the quiet period.
+  - **Failed** and **Cancelled** are in the list of values but on hold until the BA explains when they apply (Q13).
+- **Edit:** a Draft reopens in Edit and saves under the same ID. Queue and later cannot be edited (P2-20).
 - **Delivery report:** a CSV, `{id}-delivery-report.csv`, with one row per recipient: ID, Channel, Result (Success, Failed, Not sent, Waiting to send) and Reason.
   - Offered once anything was attempted.
   - In the prototype the rows are mock data built from the counts.
@@ -151,13 +154,14 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 | 14 Oct 2026 | Times in 5-minute steps, for Start and for DND. |
 | 14 Oct 2026 | DND can hold several quiet periods that the user adds; All day per period. |
 | 14 Oct 2026 | Broadcast message uses DND, not Service Window (Q1). |
-| 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2). |
+| 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2; Published since 16 Oct). |
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
+| 16 Oct 2026 | Broadcast statuses follow the list of values: Draft, Queue, Processing, Published; Paused folds into Processing. Failed and Cancelled are on hold (Q13). |
 
 ## Open items
 
-- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC) and Q12. See [broadcast-gaps.md](broadcast-gaps.md).
+- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12 and Q13. See [broadcast-gaps.md](broadcast-gaps.md).
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy).
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.

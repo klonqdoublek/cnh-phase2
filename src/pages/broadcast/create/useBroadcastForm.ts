@@ -295,7 +295,7 @@ export function useBroadcastForm({
         setFailed(true)
         return
       }
-      onCreate(record(mode === 'now' && !waits ? 'Sending' : 'Scheduled'), 'submit')
+      onCreate(record(mode === 'now' && !waits ? 'Processing' : 'Queue'), 'submit')
     }, CREATE_MS)
   }
 
