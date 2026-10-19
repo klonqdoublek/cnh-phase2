@@ -1,16 +1,21 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/bbl/button'
+import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
 import { ConsolePage } from '@/patterns/console-page'
 import { EmptyState } from '@/patterns/empty-state'
 import {
   BROADCAST_COPY,
+  BROADCAST_STATUSES,
   fmtDateTime,
   fmtDndRule,
   type Broadcast,
   type Dnd,
   type ListToast as ListToastValue,
 } from '@/data/broadcast'
+import { CHANNELS } from '@/data/templates'
+import { FilterSelect } from '../notifications/FilterSelect'
+import { ListSearch } from '../notifications/ListSearch'
 import { BroadcastStatus } from './list/BroadcastStatus'
 import { ListFooter } from './list/ListFooter'
 import { ListTable, type ListColumn } from './list/ListTable'
@@ -72,9 +77,68 @@ const COLUMNS: ListColumn<Broadcast>[] = [
  */
 export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast, onCreatedClose }: BroadcastListProps) {
   const [requestedPage, setPage] = useState(0)
-  const pageCount = Math.max(1, Math.ceil(broadcasts.length / PAGE_SIZE))
+  const [query, setQuery] = useState('')
+  const [channels, setChannels] = useState<string[]>([...CHANNELS])
+  const [statuses, setStatuses] = useState<string[]>([...BROADCAST_STATUSES])
+
+  /* Notification management's rules: search matches name or description, and
+     a filter with nothing — or everything — ticked filters nothing. */
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return broadcasts.filter((b) => {
+      const matches = !q || b.name.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)
+      const channel =
+        channels.length === CHANNELS.length || channels.length === 0 || b.channels.some((c) => channels.includes(c))
+      const status = statuses.length === 0 || statuses.includes(b.status)
+      return matches && channel && status
+    })
+  }, [broadcasts, query, channels, statuses])
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const page = Math.min(requestedPage, pageCount - 1)
-  const rows = broadcasts.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
+  const rows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
+
+  /** Any filter change goes back to page 1. */
+  const refilter = (change: () => void) => {
+    change()
+    setPage(0)
+  }
+
+  /* Notification management's filter row — search 520 · two 304 filters ·
+     Clear 72, gap 16 — at the list's px 16, 24 above the table. */
+  const filters = (
+    <div className="flex w-full shrink-0 items-start gap-[var(--space-4)] px-[var(--space-4)] pb-[var(--space-6)]">
+      <div className="min-w-[200px] flex-[0_1_520px]">
+        <ListSearch label={BROADCAST_COPY.search} value={query} onChange={(v) => refilter(() => setQuery(v))} />
+      </div>
+      <div className="min-w-[180px] flex-[0_1_304px]">
+        <FilterSelect label="Channel" options={CHANNELS} value={channels} onChange={(v) => refilter(() => setChannels(v))} />
+      </div>
+      <div className="min-w-[180px] flex-[0_1_304px]">
+        <FilterSelect
+          label="Status"
+          options={BROADCAST_STATUSES}
+          value={statuses}
+          onChange={(v) => refilter(() => setStatuses(v))}
+        />
+      </div>
+      <div className="flex h-[64px] shrink-0 items-center">
+        <GhostButton
+          appearance="highlight"
+          className="w-[72px] whitespace-nowrap"
+          onClick={() =>
+            refilter(() => {
+              setQuery('')
+              setChannels([...CHANNELS])
+              setStatuses([...BROADCAST_STATUSES])
+            })
+          }
+        >
+          Clear
+        </GhostButton>
+      </div>
+    </div>
+  )
 
   return (
     <div className="flex h-full min-h-px flex-col">
@@ -102,13 +166,29 @@ export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast
             {BROADCAST_COPY.emptyLine}
           </EmptyState>
         ) : (
-          <ListTable
-            label={BROADCAST_COPY.listTitle}
-            columns={COLUMNS}
-            rows={rows}
-            rowKey={(b) => b.id}
-            onOpen={onOpen}
-          />
+          /* One block, so the column's gap stays out of the filter row's 24. */
+          <div className="flex flex-col">
+            {filters}
+            {rows.length === 0 ? (
+              /* The empty card's shape, less the filter row (64 + 24). */
+              <EmptyState
+                variant="idle"
+                icon={<img src="/illustrations/no-results.svg" alt="" width={124} height={124} />}
+                bodyMaxWidth="none"
+                className="h-[725px] justify-start gap-[var(--space-6)] pt-[100px] [&>div>span:last-child]:text-[var(--color-text-secondary-default)]"
+              >
+                {BROADCAST_COPY.noResults}
+              </EmptyState>
+            ) : (
+              <ListTable
+                label={BROADCAST_COPY.listTitle}
+                columns={COLUMNS}
+                rows={rows}
+                rowKey={(b) => b.id}
+                onOpen={onOpen}
+              />
+            )}
+          </div>
         )}
       </ConsolePage>
 
@@ -116,7 +196,7 @@ export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast
         <ListFooter
           page={page}
           pageSize={PAGE_SIZE}
-          total={broadcasts.length}
+          total={filtered.length}
           onPrevious={() => setPage(page - 1)}
           onNext={() => setPage(page + 1)}
         />
