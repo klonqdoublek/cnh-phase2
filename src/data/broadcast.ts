@@ -69,6 +69,8 @@ export const BROADCAST_COPY = {
      management's failure toast, Figma 1:14740. */
   reportFailTitle: 'Unable to download',
   reportFailBody: 'Please try again',
+  /* The status could not be updated: Submit's fail dialog, reworded. */
+  cancelFailTitle: 'Unable to cancel the broadcast',
 }
 
 export const MAX_FILE_BYTES = 10485760
