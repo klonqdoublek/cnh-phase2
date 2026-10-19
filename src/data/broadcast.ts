@@ -12,6 +12,10 @@ export const BROADCAST_COPY = {
   createLede: 'Create a manual notification for a selected audience.',
   emptyTitle: 'No broadcasts created yet',
   emptyLine: 'Create a broadcast to send one message to many customers',
+  /* Composed (docs/broadcast-gaps.md): the list's search and its no-results
+     line, after the Notification management list. */
+  search: 'Search by broadcast name or description',
+  noResults: 'No results found',
   dropTitle: 'Upload audience file',
   dropHint: 'Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000 recipients',
   browse: 'Choose file',
@@ -287,7 +291,8 @@ export type BroadcastContent = {
 
 /** The status list of values (16 Oct 2026): DRAFT, QUEUE, PROCESSING, PUBLISHED.
  *  FAILED and CANCELLED are on hold until the BA confirms them. */
-export type BroadcastStatus = 'Draft' | 'Queue' | 'Processing' | 'Published'
+export const BROADCAST_STATUSES = ['Draft', 'Queue', 'Processing', 'Published'] as const
+export type BroadcastStatus = (typeof BROADCAST_STATUSES)[number]
 
 export type Broadcast = {
   id: string
