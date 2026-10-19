@@ -586,7 +586,9 @@ function Outlook({ f }: F) {
     <Alert
       appearance="brand"
       icon={<Icon slug="information" size={24} color="var(--color-icon-highlight-default)" />}
-      description={<>
+      /* Title, not Description: the Figma Alert has no switch to hide its Title,
+         so the board draws this note as the Title-only Alert. */
+      title={<>
         {f.waits
           ? `${f.mode === 'now' ? 'Now' : 'The start'} is inside the quiet period. Sending starts at ${fmtDateTime(f.first)}.`
           : f.mode === 'now'
