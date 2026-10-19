@@ -256,6 +256,20 @@
    "label": "Edit broadcast — the draft reopened",
    "route": "#/broadcast/edit/BC-0007",
    "section": "Broadcast"
+  },
+  {
+   "id": "bc-cancel-confirm",
+   "kind": "screen",
+   "label": "Cancel this broadcast?",
+   "route": "#/broadcast/view/BC-0007/cancel",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-cancelled",
+   "kind": "screen",
+   "label": "Broadcast cancelled",
+   "route": "#/broadcast/cancelled",
+   "section": "Broadcast"
   }
  ],
  "edges": [
@@ -713,7 +727,7 @@
    "style": "solid",
    "touch": {
     "x": 320,
-    "y": 170,
+    "y": 379,
     "w": 1600,
     "h": 64
    }
@@ -724,9 +738,45 @@
    "label": "Edit",
    "style": "solid",
    "touch": {
-    "x": 1832,
+    "x": 1836,
     "y": 1020,
-    "w": 64,
+    "w": 61,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-view",
+   "to": "bc-cancel-confirm",
+   "label": "Cancel broadcast",
+   "style": "solid",
+   "touch": {
+    "x": 1655,
+    "y": 1020,
+    "w": 165,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-confirm",
+   "to": "bc-cancelled",
+   "label": "Cancel broadcast",
+   "style": "solid",
+   "touch": {
+    "x": 962,
+    "y": 565,
+    "w": 165,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-confirm",
+   "to": "bc-view",
+   "label": "Keep draft",
+   "style": "back",
+   "touch": {
+    "x": 1134,
+    "y": 565,
+    "w": 110,
     "h": 44
    }
   },
@@ -755,5 +805,5 @@
    }
   }
  ],
- "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself)"
+ "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself) · Cancel a draft 2026-10-19, same method on a static build (#/broadcast/view/BC-0007[/cancel])"
 }

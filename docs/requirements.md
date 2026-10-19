@@ -90,7 +90,8 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
   - **Download report** in the Delivery result head.
   - Broadcast details: description, audience file, recipient type, start, end, Do Not Disturb.
   - One section per channel.
-  - **Edit** on a Draft only.
+  - A Draft and a Cancelled broadcast have no Delivery result; Broadcast details carries the status note.
+  - **Cancel broadcast** and **Edit** on a Draft only. Cancel asks first (*Cancel this broadcast?*: **Keep draft** / **Cancel broadcast**), then the list shows a *Broadcast cancelled* toast and the row turns Cancelled.
 - **Create and Edit broadcast:** one page with six steps, a sticky footer with **Save draft** and **Submit**, then a confirm dialog.
 
 ### Create: the six steps
@@ -128,13 +129,25 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
   - There is no Expired status.
   - The end does not appear in the list.
 - **Status on submit:** **Processing** if it is sent now and not inside a quiet period, otherwise **Queue**.
-- **Statuses** (list of values, 16 Oct 2026): Draft, Queue, Processing, Published. The badge shows them in title case (DRAFT, QUEUE, PROCESSING, PUBLISHED in the list of values).
+- **Statuses** (list of values 16 Oct 2026; meanings 19 Oct 2026). The badge shows them in title case.
+
+  | Status | Meaning | Badge |
+  |---|---|---|
+  | DRAFT | Saved with **Save draft**. | Caution (yellow) |
+  | QUEUE | Submitted; the system has accepted it. | Disabled (grey) |
+  | PROCESSING | The system has started sending. | Accent (blue) |
+  | PUBLISHED | Finished. | Positive (green) |
+  | FAILED | A system error stopped it, in Queue or Processing. | Negative (red) |
+  | CANCELLED | A saved draft was cancelled because it is no longer needed. | Disabled (grey) |
+
   - The old Scheduled is Queue, Sending is Processing, Completed is Published.
   - The old Paused is Processing; the drawer still says it is inside the quiet period.
-  - **Failed** and **Cancelled** are in the list of values but on hold until the BA explains when they apply (Q13).
-- **Edit:** a Draft reopens in Edit and saves under the same ID. Queue and later cannot be edited (P2-20).
+  - **Cancel is for a Draft only.** Once submitted (Queue and later) a broadcast cannot be cancelled; this is a system limit.
+  - A Cancelled broadcast stays in the list, read only, with no actions.
+  - A Failed broadcast keeps its Delivery result. Recipients still waiting when it stopped are counted as **Not sent** (report reason `System error`), and Download report is offered once anything was attempted. There is no retry.
+- **Edit:** a Draft reopens in Edit and saves under the same ID. Queue and later cannot be edited (P2-20). Cancelled cannot be edited.
 - **Delivery report:** a CSV, `{id}-delivery-report.csv`, with one row per recipient: ID, Channel, Result (Success, Failed, Not sent, Waiting to send) and Reason.
-  - Offered once anything was attempted.
+  - Offered once anything was attempted (Processing, Published, Failed).
   - In the prototype the rows are mock data built from the counts.
 
 ### Recipient file (from the BA deck; not every rule is in the prototype)
@@ -158,10 +171,11 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
 | 16 Oct 2026 | Broadcast statuses follow the list of values: Draft, Queue, Processing, Published; Paused folds into Processing. Failed and Cancelled are on hold (Q13). |
+| 19 Oct 2026 | Meaning of each status (Q13 answered): Failed is a system error; Cancelled is a saved draft cancelled by the user. Only a Draft can be cancelled; after Submit it cannot (system limit). Design decisions with the requester: Cancel sits in the Draft drawer footer behind a confirm dialog; a Cancelled broadcast stays in the list read only; a Failed drawer keeps Delivery result and Download report, no retry; badges Failed = Negative, Cancelled = Disabled. |
 
 ## Open items
 
-- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12 and Q13. See [broadcast-gaps.md](broadcast-gaps.md).
+- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC) and Q12. Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy).
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.
