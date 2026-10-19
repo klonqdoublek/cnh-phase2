@@ -150,6 +150,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 
 | Date | Ruling |
 |---|---|
+| 19 Oct 2026 | Import dialog 600 wide, was 800: too wide for one file (review comment). 600 is the sectioned dialog's measured width and the Import over…? dialog's. Layout only. |
 | 15 Oct 2026 | Import uploading: the spinner covers the whole page (Scrim Strong, on-inverse spinner, CMS `SubmitOverlay`), not only the dialog. Requester's call. |
 | 15 Oct 2026 | Import: one file per import; 10 MB (CMS's limit, pending BA); duplicate file name asks "Import over …?" and replaces that file's earlier templates. Requester's call, not the BA's. |
 | 14 Oct 2026 | Remove Recipients and Result from the broadcast list; the drawer shows them. |
