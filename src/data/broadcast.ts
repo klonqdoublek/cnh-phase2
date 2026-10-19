@@ -51,6 +51,13 @@ export const BROADCAST_COPY = {
   draftTitle: 'Draft saved',
   draftBody: (name: string) => `${name} is saved as a draft`,
   draftNeedsName: 'Enter a broadcast name to save a draft',
+  /* Cancel a draft (19 Oct 2026). Composed: the original build has no cancel. */
+  cancel: 'Cancel broadcast',
+  cancelTitle: 'Cancel this broadcast?',
+  cancelBody: (name: string) => `${name} will not be sent, and it cannot be edited again.`,
+  cancelKeep: 'Keep draft',
+  cancelledTitle: 'Broadcast cancelled',
+  cancelledBody: (name: string) => `${name} is cancelled`,
 }
 
 export const MAX_FILE_BYTES = 10485760
@@ -289,9 +296,12 @@ export type BroadcastContent = {
   pushBody: string
 }
 
-/** The status list of values (16 Oct 2026): DRAFT, QUEUE, PROCESSING, PUBLISHED.
- *  FAILED and CANCELLED are on hold until the BA confirms them. */
-export const BROADCAST_STATUSES = ['Draft', 'Queue', 'Processing', 'Published'] as const
+/** The status list of values (16 Oct 2026; meanings 19 Oct 2026):
+ *  DRAFT — saved as a draft · QUEUE — submitted, accepted by the system ·
+ *  PROCESSING — the system has started sending · PUBLISHED — finished ·
+ *  FAILED — a system error · CANCELLED — a draft cancelled before submit.
+ *  Only a Draft can be cancelled; once submitted it cannot. */
+export const BROADCAST_STATUSES = ['Draft', 'Queue', 'Processing', 'Published', 'Failed', 'Cancelled'] as const
 export type BroadcastStatus = (typeof BROADCAST_STATUSES)[number]
 
 export type Broadcast = {
@@ -315,7 +325,8 @@ export type Broadcast = {
   status: BroadcastStatus
   success: number
   failed: number
-  /** Recipients still unsent when the end was reached. */
+  /** Recipients still unsent when the end was reached, or when a system
+   *  error stopped the broadcast (Failed). */
   notSent?: number
   /** Processing, but inside a quiet period (was the Paused status). */
   quiet?: boolean
@@ -347,6 +358,48 @@ const cisFile = (n: number) =>
   '\n'
 
 export const BROADCASTS: Broadcast[] = [
+  /* Composed (19 Oct 2026) so the list and drawer show a Failed broadcast: a
+     system error stopped it while it was sending, so whoever was still waiting
+     is Not sent. */
+  {
+    id: 'BC-0009',
+    name: 'Loan payment reminder',
+    description: '',
+    channels: ['Email'],
+    audienceFile: 'loan-due-october.csv',
+    recipients: 500,
+    recipientType: 'direct',
+    recipientColumn: 'EMAIL',
+    startMode: 'now',
+    start: '2026-10-07T14:00',
+    dnd: DEFAULT_DND,
+    status: 'Failed',
+    success: 120,
+    failed: 2,
+    notSent: 378,
+    content: content('', 'Your loan payment is due', 'Dear Customer, your loan payment is due on 15 October 2026.'),
+    createdBy: 'Naree R.',
+    createdAt: '2026-10-07T13:52',
+  },
+  /* Composed (19 Oct 2026): a draft cancelled before it was submitted. */
+  {
+    id: 'BC-0008',
+    name: 'Year-end promotion',
+    description: '',
+    channels: ['SMS'],
+    audienceFile: 'promotion-december.csv',
+    recipients: 800,
+    ...cis,
+    startMode: 'schedule',
+    start: '2026-12-01T09:00',
+    dnd: DEFAULT_DND,
+    status: 'Cancelled',
+    success: 0,
+    failed: 0,
+    content: content('Dear {{CUSTOMER_NAME}}, use code {{PROMOTION_CODE}} for our year-end promotion.'),
+    createdBy: 'Panisa R.',
+    createdAt: '2026-10-08T15:20',
+  },
   {
     id: 'BC-0007',
     name: 'November statement notice',
@@ -489,11 +542,13 @@ export const BROADCASTS: Broadcast[] = [
   },
 ]
 
-export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'accent' | 'positive'> = {
+export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'accent' | 'positive' | 'negative'> = {
   Draft: 'caution',
   Queue: 'disabled',
   Processing: 'accent',
   Published: 'positive',
+  Failed: 'negative',
+  Cancelled: 'disabled',
 }
 
 /** Recipients not yet attempted: not sent, not failed, not cut off by the end. */
@@ -502,8 +557,9 @@ export const waitingOf = (b: Broadcast) => Math.max(0, b.recipients - b.success 
 export const EMPTY = '–'
 export const fmtNumber = (n: number) => n.toLocaleString('en-US')
 
-/** The toast the list shows after Create returns — held open on its preset route. */
-export type ListToast = { name: string; draft: boolean }
+/** The toast the list shows after Create returns, or after a draft is
+ *  cancelled — held open on its preset route. */
+export type ListToast = { name: string; draft: boolean; cancelled?: boolean }
 
 /* ── delivery report ───────────────────────────────────────────────────── */
 
@@ -539,7 +595,7 @@ export function deliveryReportCsv(b: Broadcast): string {
   }
   add(b.success, 'Success', () => '')
   add(b.failed, 'Failed', (i) => reasons[i % reasons.length])
-  add(b.notSent ?? 0, 'Not sent', () => 'Broadcast ended')
+  add(b.notSent ?? 0, 'Not sent', () => (b.status === 'Failed' ? 'System error' : 'Broadcast ended'))
   add(waiting, 'Waiting to send', () => '')
   return rows.map((row) => row.map(csvCell).join(',')).join('\n') + '\n'
 }

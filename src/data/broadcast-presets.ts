@@ -22,7 +22,7 @@ export const FORM_PRESETS = [
 ] as const
 export type FormPreset = (typeof FORM_PRESETS)[number]
 
-export const LIST_PRESETS = ['submitted', 'draft-saved'] as const
+export const LIST_PRESETS = ['submitted', 'draft-saved', 'cancelled'] as const
 export type ListPreset = (typeof LIST_PRESETS)[number]
 
 export const formPreset = (s?: string) =>
@@ -33,6 +33,7 @@ export const listPreset = (s?: string) =>
 export const LIST_TOAST: Record<ListPreset, ListToast> = {
   submitted: { name: 'October Customer Campaign', draft: false },
   'draft-saved': { name: 'October Customer Campaign', draft: true },
+  cancelled: { name: 'November statement notice', draft: false, cancelled: true },
 }
 
 /* ── the Create form's seeds — `formSeed` in the original build ─────────── */
