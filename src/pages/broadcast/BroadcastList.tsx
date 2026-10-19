@@ -104,18 +104,19 @@ export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast
     setPage(0)
   }
 
-  /* Notification management's filter band (Figma: the published Filtter set,
-     Service code hidden) — search 520 · two 304 filters · Clear 72, gap 16, in
-     a 105 band (pt 20 / pb 21) with its own rule; the table sits flush under it. */
+  /* Notification management's filter band (Figma 336:112267: the published
+     Filtter set, Service code hidden) — search 520 · two 291 filters · Clear
+     72, gap 16, in a 105 band (pt 20 / pb 21) with its own rule; the table
+     sits flush under it. */
   const filters = (
     <div className="flex h-[105px] w-full shrink-0 items-start gap-[var(--space-4)] px-[var(--space-4)] pt-[var(--space-5)] pb-[21px] shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]">
       <div className="min-w-[200px] flex-[0_1_520px]">
         <ListSearch label={BROADCAST_COPY.search} value={query} onChange={(v) => refilter(() => setQuery(v))} />
       </div>
-      <div className="min-w-[180px] flex-[0_1_304px]">
+      <div className="min-w-[180px] flex-[0_1_291px]">
         <FilterSelect label="Channel" options={CHANNELS} value={channels} onChange={(v) => refilter(() => setChannels(v))} />
       </div>
-      <div className="min-w-[180px] flex-[0_1_304px]">
+      <div className="min-w-[180px] flex-[0_1_291px]">
         <FilterSelect
           label="Status"
           options={BROADCAST_STATUSES}
