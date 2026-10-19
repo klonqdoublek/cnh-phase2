@@ -583,9 +583,10 @@ export function Delivery({ f }: F) {
 function Outlook({ f }: F) {
   if (!f.start || !f.first) return null
   return (
-    <div className="flex items-start gap-[var(--space-3)] rounded-[var(--radius-2)] bg-[var(--color-surface-highlight-subtle-default)] px-[var(--space-4)] py-[var(--space-3)] type-body-m text-[var(--color-text-primary-default)]">
-      <Icon slug="time" size={24} color="var(--color-icon-highlight-default)" />
-      <span>
+    <Alert
+      appearance="brand"
+      icon={<Icon slug="information" size={24} color="var(--color-icon-highlight-default)" />}
+      description={<>
         {f.waits
           ? `${f.mode === 'now' ? 'Now' : 'The start'} is inside the quiet period. Sending starts at ${fmtDateTime(f.first)}.`
           : f.mode === 'now'
@@ -593,8 +594,8 @@ function Outlook({ f }: F) {
             : `Sending starts at ${fmtDateTime(f.start)}.`}
         {f.dnd.enabled && ' Sending pauses during the quiet period and resumes after it.'}
         {f.end && ` Sending stops at ${fmtDateTime(new Date(f.end))}; recipients not sent by then are counted as Not sent.`}
-      </span>
-    </div>
+      </>}
+    />
   )
 }
 
