@@ -39,10 +39,10 @@ function resumesAt(b: Broadcast) {
 
 const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
   Draft: () => 'Not submitted yet. Nothing is sent until the broadcast is submitted.',
-  Scheduled: (b) => `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
-  Sending: () => 'Messages are being sent.',
-  Paused: (b) => `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`,
-  Completed: (b) =>
+  Queue: (b) => `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
+  Processing: (b) =>
+    b.quiet ? `Inside the quiet period. Sending resumes at ${resumesAt(b)}.` : 'Messages are being sent.',
+  Published: (b) =>
     b.notSent && b.end
       ? `The broadcast ended at ${fmtDateTime(new Date(b.end))}. ${fmtNumber(b.notSent)} recipients were not sent.`
       : 'Every recipient was sent a message.',
@@ -67,7 +67,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
               ['Waiting to send', fmtNumber(waiting)],
             ] as [string, string][],
             note: STATUS_LINE[b.status](b),
-            /* Only once something was attempted — Sending, Paused, Completed. */
+            /* Only once something was attempted — Processing or Published. */
             action:
               b.success + b.failed > 0 ? (
                 <OutlineButton

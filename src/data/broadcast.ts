@@ -12,6 +12,10 @@ export const BROADCAST_COPY = {
   createLede: 'Create a manual notification for a selected audience.',
   emptyTitle: 'No broadcasts created yet',
   emptyLine: 'Create a broadcast to send one message to many customers',
+  /* Composed (docs/broadcast-gaps.md): the list's search and its no-results
+     line, after the Notification management list. */
+  search: 'Search by broadcast name or description',
+  noResults: 'No results found',
   dropTitle: 'Upload audience file',
   dropHint: 'Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000 recipients',
   browse: 'Choose file',
@@ -285,7 +289,10 @@ export type BroadcastContent = {
   pushBody: string
 }
 
-export type BroadcastStatus = 'Draft' | 'Scheduled' | 'Sending' | 'Paused' | 'Completed'
+/** The status list of values (16 Oct 2026): DRAFT, QUEUE, PROCESSING, PUBLISHED.
+ *  FAILED and CANCELLED are on hold until the BA confirms them. */
+export const BROADCAST_STATUSES = ['Draft', 'Queue', 'Processing', 'Published'] as const
+export type BroadcastStatus = (typeof BROADCAST_STATUSES)[number]
 
 export type Broadcast = {
   id: string
@@ -310,6 +317,8 @@ export type Broadcast = {
   failed: number
   /** Recipients still unsent when the end was reached. */
   notSent?: number
+  /** Processing, but inside a quiet period (was the Paused status). */
+  quiet?: boolean
   content: BroadcastContent
   createdBy: string
   createdAt: string
@@ -369,7 +378,7 @@ export const BROADCASTS: Broadcast[] = [
     start: '2026-10-12T09:00',
     end: '2026-10-16T18:00',
     dnd: BA_DND,
-    status: 'Scheduled',
+    status: 'Queue',
     success: 0,
     failed: 0,
     content: content(
@@ -391,7 +400,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'now',
     start: '2026-10-05T10:00',
     dnd: DEFAULT_DND,
-    status: 'Sending',
+    status: 'Processing',
     success: 612,
     failed: 9,
     content: content(
@@ -411,7 +420,8 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-10-03T19:00',
     dnd: DEFAULT_DND,
-    status: 'Paused',
+    status: 'Processing',
+    quiet: true,
     success: 402,
     failed: 3,
     content: content('Dear Customer, our branch will be closed on 10 October 2026.', 'Branch closure'),
@@ -429,7 +439,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'now',
     start: '2026-09-29T08:15',
     dnd: { ...DEFAULT_DND, enabled: false },
-    status: 'Completed',
+    status: 'Published',
     success: 991,
     failed: 7,
     content: content('Bualuang mBanking will be unavailable on 30 Sep 2026, 00:00–04:00.', 'Scheduled maintenance'),
@@ -448,7 +458,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-09-21T07:00',
     dnd: DEFAULT_DND,
-    status: 'Completed',
+    status: 'Published',
     success: 988,
     failed: 12,
     content: content('', 'Your statement is ready', 'Your credit card statement is ready.'),
@@ -456,7 +466,7 @@ export const BROADCASTS: Broadcast[] = [
     createdAt: '2026-09-19T14:30',
   },
   /* The deck's scenario F (composed, 2026-10-14): the end came before every
-     recipient was sent, so 174 are Not sent and the broadcast is Completed. */
+     recipient was sent, so 174 are Not sent and the broadcast is Published. */
   {
     id: 'BC-0001',
     name: 'Savings interest rate update',
@@ -469,7 +479,7 @@ export const BROADCASTS: Broadcast[] = [
     start: '2026-09-15T10:00',
     end: '2026-09-15T12:00',
     dnd: DEFAULT_DND,
-    status: 'Completed',
+    status: 'Published',
     success: 820,
     failed: 6,
     notSent: 174,
@@ -481,10 +491,9 @@ export const BROADCASTS: Broadcast[] = [
 
 export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'accent' | 'positive'> = {
   Draft: 'caution',
-  Scheduled: 'disabled',
-  Sending: 'accent',
-  Paused: 'caution',
-  Completed: 'positive',
+  Queue: 'disabled',
+  Processing: 'accent',
+  Published: 'positive',
 }
 
 /** Recipients not yet attempted: not sent, not failed, not cut off by the end. */
