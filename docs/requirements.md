@@ -99,8 +99,15 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 1. **Basic information.** Broadcast name\* (max 100) and Description (max 250).
 2. **Audience file.**
    - `.csv` or `.xlsx`, at most 10 MB and 1,000 recipients.
-   - After upload: a 5-row preview, a valid / invalid count, and a table of invalid rows. Invalid rows are skipped.
+   - **On pick, only the file type and size are checked** (BA, 19 Oct). The browser can show a preview but cannot read the whole file, so the full read happens on Submit.
+   - After upload: the file row (name, size, *File validated*) and a 5-row preview. No row count, no valid / invalid count.
+   - The ID column is still guessed from the preview's header row.
    - Two sample files.
+   - **On Submit**, once every section is valid, *Checking file…* covers the page while the whole file is read:
+     - Invalid rows are skipped. The confirm dialog lists them under *Invalid recipients are skipped. Only valid recipients will receive the broadcast.*, in a table of Row / {ID column} / Problem.
+     - No rows, more than 1,000 rows or no valid recipient blocks the broadcast: *The audience file cannot be used* with the reason and Close, and the reason stays on Step 2. **PROPOSAL, pending BA confirmation** (Q16).
+     - If the read fails, the system-fail dialog *Unable to submit the broadcast* (Close / Try again) appears, and Try again reads the file again.
+   - Save draft does not read the file.
 3. **Recipient mapping and channels.**
    - Recipient type **CIS** (CIS ID column; any of Push, Email, SMS) or **Direct recipient** (a mobile or email column; Email *or* SMS only).
    - The ID column is chosen from the file's headers. The BA confirmed on 14 Oct that Direct recipient stays.
@@ -154,7 +161,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 
 - One row per recipient (CIS).
 - Columns: CIS ID\*, Mobile number, Email address, First name, Last name, Tier.
-- **Prototype checks:** ID required; mobile and email well formed; no duplicate IDs.
+- **Prototype checks** (on Submit since 19 Oct): ID required; mobile and email well formed; no duplicate IDs.
 - **Deck checks the prototype does not:** at least one contact method per row; no duplicate mobile or email in the file; data "valid and active". This is Q7.
 - **Push:** finds device tokens from CIS ID.
 
@@ -171,11 +178,12 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
 | 16 Oct 2026 | Broadcast statuses follow the list of values: Draft, Queue, Processing, Published; Paused folds into Processing. Failed and Cancelled are on hold (Q13). |
+| 19 Oct 2026 | Validate the audience file: on pick, only the file type and size; the preview shows, but the whole file is read on Submit. Showing invalid recipients (Row / column / Problem) on Submit is possible. Design decisions with the requester: the read runs before the confirm dialog, which carries the invalid table; Step 2 drops the row count and the recipients summary; no rows, over 1,000 or no valid recipient blocks the submit (PROPOSAL, pending BA confirmation). |
 | 19 Oct 2026 | Meaning of each status (Q13 answered): Failed is a system error; Cancelled is a saved draft cancelled by the user. Only a Draft can be cancelled; after Submit it cannot (system limit). Design decisions with the requester: Cancel sits in the Draft drawer footer behind a confirm dialog; a Cancelled broadcast stays in the list read only; a Failed drawer keeps Delivery result and Download report, no retry; badges Failed = Negative, Cancelled = Disabled. |
 
 ## Open items
 
-- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC) and Q12. Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
+- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12 and Q16 (a file Submit cannot use, PROPOSAL). Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy).
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.
@@ -183,6 +191,6 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 ## Working in this repo
 
 - Routes, commands and design system rules: [../CLAUDE.md](../CLAUDE.md). Every state has its own hash route.
-  - Broadcast presets are under `#/broadcast/create/<preset>`. They include `dnd-rules` and `end`.
+  - Broadcast presets are under `#/broadcast/create/<preset>`. They include `dnd-rules` and `end`, and Submit's file read: `checking`, `confirm-invalid`, `file-blocked`, `check-fail`.
 - **Copy:** transcribed from the original build. Copy written here is listed in the decision log of [broadcast-gaps.md](broadcast-gaps.md).
 - **Components:** webds first, then CMS ([cms-components.md](cms-components.md)), then hand-built. A hand-built control is a webds gap and is recorded as one.
