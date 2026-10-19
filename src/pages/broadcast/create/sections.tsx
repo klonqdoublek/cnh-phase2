@@ -26,7 +26,6 @@ type F = { f: BroadcastForm }
 /** The message box the cursor was last in, so a field chip knows where to insert. */
 export type FocusRef = React.MutableRefObject<{ key: string; el: HTMLInputElement | HTMLTextAreaElement } | null>
 
-const n = (v: number) => v.toLocaleString('en-US')
 const sizeLabel = (bytes: number) =>
   bytes < 1048576 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
@@ -86,7 +85,7 @@ export function BasicInfo({ f }: F) {
  *  webds ships no upload control (gap). */
 export function AudienceFile({ f }: F) {
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
+    <div data-error={f.errors.file ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-4)]">
       {f.file ? (
         <FileResult f={f} />
       ) : (
@@ -124,10 +123,11 @@ function SampleLink({ href, children }: { href: string; children: React.ReactNod
   )
 }
 
+/** The file row and its preview. A pick checks type and size only (BA,
+ *  19 Oct 2026), so nothing here counts rows; the full read is on Submit. */
 function FileResult({ f }: F) {
   const file = f.file!
   const bad = !!f.read && !f.read.ok
-  const invalidRows = f.check ? f.check.rows.filter((r) => r.errors.length) : []
   return (
     <div className="flex flex-col gap-[var(--space-3)]">
       <UploadedFile
@@ -136,7 +136,7 @@ function FileResult({ f }: F) {
         meta={
           f.read
             ? f.read.ok
-              ? `${sizeLabel(file.size)} · ${n(f.read.audience.rows.length)} rows`
+              ? sizeLabel(file.size)
               : f.read.message
             : BROADCAST_COPY.checking
         }
@@ -156,35 +156,6 @@ function FileResult({ f }: F) {
         </div>
       )}
       {f.audience && <Preview f={f} />}
-      {f.check && (
-        <>
-          <p className="type-label-m-emphasized text-[var(--color-text-primary-default)]">
-            {BROADCAST_COPY.rowsSummary(f.check.rows.length, f.check.valid)}
-            {f.check.invalid > 0 && (
-              <span className="text-[var(--color-text-negative-default)]">
-                {' · '}
-                {BROADCAST_COPY.invalidCount(f.check.invalid)}
-              </span>
-            )}
-            <span className="text-[var(--color-text-secondary-default)]">
-              {' · by '}
-              {f.column}
-            </span>
-          </p>
-          {f.check.invalid > 0 && (
-            <>
-              <p className={NOTE}>{BROADCAST_COPY.invalidNote}</p>
-              <MiniTable
-                columns={['Row', f.column, 'Problem']}
-                widths="80px 200px 1fr"
-                rows={invalidRows.map((r) => [String(r.line), r.id || '–', r.errors.join(' · ')])}
-                negativeLast
-                maxHeight
-              />
-            </>
-          )}
-        </>
-      )}
     </div>
   )
 }
@@ -211,7 +182,7 @@ function Preview({ f }: F) {
 /** webds Table Header / Data Cells at a compact row height in a bordered grid.
  *  The cells' own 64 row is the data grid's; a validation list inside a card
  *  reads at 36 — the original's own reason for not using its Table. */
-function MiniTable({
+export function MiniTable({
   columns,
   rows,
   widths,

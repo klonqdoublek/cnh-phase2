@@ -15,7 +15,11 @@ export const FORM_PRESETS = [
   'quiet',
   'dnd-rules',
   'end',
+  'checking',
   'confirm',
+  'confirm-invalid',
+  'file-blocked',
+  'check-fail',
   'submitting',
   'fail-dialog',
   'leave',
@@ -59,6 +63,13 @@ export const DIRECT_CSV = `MOBILE_NO,EMAIL,CUSTOMER_NAME,AMOUNT,PROMOTION_CODE
 +66812223333,kanya@email.com,Kanya Thongdee,1999.00,OCT24
 `
 
+/** Every CIS ID missing: the full read on Submit finds no valid recipient. */
+export const NO_VALID_CSV = `CIS_ID,CUSTOMER_NAME,ACCOUNT_NO,AMOUNT,PROMOTION_CODE
+,Somchai Yimdee,1234567890,1250.00,OCT24
+,Araya Chaisri,9876543210,860.50,OCT24
+,Nattapong Wongsa,4567891230,2100.00,OCT24
+`
+
 export const MESSAGE = `Dear {{CUSTOMER_NAME}},
 Your payment of THB {{AMOUNT}} was successful.
 Reference: {{ACCOUNT_NO}}.`
@@ -80,8 +91,9 @@ export type FormSeed = {
   /** Broadcast End: days from today, and HH:mm. */
   end?: { inDays: number; time: string }
   dnd?: Dnd
-  /** A dialog open on arrival. */
-  open?: 'confirm' | 'submitting' | 'fail' | 'leave'
+  /** A dialog open on arrival. `checking` is Submit's full read of the file,
+   *  held; `blocked` is its result when the file cannot be used. */
+  open?: 'checking' | 'confirm' | 'blocked' | 'check-fail' | 'submitting' | 'fail' | 'leave'
   /** A button pressed on arrival, to show what it does on this state. */
   press?: 'submit' | 'draft'
 }
@@ -140,8 +152,23 @@ export function formSeed(preset: FormPreset): FormSeed {
         start: { inDays: nextWeekday(), time: '10:00' },
         end: { inDays: nextWeekday(), time: '12:00' },
       }
+    case 'checking':
+      return { ...filled, open: 'checking' }
     case 'confirm':
       return { ...filled, open: 'confirm' }
+    case 'confirm-invalid':
+      return {
+        ...filled,
+        file: { name: 'audience-direct.csv', text: DIRECT_CSV },
+        recipientType: 'direct',
+        column: 'MOBILE_NO',
+        channels: ['SMS'],
+        open: 'confirm',
+      }
+    case 'file-blocked':
+      return { ...filled, file: { name: 'audience-cis.csv', text: NO_VALID_CSV }, open: 'blocked' }
+    case 'check-fail':
+      return { ...filled, open: 'check-fail' }
     case 'submitting':
       return { ...filled, open: 'submitting' }
     case 'fail-dialog':

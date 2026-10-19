@@ -29,9 +29,9 @@ export const BROADCAST_COPY = {
   tooManyRows: (n: number) => `The file has ${n.toLocaleString('en-US')} recipients. The maximum is 1,000`,
   checking: 'Checking file…',
   validated: 'File validated',
-  rowsSummary: (total: number, valid: number) =>
-    `${total.toLocaleString('en-US')} ${total === 1 ? 'recipient' : 'recipients'} · ${valid.toLocaleString('en-US')} valid`,
-  invalidCount: (n: number) => `${n} invalid`,
+  /* Composed (docs/broadcast-gaps.md): the original build has no dialog for a
+     file that fails the full read on Submit. */
+  fileBlockedTitle: 'The audience file cannot be used',
   invalidNote: 'Invalid recipients are skipped. Only valid recipients will receive the broadcast.',
   previewTitle: 'Preview (first 5 rows)',
   required: 'This field is required',
@@ -103,16 +103,17 @@ export function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim() !== ''))
 }
 
+/** On pick. Only the file type and size are validated (BA, 19 Oct 2026): the
+ *  browser can show a preview but cannot read the whole file, so row counts and
+ *  row checks wait for Submit (`checkAudience`). The prototype parses every row
+ *  here only because it has no server to read the file later. */
 export function readAudience(name: string, text: string, size = text.length): AudienceResult {
   const lower = name.toLowerCase()
   if (!lower.endsWith('.csv') && !lower.endsWith('.xlsx')) return { ok: false, message: BROADCAST_COPY.fileFormat }
   if (size > MAX_FILE_BYTES) return { ok: false, message: BROADCAST_COPY.fileSize }
   if (lower.endsWith('.xlsx')) return { ok: false, message: BROADCAST_COPY.xlsxNotInPrototype }
   const all = parseCsv(text)
-  const rows = all.slice(1)
-  if (all.length === 0 || rows.length === 0) return { ok: false, message: BROADCAST_COPY.fileEmpty }
-  if (rows.length > MAX_RECIPIENTS) return { ok: false, message: BROADCAST_COPY.tooManyRows(rows.length) }
-  return { ok: true, audience: { headers: all[0].map((h) => h.trim()), rows } }
+  return { ok: true, audience: { headers: (all[0] ?? []).map((h) => h.trim()), rows: all.slice(1) } }
 }
 
 export async function readAudienceFile(file: File): Promise<AudienceResult> {
@@ -158,6 +159,19 @@ export function checkRecipients(audience: Audience, column: string, kind: IdKind
   })
   const invalid = rows.filter((r) => r.errors.length).length
   return { rows, valid: rows.length - invalid, invalid }
+}
+
+export type AudienceCheck = { ok: true; check: RecipientCheck } | { ok: false; message: string }
+
+/** On Submit: the whole file is read. No rows, more than 1,000 or no valid
+ *  recipient blocks the broadcast; invalid rows are otherwise skipped. */
+export function checkAudience(audience: Audience, column: string, kind: IdKind): AudienceCheck {
+  const total = audience.rows.length
+  if (total === 0) return { ok: false, message: BROADCAST_COPY.fileEmpty }
+  if (total > MAX_RECIPIENTS) return { ok: false, message: BROADCAST_COPY.tooManyRows(total) }
+  const check = checkRecipients(audience, column, kind)
+  if (check.valid === 0) return { ok: false, message: BROADCAST_COPY.noValidRows }
+  return { ok: true, check }
 }
 
 /* ── message content ───────────────────────────────────────────────────── */
