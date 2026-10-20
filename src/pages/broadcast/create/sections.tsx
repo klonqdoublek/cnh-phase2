@@ -19,6 +19,7 @@ import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
 import { ToggleSwitch } from '@/bbl/toggle-switch'
 import { DropdownMenu } from '@/patterns/dropdown-menu'
+import { PickerDialog } from '@/patterns/picker-dialog'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { FormStep } from '@/patterns/console-page'
 import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
@@ -532,18 +533,21 @@ function FieldPills({ f, onInsert, disabled }: F & { onInsert: Insert; disabled?
 }
 
 /** Idea 2 / 2.2: a button that opens the file's columns as a webds Dropdown
- *  Menu. The drafts draw the button only; the menu is composed (gap). */
+ *  Menu. The drafts draw the button only; the menu is composed (gap).
+ *  Idea 3 / 3.2 (`dialog`): the same button opens webds `picker-dialog`
+ *  instead, single pick, as CMS's Link Document Type (requester, 20 Oct 2026). */
 function FieldMenuButton({
   f,
   onInsert,
   icon,
+  dialog,
   disabled,
   label,
-}: F & { onInsert: Insert; icon?: boolean; disabled?: boolean; label: string }) {
+}: F & { onInsert: Insert; icon?: boolean; dialog?: boolean; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
   useEffect(() => {
-    if (!open) return
+    if (!open || dialog) return
     const away = (e: MouseEvent) => !root.current?.contains(e.target as Node) && setOpen(false)
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
     document.addEventListener('mousedown', away)
@@ -552,33 +556,51 @@ function FieldMenuButton({
       document.removeEventListener('mousedown', away)
       document.removeEventListener('keydown', esc)
     }
-  }, [open])
+  }, [open, dialog])
   const off = disabled || !f.fields.length
+  const options = f.fields.map((field) => ({ value: field.token, label: field.column }))
   return (
-    /* mousedown would blur the message box and lose the caret first */
-    <span ref={root} className="relative inline-flex" onMouseDown={(e) => e.preventDefault()}>
-      {icon ? (
-        <ContainedIconButton
-          label={label}
-          aria-expanded={open}
-          disabled={off}
-          icon={<Icon slug="plus" size={16} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />}
-          onClick={() => setOpen(!open)}
-        />
-      ) : (
-        <OutlineButton aria-expanded={open} disabled={off} onClick={() => setOpen(!open)}>
-          {label}
-          <Icon slug="plus" size={16} color="currentColor" />
-        </OutlineButton>
+    <span ref={root} className="relative inline-flex">
+      {/* mousedown would blur the message box and lose the caret first */}
+      <span className="inline-flex" onMouseDown={(e) => e.preventDefault()}>
+        {icon ? (
+          <ContainedIconButton
+            label={label}
+            aria-expanded={open}
+            disabled={off}
+            icon={<Icon slug="plus" size={16} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />}
+            onClick={() => setOpen(!open)}
+          />
+        ) : (
+          <OutlineButton aria-expanded={open} disabled={off} onClick={() => setOpen(!open)}>
+            {label}
+            <Icon slug="plus" size={16} color="currentColor" />
+          </OutlineButton>
+        )}
+      </span>
+      {open && !dialog && (
+        <span onMouseDown={(e) => e.preventDefault()}>
+          <DropdownMenu
+            width={240}
+            className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[320px] overflow-y-auto"
+            options={options}
+            onSelect={(token) => {
+              onInsert(token)
+              setOpen(false)
+            }}
+          />
+        </span>
       )}
-      {open && (
-        <DropdownMenu
-          width={240}
-          className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[320px] overflow-y-auto"
-          options={f.fields.map((field) => ({ value: field.token, label: field.column }))}
-          onSelect={(token) => {
-            onInsert(token)
+      {open && dialog && (
+        <PickerDialog
+          title="Dynamic field"
+          single
+          options={options}
+          empty={['No fields in the audience file.', 'Upload a file with more columns.']}
+          onClose={() => setOpen(false)}
+          onConfirm={([token]) => {
             setOpen(false)
+            if (token) onInsert(token)
           }}
         />
       )}
@@ -603,6 +625,7 @@ function ChannelAlert({ f }: F) {
  *  field drafts (Figma 324:35732, 20 Oct 2026) — the Concept panel picks:
  *
  *    picker     pills always on show (Idea 1, 1.2) · a button and its menu (2, 2.2)
+ *               · a button and a picker dialog (3, 3.2 — CMS's)
  *    placement  one for every channel (1, 2) · one on each card (1.2, 2.2)
  *    layout     cards three across (1, 2, 2.2) · stacked full width as CNH (1.2)
  *
@@ -617,11 +640,12 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   const hasFields = f.fields.length > 0
   const insertShared: Insert = (token) => setNeedsField(!insert(token))
 
-  /* Idea 2 and 2.2 head the area "Broadcast Message"; Idea 1.2 "Select", as
-     drawn; Idea 1 has no heading. */
-  const heading = concept.picker === 'button' ? 'Broadcast Message' : concept.layout === 'stacked' ? 'Select' : null
-  const sharedButton = shared && concept.picker === 'button' && (
-    <FieldMenuButton f={f} label="Add dynamic field" onInsert={insertShared} />
+  /* Idea 2, 2.2 and the dialog head the area "Broadcast Message"; Idea 1.2
+     "Select", as drawn; Idea 1 has no heading. */
+  const menu = concept.picker !== 'pills'
+  const heading = menu ? 'Broadcast Message' : concept.layout === 'stacked' ? 'Select' : null
+  const sharedButton = shared && menu && (
+    <FieldMenuButton f={f} label="Add dynamic field" dialog={concept.picker === 'dialog'} onInsert={insertShared} />
   )
 
   const cards = (
@@ -643,8 +667,15 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
       {f.offered.map((c) => {
         const on = f.channels.includes(c)
         const perCard = !shared && hasFields
-        const cardButton = perCard && concept.picker === 'button' && (
-          <FieldMenuButton f={f} icon label={`Add dynamic field to ${c}`} disabled={!on} onInsert={(t) => insert(t, c)} />
+        const cardButton = perCard && menu && (
+          <FieldMenuButton
+            f={f}
+            icon
+            dialog={concept.picker === 'dialog'}
+            label={`Add dynamic field to ${c}`}
+            disabled={!on}
+            onInsert={(t) => insert(t, c)}
+          />
         )
         return (
           <FormSectionCard

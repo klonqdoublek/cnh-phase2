@@ -25988,3 +25988,667 @@
     left: 100%;
   }
 }
+
+/* HAND-WRITTEN — not generated (v0.40.0, 2026-10-15).
+ * Added for CMS Web Content Admin Portal (MI2zFydRz9Qi673VeklnkI), from its
+ * component pack (2026-10-12). Every value is a token or a measurement the
+ * pattern's own note cites.
+ * Sources: src/patterns/{date-input,picker-dialog,file-upload,file-preview,
+ * data-table,confirm-dialog,profile-menu,product-shell,detail-drawer,form-field}.tsx,
+ * src/bbl/{date-picker,date-time-picker,overlay-loader}.tsx
+ */
+
+@layer webds.components {
+  /* data-table — sideways scroll below `flexMinWidth` */
+  .webds-pattern-data-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  /* confirm-dialog — sectioned title band with the 24 Close */
+  .webds-pattern-confirm-dialog-3--close {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .webds-pattern-confirm-dialog-3--close > .webds-pattern-confirm-dialog-4 {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  /* profile-menu — CMS's `Profile` row (536:115907) */
+  .webds-pattern-profile-menu-link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 38px;
+    padding: var(--space-2);
+    border: 0;
+    border-radius: var(--radius-2);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+  .webds-pattern-profile-menu-link:hover {
+    background-color: var(--color-surface-primary-hovered);
+  }
+  .webds-pattern-profile-menu-link:focus-visible {
+    outline: 2px solid var(--color-border-highlight-default);
+    outline-offset: -2px;
+  }
+  .webds-pattern-profile-menu-link > :first-child {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .webds-pattern-profile-menu-link-mark {
+    fill: var(--color-icon-primary-default);
+  }
+
+  /* product-shell — Access Denied (536:111322) */
+  /* Inert, so no hover fill — the base `--s2:hover` would otherwise still paint. */
+  .webds-pattern-product-shell-8--disabled,
+  .webds-pattern-product-shell-8.webds-pattern-product-shell-8--disabled:hover {
+    cursor: default;
+    background-color: var(--color-surface-primary-default);
+  }
+  .webds-pattern-product-shell-8.webds-pattern-product-shell-8--disabled * {
+    color: var(--color-text-disabled-default);
+    font-weight: var(--type-label-xl-weight);
+  }
+  /* product-shell — folded (PROPOSAL): the panel leaves the row */
+  /* No height: inset-block 0 fills the containing block. 100vh overshot it
+     wherever that is not the viewport (a transformed or scaled ancestor). */
+  .webds-pattern-product-shell-2--folded {
+    position: fixed;
+    inset-block: 0;
+    left: 0;
+    z-index: 46;
+    transition-property: translate, visibility;
+    transition-duration: 300ms;
+    transition-timing-function: ease-out;
+  }
+  .webds-pattern-product-shell-2--open {
+    translate: 0 0;
+  }
+  .webds-pattern-product-shell-2--shut {
+    translate: -100% 0;
+    visibility: hidden;
+  }
+  .webds-pattern-product-shell-rail {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    width: 72px;
+    height: 100%;
+    background-color: var(--color-surface-primary-default);
+    box-shadow: inset -1px 0 0 0 var(--color-border-primary-default);
+  }
+  .webds-pattern-product-shell-rail-top {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+  }
+  .webds-pattern-product-shell-rail-nav {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    padding-block: var(--space-4);
+  }
+  .webds-pattern-product-shell-rail-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1-5);
+  }
+  .webds-pattern-product-shell-rail-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface-primary-default);
+    cursor: pointer;
+  }
+  .webds-pattern-product-shell-rail-row:hover:not(:disabled) {
+    background-color: var(--color-surface-primary-hovered);
+  }
+  .webds-pattern-product-shell-rail-row--selected,
+  .webds-pattern-product-shell-rail-row--selected:hover:not(:disabled) {
+    background-color: var(--color-surface-highlight-subtle-default);
+  }
+  .webds-pattern-product-shell-rail-row:disabled {
+    cursor: default;
+  }
+  .webds-pattern-product-shell-rail-row:focus-visible {
+    outline: 2px solid var(--color-border-highlight-default);
+    outline-offset: -2px;
+  }
+  .webds-pattern-product-shell-rail-foot {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: 100%;
+  }
+  .webds-pattern-product-shell-rail-foot-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 67px;
+  }
+  .webds-pattern-product-shell-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    transition: opacity 300ms ease-out;
+  }
+  .webds-pattern-product-shell-scrim--open {
+    opacity: 1;
+  }
+  .webds-pattern-product-shell-scrim--shut {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* detail-drawer — the host */
+  .webds-pattern-detail-drawer-host {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .webds-pattern-detail-drawer-host-scrim {
+    position: absolute;
+    inset: 0;
+    transition: opacity 300ms ease-out;
+  }
+  .webds-pattern-detail-drawer-host--in {
+    opacity: 1;
+  }
+  .webds-pattern-detail-drawer-host--out {
+    opacity: 0;
+  }
+  .webds-pattern-detail-drawer-host-panel {
+    position: relative;
+    height: 100vh;
+    transition: transform 300ms ease-out;
+  }
+  .webds-pattern-detail-drawer-host-panel--in {
+    transform: translateX(0);
+  }
+  .webds-pattern-detail-drawer-host-panel--out {
+    transform: translateX(100%);
+  }
+
+  /* overlay-loader — over the viewport */
+  .webds-overlay-loader--fixed {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+  }
+
+  /* form-field — search and chips */
+  .webds-pattern-form-field-box-64 {
+    height: 64px;
+  }
+  .webds-pattern-form-field-search {
+    width: 100%;
+  }
+  .webds-pattern-form-field-search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .webds-pattern-form-field-chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* date-picker — the cell states the library draws (v0.40) */
+  .webds-date-picker-13--selected {
+    background-color: var(--color-surface-highlight-default);
+  }
+  .webds-date-picker-13--s1:not(.webds-date-picker-13--selected):hover {
+    background-color: var(--color-surface-primary-subtle-hovered);
+  }
+  .webds-date-picker-16--pickable {
+    cursor: pointer;
+  }
+  .webds-date-picker-16--pickable.webds-date-picker-16--s2:hover {
+    background-color: var(--color-surface-primary-subtle-hovered);
+  }
+  .webds-date-picker-16--outlined {
+    outline: 1px solid var(--color-border-highlight-default);
+    outline-offset: -1px;
+  }
+  .webds-time-column-2--s1:not(.webds-time-column-2--s2):hover {
+    background-color: var(--color-surface-primary-subtle-hovered);
+  }
+  .webds-date-picker-3--button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .webds-date-picker-3-mark {
+    display: inline-flex;
+  }
+  .webds-date-picker-3-mark path {
+    fill: var(--color-icon-primary-default);
+  }
+  .webds-date-picker-3-mark--up {
+    transform: rotate(180deg);
+  }
+  .webds-date-picker-3-mark--up path {
+    fill: var(--color-icon-highlight-default);
+  }
+
+  /* date-input */
+  .webds-pattern-date-input,
+  .webds-pattern-date-input-anchor {
+    position: relative;
+  }
+  .webds-pattern-date-input-button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+  .webds-pattern-date-input-button:disabled {
+    cursor: default;
+  }
+  .webds-pattern-date-input-button:focus-visible {
+    outline: none;
+  }
+  .webds-pattern-date-input-box {
+    height: 56px;
+    align-items: center;
+    gap: var(--space-1-5);
+    padding: var(--space-4);
+  }
+  .webds-pattern-date-input-box--inside {
+    height: 64px;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+  }
+  .webds-pattern-date-input-stack {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .webds-pattern-date-input-over {
+    color: var(--color-text-tertiary-default);
+    font-family: var(--font-label);
+    font-size: var(--type-label-m-size);
+    line-height: var(--type-label-m-line-height);
+    font-weight: var(--type-label-m-weight);
+  }
+  .webds-pattern-date-input-value {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-body);
+    font-size: var(--type-body-m-size);
+    line-height: var(--type-body-m-line-height);
+    font-weight: var(--type-body-m-weight);
+  }
+  /* In the Inside stack the value is a row of a column, not the row's filler —
+     `flex: 1 1 0` there collapses it to 0 tall. */
+  .webds-pattern-date-input-stack > .webds-pattern-date-input-value {
+    flex: none;
+  }
+  .webds-pattern-date-input-card {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    left: 0;
+    z-index: 30;
+    border-radius: var(--radius-3);
+    background-color: var(--color-surface-primary-default);
+    box-shadow: var(--shadow-overlay);
+  }
+  .webds-pattern-date-input-card--right {
+    left: auto;
+    right: 0;
+  }
+  .webds-pattern-date-input-card--date {
+    display: flex;
+    flex-direction: column;
+    width: 320px;
+  }
+  .webds-pattern-date-input-card--datetime {
+    width: 432px;
+    height: 396px;
+  }
+  .webds-pattern-date-input-quick {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-4) var(--space-4);
+  }
+  .webds-pattern-date-input-quick-button {
+    height: 32px;
+  }
+
+  /* picker-dialog — 1537:119725 */
+  .webds-pattern-picker-dialog-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+  .webds-pattern-picker-dialog-title-text {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .webds-pattern-picker-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding-top: var(--space-2);
+  }
+  /* 393 — the list's share of the board's fixed 641 dialog; no token. */
+  .webds-pattern-picker-dialog-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    height: 393px;
+    overflow-y: auto;
+  }
+  .webds-pattern-picker-dialog-empty {
+    margin: auto;
+  }
+  .webds-pattern-picker-dialog-line {
+    display: block;
+  }
+  .webds-pattern-picker-dialog-row {
+    display: flex;
+    flex-shrink: 0;
+    height: var(--space-6);
+  }
+  .webds-pattern-picker-dialog-row > * {
+    width: 100%;
+  }
+  .webds-pattern-picker-dialog-label {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    color: var(--color-text-primary-default);
+    font-family: var(--font-label);
+    font-size: var(--type-label-xl-size);
+    line-height: var(--type-label-xl-line-height);
+    font-weight: var(--type-label-xl-weight);
+  }
+
+  /* file-upload — FileSlot (734:166694) */
+  .webds-pattern-file-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    min-height: 84px;
+    padding: var(--space-3);
+    border: 1px dashed var(--color-border-highlight-default);
+    border-radius: var(--radius-2);
+    text-align: center;
+  }
+  .webds-pattern-file-slot--empty {
+    cursor: pointer;
+  }
+  .webds-pattern-file-slot--empty:hover,
+  .webds-pattern-file-slot--over {
+    background-color: var(--color-surface-highlight-subtle-default);
+  }
+  .webds-pattern-file-slot--too-many,
+  .webds-pattern-file-slot--too-many:hover {
+    border-color: var(--color-border-negative-default);
+    background-color: var(--color-surface-negative-default);
+  }
+  .webds-pattern-file-slot--uploaded {
+    align-items: stretch;
+    justify-content: space-between;
+    gap: var(--space-2);
+    border-style: solid;
+    border-color: var(--color-border-primary-default);
+    text-align: left;
+  }
+  .webds-pattern-file-slot--negative {
+    border-color: var(--color-border-negative-default);
+  }
+  .webds-pattern-file-slot--disabled {
+    border-color: var(--color-border-disabled-subtlest-default);
+    background-color: var(--color-surface-disabled-default);
+  }
+  .webds-pattern-file-slot-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .webds-pattern-file-slot-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .webds-pattern-file-slot-line--gap16 {
+    gap: var(--space-4);
+  }
+  .webds-pattern-file-slot-name,
+  .webds-pattern-file-slot-meta {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .webds-pattern-file-slot-name {
+    color: var(--color-text-primary-default);
+    font-family: var(--font-body);
+    font-size: var(--type-body-s-size);
+    line-height: var(--type-body-s-line-height);
+    font-weight: var(--type-body-s-weight-emphasized);
+  }
+  .webds-pattern-file-slot-meta,
+  .webds-pattern-file-slot-hint {
+    color: var(--color-text-placeholder-default);
+    font-family: var(--font-body);
+    font-size: var(--type-body-xs-size);
+    line-height: var(--type-body-xs-line-height);
+    font-weight: var(--type-body-xs-weight);
+  }
+  .webds-pattern-file-slot-hint--negative {
+    color: var(--color-text-negative-default);
+  }
+  .webds-pattern-file-slot--disabled .webds-pattern-file-slot-hint {
+    color: var(--color-text-disabled-default);
+  }
+  /* 28 — the board's Preview button; no token. */
+  .webds-pattern-file-slot-preview {
+    height: 28px;
+  }
+  .webds-pattern-file-slot-disabled-title {
+    color: var(--color-text-disabled-default);
+    font-family: var(--font-label);
+    font-size: var(--type-label-xl-size);
+    line-height: var(--type-label-xl-line-height);
+    font-weight: var(--type-label-xl-weight-emphasized);
+  }
+
+  /* file-upload — FileMatrix */
+  .webds-pattern-file-matrix {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .webds-pattern-file-matrix-groups {
+    display: flex;
+    gap: var(--space-6);
+  }
+  .webds-pattern-file-matrix-group {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+    padding: var(--space-5);
+    border: 1px solid var(--color-border-primary-default);
+    border-radius: var(--radius-2);
+  }
+  .webds-pattern-file-matrix-group--negative {
+    border-color: var(--color-border-negative-default);
+  }
+  .webds-pattern-file-matrix-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .webds-pattern-file-matrix-name {
+    color: var(--color-text-primary-default);
+    font-family: var(--font-body);
+    font-size: var(--type-body-m-size);
+    line-height: var(--type-body-m-line-height);
+    font-weight: var(--type-body-m-weight-emphasized);
+  }
+  .webds-pattern-file-matrix-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .webds-pattern-file-matrix-row-label {
+    color: var(--color-text-tertiary-default);
+    font-family: var(--font-body);
+    font-size: var(--type-body-s-size);
+    line-height: var(--type-body-s-line-height);
+    font-weight: var(--type-body-s-weight);
+  }
+  .webds-pattern-file-matrix-error {
+    padding-left: var(--space-4);
+    color: var(--color-text-negative-default);
+    font-family: var(--font-body);
+    font-size: var(--type-body-xs-size);
+    line-height: var(--type-body-xs-line-height);
+    font-weight: var(--type-body-xs-weight);
+  }
+
+  /* file-preview — 66:17371 */
+  .webds-pattern-file-preview-title {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .webds-pattern-file-preview-meta {
+    color: var(--color-text-tertiary-default);
+    font-family: var(--font-body);
+    font-size: var(--type-body-s-size);
+    line-height: var(--type-body-s-line-height);
+    font-weight: var(--type-body-s-weight);
+  }
+  .webds-pattern-file-preview-name {
+    min-width: 0;
+    word-break: break-all;
+  }
+  .webds-pattern-file-preview-pane {
+    display: block;
+    overflow: auto;
+    padding: var(--space-6);
+    background-color: var(--color-surface-secondary-default);
+  }
+  .webds-pattern-file-preview-json {
+    margin: 0;
+    white-space: pre-wrap;
+    color: var(--color-text-primary-default);
+    font-family: var(--font-body);
+    font-size: var(--type-body-m-size);
+    line-height: var(--type-body-m-line-height);
+    font-weight: var(--type-body-m-weight);
+  }
+  .webds-pattern-file-preview-json-key {
+    color: var(--color-text-highlight-default);
+  }
+  .webds-pattern-file-preview-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    color: var(--color-text-primary-default);
+  }
+  .webds-pattern-file-preview-text-title {
+    font-family: var(--font-heading);
+    font-size: var(--type-heading-xxs-size);
+    line-height: var(--type-heading-xxs-line-height);
+    font-weight: var(--type-heading-xxs-weight-emphasized);
+  }
+  .webds-pattern-file-preview-text-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding-left: var(--space-6);
+    list-style: decimal;
+    font-family: var(--font-body);
+    font-size: var(--type-body-m-size);
+    line-height: var(--type-body-m-line-height);
+    font-weight: var(--type-body-m-weight);
+  }
+}
+
+/* HAND-WRITTEN — not generated (v0.41.0, 2026-10-19).
+ * From CMS Web Content Admin Portal v4.58 (MI2zFydRz9Qi673VeklnkI), HANDOFF §6.1.
+ * Sources: src/bbl/{badge,table-pagination,list-item}.tsx
+ */
+
+@layer webds.components {
+  /* badge — neutral (D5): the board's Accent with Surface/Secondary + Text/Secondary */
+  .webds-badge--neutral-surface {
+    background-color: var(--color-surface-secondary-default);
+  }
+  .webds-badge--neutral-text {
+    color: var(--color-text-secondary-default);
+  }
+  .webds-badge--neutral-icon {
+    fill: var(--color-icon-secondary-default);
+  }
+
+  /* table-pagination — a chevron at the end of the range (D6, 178:63035) */
+  .webds-table-pagination-7:disabled,
+  .webds-table-pagination-9:disabled {
+    cursor: default;
+  }
+  .webds-table-pagination-7:disabled .webds-table-pagination-8,
+  .webds-table-pagination-9:disabled .webds-table-pagination-10 {
+    fill: var(--color-icon-disabled-subtle-default);
+  }
+
+  /* list-item — the :hover / :active its own note promises (D16). Only on a row
+     that takes a click and is not already in a drawn state. */
+  .webds-list-item-2--s3.webds-list-item--default:hover {
+    background-color: var(--color-surface-primary-hovered);
+  }
+  .webds-list-item-2--s3.webds-list-item--default:active {
+    background-color: var(--color-surface-primary-pressed);
+  }
+}

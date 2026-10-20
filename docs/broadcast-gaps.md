@@ -101,12 +101,15 @@ The designer drew four ways to insert a dynamic field (`{{COLUMN}}`) into the me
 | Idea 1.2 | 324:36348 | Pills | One on each card | Stacked, as the CNH Template form |
 | Idea 2 | 324:49318 | `Add dynamic field` Outline Button | One for all channels | 3 columns |
 | Idea 2.2 | 359:112101 | `+` Contained Icon Button on the card title row | One on each card | 3 columns |
+| Idea 3 | none (requester, 20 Oct 2026) | `Add dynamic field` Outline Button that opens webds `picker-dialog`, as CMS's Link Document Type | One for all channels | Either |
+| Idea 3.2 | none (requester, 20 Oct 2026) | `+` Contained Icon Button that opens the same dialog | One on each card | Either |
 
 The Figma labels *IDEA 1* and *IDEA 2* sit over different frames than the requester's numbering. This table follows the requester's numbering. The section also holds two frames not wired here: 324:50675 (an `Add dynamic field` button under each card's title) and 324:49820 (a `Select Dynamic Field` select beside the heading).
 
 What the drafts do not draw, and what the prototype does instead:
 
 - **The pop-up.** No draft draws what the button opens. The prototype opens a webds Dropdown Menu that lists the file's columns, 240 wide, scrolling past 320.
+- **The dialog (Idea 3, 3.2).** webds `picker-dialog`, single pick (radio rows), search, Cancel and Confirm. There is no *Create new* button, because fields come from the file. Title `Dynamic field`, composed. Its empty state (`No fields in the audience file.` / `Upload a file with more columns.`) is composed too, and cannot show: the button is disabled when the file has no fields.
 - **Where a field goes.** A shared picker inserts at the caret of the message box the cursor was last in. If there is none, it shows `Click in a message field first, then choose a field to insert`. A per-card picker inserts into that card's last-focused box, or into the card's first box.
 - **A channel that is off.** Its per-card chips and `+` button are disabled.
 - **No file yet.** The pickers are hidden or disabled, and the note `Available fields appear here once the audience file is uploaded.` shows.

@@ -5,7 +5,7 @@ import { RadioButton } from '@/bbl/radio-button'
 import { SegmentedTab } from '@/bbl/segmented-tab'
 import { useHash } from '@/lib/hash'
 import { cn } from '@/lib/cn'
-import { FEW_FIELDS, FIGMA_FILE, VARIANTS, ideaOf, setConcept, useConcept, type Columns, type Layout } from './dynamic-field'
+import { DIALOG_IDEAS, FEW_FIELDS, FIGMA_FILE, VARIANTS, ideaOf, setConcept, useConcept, type Columns, type Layout } from './dynamic-field'
 
 /* Prototype runner only — the floating Prototype control over Create / Edit
  * broadcast. Channel layout comes first; under it, the design drafts that
@@ -122,7 +122,8 @@ export function ConceptPanel() {
         <span className="type-label-l-emphasized text-[var(--color-text-primary-default)]">Prototype control</span>
         {!open && (
           <span className="type-label-m text-[var(--color-text-secondary-default)]">
-            · {LAYOUTS.find((l) => l.value === concept.layout)?.label} · {idea ? idea.label : 'Not drawn'} ·{' '}
+            · {LAYOUTS.find((l) => l.value === concept.layout)?.label} ·{' '}
+            {concept.picker === 'dialog' ? DIALOG_IDEAS[concept.placement] : idea ? idea.label : 'Not drawn'} ·{' '}
             {concept.columns === 'few' ? 'Few' : 'Many'} fields
           </span>
         )}
@@ -151,6 +152,7 @@ export function ConceptPanel() {
             <div role="radiogroup" aria-label="Design draft" className="flex flex-col">
               {VARIANTS.map((v) => {
                 const draft = ideaOf({ ...v, layout: concept.layout })
+                const named = v.picker === 'dialog' ? DIALOG_IDEAS[v.placement] : draft?.label
                 const on = v.picker === concept.picker && v.placement === concept.placement
                 return (
                   <label
@@ -159,17 +161,17 @@ export function ConceptPanel() {
                   >
                     <RadioButton
                       selected={on}
-                      aria-label={draft ? draft.label : v.note}
+                      aria-label={named ?? v.note}
                       onClick={() => setConcept({ picker: v.picker, placement: v.placement })}
                     />
                     <span className="flex min-w-0 flex-col">
                       <span
                         className={cn(
                           'type-label-l-emphasized',
-                          draft ? 'text-[var(--color-text-primary-default)]' : 'text-[var(--color-text-secondary-default)]',
+                          named ? 'text-[var(--color-text-primary-default)]' : 'text-[var(--color-text-secondary-default)]',
                         )}
                       >
-                        {draft ? draft.label : 'Not drawn'}
+                        {named ?? 'Not drawn'}
                       </span>
                       <span className="type-body-s text-[var(--color-text-secondary-default)]">
                         {v.note}

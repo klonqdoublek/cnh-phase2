@@ -8,8 +8,9 @@ import type { FormSeed } from '@/data/broadcast-presets'
  * 324:35732) are presets over them. Kept in `?df=` so a link opens a concept.
  * Not product UI: the chosen concept stays, this file goes. */
 
-/** How a field is picked: chips always on show, or a button that opens a menu. */
-export type Picker = 'pills' | 'button'
+/** How a field is picked: chips always on show, a button that opens a menu,
+ *  or a button that opens CMS's picker dialog. */
+export type Picker = 'pills' | 'button' | 'dialog'
 /** One picker for the whole message area, or one per channel card. */
 export type Placement = 'shared' | 'channel'
 /** Channel cards three across, or stacked full width as the CNH Template form. */
@@ -27,6 +28,11 @@ export const IDEAS = [
   { id: '2.2', label: 'Idea 2.2', note: '+ button per card', node: '359-112101', concept: { picker: 'button', placement: 'channel', layout: 'columns' } },
 ] as const satisfies readonly { id: string; label: string; note: string; node: string; concept: Omit<Concept, 'columns'> }[]
 
+/** Idea 3 / 3.2 — the requester's (20 Oct 2026): the button opens CMS's
+ *  picker dialog (Link Document Type) instead of a menu, single pick. No
+ *  Figma draft, so it is offered in both layouts. */
+export const DIALOG_IDEAS = { shared: 'Idea 3', channel: 'Idea 3.2' } as const
+
 /** The four picker × placement pairs — the panel lists them under each
  *  channel layout, named after the draft that draws them in that layout. */
 export const VARIANTS = [
@@ -34,6 +40,8 @@ export const VARIANTS = [
   { picker: 'pills', placement: 'channel', note: 'Pills on each channel card' },
   { picker: 'button', placement: 'shared', note: 'Add dynamic field button + pop-up' },
   { picker: 'button', placement: 'channel', note: '+ button + pop-up on each card' },
+  { picker: 'dialog', placement: 'shared', note: 'Add dynamic field button + dialog (CMS)' },
+  { picker: 'dialog', placement: 'channel', note: '+ button + dialog (CMS) on each card' },
 ] as const satisfies readonly { picker: Picker; placement: Placement; note: string }[]
 
 export const FIGMA_FILE = 'https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--WIP_Broadcast-Message'
@@ -43,7 +51,7 @@ const DEFAULT: Concept = { ...IDEAS[0].concept, columns: 'many' }
 const parse = (raw: string | null): Concept => {
   const [picker, placement, layout, columns] = (raw ?? '').split('-')
   return {
-    picker: picker === 'button' ? 'button' : picker === 'pills' ? 'pills' : DEFAULT.picker,
+    picker: picker === 'button' || picker === 'dialog' || picker === 'pills' ? picker : DEFAULT.picker,
     placement: placement === 'channel' ? 'channel' : placement === 'shared' ? 'shared' : DEFAULT.placement,
     layout: layout === 'stacked' ? 'stacked' : layout === 'columns' ? 'columns' : DEFAULT.layout,
     columns: columns === 'few' ? 'few' : columns === 'many' ? 'many' : DEFAULT.columns,

@@ -139,7 +139,12 @@ export type ConfirmDialogProps = {
    */
   layer?: 'absolute' | 'fixed'
   /** Replaces the split cancel/confirm pair — the informative dialog's two or
-   *  three buttons at their own widths, at gap 24. */
+   *  three buttons at their own widths, at gap 24.
+   *
+   *  `null` draws NO action row at all — CMS's User Profile pop-up
+   *  (MI2zFydRz9Qi673VeklnkI · 351:43632) has a Close and nothing else. Until
+   *  v0.40 `null` fell through to the default pair, which is why that product
+   *  hand-built the dialog. `undefined` still means the default pair. */
   actions?: React.ReactNode
   /** Distance from the top of the scrim. The component centres by default, which
    *  is what a live dialog should do; a screen that reproduces a frame can pin it
@@ -273,10 +278,17 @@ export function ConfirmDialog({
           {/* 48 = pt 16 + a 32-tall Heading XS Emphasized, and pb 0 — the gap to
               the content is the content's own top padding, not a gap on the
               column. The three blocks sit flush (gap 0). */}
-          <div className="webds-pattern-confirm-dialog-3">
+          <div className={cn('webds-pattern-confirm-dialog-3', onClose && 'webds-pattern-confirm-dialog-3--close')}>
             <h2 id={titleId} className="webds-pattern-confirm-dialog-4">
               {title}
             </h2>
+            {/* CMS User Profile (351:43632): the 24 Close at the right of the
+                48 title band, the confirm anatomy's own mark. */}
+            {onClose && (
+              <button type="button" onClick={onClose} aria-label="Close" className="webds-pattern-confirm-dialog-12">
+                <CloseIcon />
+              </button>
+            )}
           </div>
           {/* 16 + the line + 16 — so 60 at Heading XXS and 54 at Label XL. */}
           <div className="webds-pattern-confirm-dialog-5">
@@ -291,6 +303,7 @@ export function ConfirmDialog({
           </div>
           {/* 68 = 8 + 44 + 16. Right-aligned at their own widths, not the split
               pair the other shell draws. */}
+          {actions !== null && (
           <div className="webds-pattern-confirm-dialog-7">
             {actions ??
               (destructive ? (
@@ -309,6 +322,7 @@ export function ConfirmDialog({
                 </>
               ))}
           </div>
+          )}
         </div>
       ) : (
       <div
@@ -338,7 +352,7 @@ export function ConfirmDialog({
           </div>
           {children}
         </div>
-        {actions ? (
+        {actions === null ? null : actions ? (
           /* The informative dialog's row: buttons at their own widths, gap 24. */
           <div className="webds-pattern-confirm-dialog-13">{actions}</div>
         ) : (
