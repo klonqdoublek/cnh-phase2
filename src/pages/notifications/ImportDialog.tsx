@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { Icon } from '@/bbl/icon'
 import { Scrim } from '@/bbl/building-block-scrim'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
@@ -79,6 +78,8 @@ export function ImportDialog({
   const [tooMany, setTooMany] = useState(false)
   const [previewing, setPreviewing] = useState<File | null>(null)
   const nextKey = useRef(0)
+  /* Whether the last upload was an import over: Try again repeats it without asking again. */
+  const lastReplace = useRef(false)
   const uploading = phase === 'uploading'
 
   useEffect(() => {
@@ -97,6 +98,10 @@ export function ImportDialog({
   }, [open, preset])
 
   const bad = !!picked?.check && !picked.check.ok
+  const failed = phase === 'failed'
+  /* CMS's upload-failed slot (design request, 20 Oct 2026): over the size limit, and the
+     upload failing, read inside the slot; only the failure offers Try again. */
+  const inSlot = failed || (picked?.check?.ok === false && picked.check.problem === 'size')
   const templateCount = picked?.check?.ok ? picked.check.templates.length : 0
 
   const reset = () => {
@@ -133,6 +138,7 @@ export function ImportDialog({
 
   const upload = (replace: boolean) => {
     if (!picked?.check?.ok) return
+    lastReplace.current = replace
     setMessage(null)
     setPhase('uploading')
     const { file, check } = picked
@@ -167,19 +173,6 @@ export function ImportDialog({
         className="relative z-50"
       >
         <div className="flex flex-col gap-[var(--space-4)]">
-          {phase === 'failed' && (
-            <div
-              role="alert"
-              className="flex items-start gap-[var(--space-3)] rounded-[var(--radius-2)] bg-[var(--color-surface-negative-subtle-default)] px-[var(--space-4)] py-[var(--space-3)]"
-            >
-              <Icon slug="caution" size={24} color="var(--color-icon-negative-default)" />
-              <div>
-                <p className="type-label-m-emphasized text-[var(--color-text-negative-strong-default)]">{IMPORT_COPY.failTitle}</p>
-                <p className="type-body-s text-[var(--color-text-negative-strong-default)]">{IMPORT_COPY.failBody}</p>
-              </div>
-            </div>
-          )}
-
           {picked ? (
             <UploadedFile
               name={picked.file.name}
@@ -190,8 +183,11 @@ export function ImportDialog({
                     ? ` • ${templateCount} ${templateCount === 1 ? 'template' : 'templates'}`
                     : ''
               }`}
-              error={bad}
-              errorMessage={picked.check && !picked.check.ok ? picked.check.message : undefined}
+              error={bad || failed}
+              errorMessage={failed ? IMPORT_COPY.failTitle : picked.check && !picked.check.ok ? picked.check.message : undefined}
+              errorPlacement={inSlot ? 'slot' : 'below'}
+              retryLabel={IMPORT_COPY.retry}
+              onRetry={failed ? () => upload(lastReplace.current) : undefined}
               previewLabel={PREVIEW_COPY.preview}
               onPreview={() => setPreviewing(picked.file)}
               onRemove={remove}

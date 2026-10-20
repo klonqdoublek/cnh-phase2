@@ -48,8 +48,10 @@ export const IMPORT_COPY = {
   noFile: 'Select a .jsonl file to import',
   hasErrors: 'Remove the file and choose another to continue',
   uploading: 'Importing templates…',
+  /* Inside the file slot since 20 Oct 2026 (CMS's upload-failed slot); the banner's
+     second line, "Please try again", became CMS's Try again button. */
   failTitle: 'Unable to import templates',
-  failBody: 'Please try again',
+  retry: 'Try again',
   successTitle: 'Templates imported',
   successBody: (n: number) => `${n} ${n === 1 ? 'template was' : 'templates were'} added as draft`,
   /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
