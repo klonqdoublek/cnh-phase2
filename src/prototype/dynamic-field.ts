@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import type { FormSeed } from '@/data/broadcast-presets'
 
 /* Prototype runner only — which dynamic-field concept the Create broadcast
  * message area draws, so the requester can compare the drafts in one build
@@ -14,14 +15,17 @@ export type Placement = 'shared' | 'channel'
 /** Channel cards three across, or stacked full width as the CNH Template form. */
 export type Layout = 'columns' | 'stacked'
 
-export type Concept = { picker: Picker; placement: Placement; layout: Layout }
+/** How many columns the seeded audience file has — how many fields to pick from. */
+export type Columns = 'few' | 'many'
+
+export type Concept = { picker: Picker; placement: Placement; layout: Layout; columns: Columns }
 
 export const IDEAS = [
   { id: '1', label: 'Idea 1', note: 'Pills over the cards', node: '324-35734', concept: { picker: 'pills', placement: 'shared', layout: 'columns' } },
   { id: '1.2', label: 'Idea 1.2', note: 'Pills per card, CNH layout', node: '324-36348', concept: { picker: 'pills', placement: 'channel', layout: 'stacked' } },
   { id: '2', label: 'Idea 2', note: 'Add dynamic field button', node: '324-49318', concept: { picker: 'button', placement: 'shared', layout: 'columns' } },
   { id: '2.2', label: 'Idea 2.2', note: '+ button per card', node: '359-112101', concept: { picker: 'button', placement: 'channel', layout: 'columns' } },
-] as const satisfies readonly { id: string; label: string; note: string; node: string; concept: Concept }[]
+] as const satisfies readonly { id: string; label: string; note: string; node: string; concept: Omit<Concept, 'columns'> }[]
 
 /** The four picker × placement pairs — the panel lists them under each
  *  channel layout, named after the draft that draws them in that layout. */
@@ -34,14 +38,15 @@ export const VARIANTS = [
 
 export const FIGMA_FILE = 'https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--WIP_Broadcast-Message'
 
-const DEFAULT: Concept = IDEAS[0].concept
+const DEFAULT: Concept = { ...IDEAS[0].concept, columns: 'many' }
 
 const parse = (raw: string | null): Concept => {
-  const [picker, placement, layout] = (raw ?? '').split('-')
+  const [picker, placement, layout, columns] = (raw ?? '').split('-')
   return {
     picker: picker === 'button' ? 'button' : picker === 'pills' ? 'pills' : DEFAULT.picker,
     placement: placement === 'channel' ? 'channel' : placement === 'shared' ? 'shared' : DEFAULT.placement,
     layout: layout === 'stacked' ? 'stacked' : layout === 'columns' ? 'columns' : DEFAULT.layout,
+    columns: columns === 'few' ? 'few' : columns === 'many' ? 'many' : DEFAULT.columns,
   }
 }
 
@@ -53,7 +58,7 @@ const listeners = new Set<() => void>()
 export function setConcept(next: Partial<Concept>) {
   current = { ...current, ...next }
   const url = new URL(location.href)
-  url.searchParams.set('df', `${current.picker}-${current.placement}-${current.layout}`)
+  url.searchParams.set('df', `${current.picker}-${current.placement}-${current.layout}-${current.columns}`)
   history.replaceState(history.state, '', url)
   listeners.forEach((l) => l())
 }
@@ -63,7 +68,7 @@ const subscribe = (l: () => void) => {
   return () => listeners.delete(l)
 }
 const read = () => {
-  const k = `${current.picker}-${current.placement}-${current.layout}`
+  const k = `${current.picker}-${current.placement}-${current.layout}-${current.columns}`
   if (k !== key) {
     key = k
     snapshot = current
@@ -74,5 +79,20 @@ const read = () => {
 export const useConcept = () => useSyncExternalStore(subscribe, read)
 
 /** The draft a concept matches, if any — a mixed one matches none. */
-export const ideaOf = (c: Concept) =>
+export const ideaOf = (c: Omit<Concept, 'columns'>) =>
   IDEAS.find((i) => i.concept.picker === c.picker && i.concept.placement === c.placement && i.concept.layout === c.layout)
+
+/** Fields the few-column file keeps after its ID column — the drafts' own four. */
+export const FEW_FIELDS = 4
+
+/** Few: the seeded file cut to its ID column and the next four, as the drafts
+ *  draw it (CUSTOMER_NAME, ACCOUNT_NO, AMOUNT, PROMOTION_CODE). Many: the file
+ *  as seeded — the 55-column one on every CIS preset. */
+export const seedWithColumns = (columns: Columns) => (seed: FormSeed): FormSeed => {
+  if (columns === 'many' || !seed.file) return seed
+  const text = seed.file.text
+    .split('\n')
+    .map((line) => line.split(',').slice(0, FEW_FIELDS + 1).join(','))
+    .join('\n')
+  return { ...seed, file: { name: seed.file.name.replace('-large', ''), text } }
+}

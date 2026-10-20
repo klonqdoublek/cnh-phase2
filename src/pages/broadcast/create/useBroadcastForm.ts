@@ -94,13 +94,16 @@ export function useBroadcastForm({
   failNext,
   preset,
   initial,
+  adaptSeed = (s) => s,
 }: {
   onCreate: (broadcast: Omit<Broadcast, 'id'>, kind: SaveKind) => void
   failNext?: boolean
   preset?: FormPreset
   initial?: Broadcast
+  /** Prototype only: lets the Prototype control swap the seeded file. */
+  adaptSeed?: (seed: FormSeed) => FormSeed
 }) {
-  const [seed] = useState<FormSeed>(() => (initial ? fromDraft(initial) : preset ? formSeed(preset) : {}))
+  const [seed] = useState<FormSeed>(() => adaptSeed(initial ? fromDraft(initial) : preset ? formSeed(preset) : {}))
   const [errors, setErrors] = useState<FormErrors>({})
   const [name, setName] = useState(seed.name ?? '')
   const [description, setDescription] = useState(seed.description ?? '')

@@ -5,7 +5,7 @@ import { RadioButton } from '@/bbl/radio-button'
 import { SegmentedTab } from '@/bbl/segmented-tab'
 import { useHash } from '@/lib/hash'
 import { cn } from '@/lib/cn'
-import { FIGMA_FILE, VARIANTS, ideaOf, setConcept, useConcept, type Layout } from './dynamic-field'
+import { FEW_FIELDS, FIGMA_FILE, VARIANTS, ideaOf, setConcept, useConcept, type Columns, type Layout } from './dynamic-field'
 
 /* Prototype runner only — the floating Prototype control over Create / Edit
  * broadcast. Channel layout comes first; under it, the design drafts that
@@ -17,6 +17,12 @@ import { FIGMA_FILE, VARIANTS, ideaOf, setConcept, useConcept, type Layout } fro
 const LAYOUTS: { value: Layout; label: string }[] = [
   { value: 'columns', label: '3 columns' },
   { value: 'stacked', label: 'Stacked (CNH)' },
+]
+
+/* Many is the 55-column CIS file: its ID column and 54 fields. */
+const COLUMNS: { value: Columns; label: string }[] = [
+  { value: 'few', label: `Few fields (${FEW_FIELDS})` },
+  { value: 'many', label: 'Many fields (54)' },
 ]
 
 const KEY = 'cnh-concept-panel'
@@ -116,7 +122,8 @@ export function ConceptPanel() {
         <span className="type-label-l-emphasized text-[var(--color-text-primary-default)]">Prototype control</span>
         {!open && (
           <span className="type-label-m text-[var(--color-text-secondary-default)]">
-            · {LAYOUTS.find((l) => l.value === concept.layout)?.label} · {idea ? idea.label : 'Not drawn'}
+            · {LAYOUTS.find((l) => l.value === concept.layout)?.label} · {idea ? idea.label : 'Not drawn'} ·{' '}
+            {concept.columns === 'few' ? 'Few' : 'Many'} fields
           </span>
         )}
         <span className="ml-auto flex">
@@ -186,6 +193,18 @@ export function ConceptPanel() {
                 )
               })}
             </div>
+          </div>
+
+          <div className="flex flex-col gap-[var(--space-2)]">
+            <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">3. Audience file</span>
+            <SegmentedTab
+              items={COLUMNS.map((c) => c.label)}
+              selectedIndex={COLUMNS.findIndex((c) => c.value === concept.columns)}
+              onSelect={(i) => setConcept({ columns: COLUMNS[i].value })}
+            />
+            <span className="type-body-s text-[var(--color-text-secondary-default)]">
+              Swaps the CIS preset's file, so the fields follow its columns. Resets what was typed.
+            </span>
           </div>
         </div>
       )}

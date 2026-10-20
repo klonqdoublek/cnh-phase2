@@ -8,7 +8,7 @@ import type { FormPreset } from '@/data/broadcast-presets'
 import { Dialogs } from './create/Dialogs'
 import { AudienceFile, BasicInfo, Delivery, MessageContent, Section, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
-import { useConcept } from '@/prototype/dynamic-field'
+import { seedWithColumns, useConcept } from '@/prototype/dynamic-field'
 
 export type SaveKind = 'draft' | 'submit'
 
@@ -30,8 +30,15 @@ export type BroadcastWizardProps = {
  * cards' switches, and the message content sits under the audience step.
  * Do Not Disturb sits inside Delivery Date (Figma 89:4665).
  */
-export function BroadcastWizard({ onBack, onCreate, failNext, preset, initial }: BroadcastWizardProps) {
-  const f = useBroadcastForm({ onCreate, failNext, preset, initial })
+export function BroadcastWizard(props: BroadcastWizardProps) {
+  /* The Prototype control's file size reseeds the form, so it remounts. */
+  const { columns } = useConcept()
+  return <Wizard key={columns} {...props} />
+}
+
+function Wizard({ onBack, onCreate, failNext, preset, initial }: BroadcastWizardProps) {
+  const { columns } = useConcept()
+  const f = useBroadcastForm({ onCreate, failNext, preset, initial, adaptSeed: seedWithColumns(columns) })
   const body = useRef<HTMLDivElement>(null)
   const focus: FocusRef = useRef(null)
   /* Which dynamic-field draft the message area draws — the prototype's
