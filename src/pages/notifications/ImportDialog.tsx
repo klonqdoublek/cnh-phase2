@@ -5,6 +5,7 @@ import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import {
   IMPORT_COPY,
   IMPORT_FAIL_SENTINEL,
+  MAX_IMPORT_BYTES,
   UPLOAD_MS,
   checkFile,
   presetFile,
@@ -42,7 +43,10 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * moment it is picked — format, then size (10 MB, CMS's limit), then
  * structure — and a file in error blocks Import until it is removed. Files
  * with a wrong extension are still taken and flagged — the original build's
- * Invalid file format state.
+ * Invalid file format state. A .jsonl file over 10 MB is not taken at all:
+ * the zone stays empty, turns Negative and reads "Max file size: 10 MB" in
+ * Text/Negative, as CMS's too-many zone does — no file name (review comment,
+ * 20 Oct 2026; was the file's slot in error).
  *
  * A file whose name was imported before asks first (requester, 15 Oct 2026):
  * "Import over <name>?", and Import replaces that earlier import's templates.
@@ -76,6 +80,8 @@ export function ImportDialog({
   const [message, setMessage] = useState<string | null>(null)
   /* Only the `too-many` route sets this: it draws the refused drag, which a live drop never leaves behind. */
   const [tooMany, setTooMany] = useState(false)
+  /* The last file picked was over 10 MB and was not taken. */
+  const [tooLarge, setTooLarge] = useState(false)
   const [previewing, setPreviewing] = useState<File | null>(null)
   const nextKey = useRef(0)
   /* Whether the last upload was an import over: Try again repeats it without asking again. */
@@ -95,13 +101,13 @@ export function ImportDialog({
     setPhase(preset === 'uploading' ? 'uploading' : preset === 'failure' ? 'failed' : preset === 'duplicate' ? 'replace' : 'idle')
     setMessage(preset === 'no-file' ? IMPORT_COPY.noFile : null)
     setTooMany(preset === 'too-many')
+    setTooLarge(preset === 'too-large')
   }, [open, preset])
 
   const bad = !!picked?.check && !picked.check.ok
   const failed = phase === 'failed'
-  /* CMS's upload-failed slot (design request, 20 Oct 2026): over the size limit, and the
-     upload failing, read inside the slot; only the failure offers Try again. */
-  const inSlot = failed || (picked?.check?.ok === false && picked.check.problem === 'size')
+  /* CMS's upload-failed slot (design request, 20 Oct 2026): the upload failing reads inside the slot, with Try again. */
+  const inSlot = failed
   const templateCount = picked?.check?.ok ? picked.check.templates.length : 0
 
   const reset = () => {
@@ -109,6 +115,7 @@ export function ImportDialog({
     setPhase('idle')
     setMessage(null)
     setTooMany(false)
+    setTooLarge(false)
     setPreviewing(null)
   }
   const close = () => {
@@ -125,6 +132,10 @@ export function ImportDialog({
     setPhase('idle')
     setTooMany(false)
     const file = list[0]
+    /* Format first: a wrong extension is taken and flagged. A .jsonl over the limit is not taken. */
+    const tooBig = file.name.toLowerCase().endsWith('.jsonl') && file.size > MAX_IMPORT_BYTES
+    setTooLarge(tooBig)
+    if (tooBig) return
     const key = nextKey.current++
     setPicked({ key, file, size: file.size, check: null })
     checkFile(file).then((check) => setPicked((p) => (p?.key === key ? { ...p, check } : p)))
@@ -200,8 +211,8 @@ export function ImportDialog({
               accept=".jsonl"
               maxFiles={1}
               tooManyHint={IMPORT_COPY.oneFile}
-              error={tooMany || message === IMPORT_COPY.noFile}
-              errorHint={tooMany ? IMPORT_COPY.oneFile : undefined}
+              error={tooMany || tooLarge || message === IMPORT_COPY.noFile}
+              errorHint={tooMany ? IMPORT_COPY.oneFile : tooLarge ? IMPORT_COPY.size : undefined}
               onFiles={add}
             />
           )}
