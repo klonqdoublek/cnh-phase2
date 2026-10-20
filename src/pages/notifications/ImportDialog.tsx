@@ -28,10 +28,10 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
 
 /**
  * Import templates — a dialog on the list (Korn, 2026-10-05). Shell is webds
- * `confirm-dialog` (`sectioned`, the CNH dialog set), 600 wide: the width
- * that anatomy was measured at, and the Import over…? dialog's. It was 800
- * while Import took many files; one file left the zone stretched (review
- * comment, 19 Oct 2026).
+ * `confirm-dialog` (`sectioned`, the CNH dialog set), 444 wide: webds Dialog
+ * `Max Width=XS`, for this dialog and Import over…? (requester, 20 Oct 2026).
+ * It was 800 while Import took many files, then 600 (the sectioned dialog's
+ * measured width) once it took one (review comment, 19 Oct 2026).
  *
  * One file per import (requester, 15 Oct 2026), the way a CMS asset slot
  * takes one: the 84-tall drop zone until a file is picked, then the file's
@@ -148,7 +148,7 @@ export function ImportDialog({
         open={open}
         anatomy="sectioned"
         layer="fixed"
-        width={600}
+        width={444}
         title={IMPORT_COPY.title}
         cancelLabel="Cancel"
         confirmLabel="Import"
@@ -209,7 +209,7 @@ export function ImportDialog({
           anatomy="sectioned"
           contentType="label-xl"
           layer="fixed"
-          width={600}
+          width={444}
           title={IMPORT_COPY.replaceTitle(picked.file.name)}
           cancelLabel="Cancel"
           confirmLabel={IMPORT_COPY.replaceConfirm}
