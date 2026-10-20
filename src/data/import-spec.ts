@@ -52,12 +52,12 @@ export const IMPORT_COPY = {
   failBody: 'Please try again',
   successTitle: 'Templates imported',
   successBody: (n: number) => `${n} ${n === 1 ? 'template was' : 'templates were'} added as draft`,
-  /* Composed (requester, 15 Oct 2026): a file whose name was imported before. Since the
-     design critique (20 Oct 2026) it is a Caution Alert inside the Import dialog, the
-     old dialog body split into title and description; the "Import over <name>?"
-     dialog is gone. */
-  duplicateTitle: 'This file has already been imported',
-  duplicateBody: 'Its templates will be replaced with the ones in this file.',
+  /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
+     before it imports over that file. Since the design critique (20 Oct 2026) it opens
+     after the upload spinner, alone, not over the Import dialog. */
+  replaceTitle: (name: string) => `Import over ${name}?`,
+  replaceBody: 'This file has already been imported. Its templates will be replaced with the ones in this file.',
+  replaceConfirm: 'Import',
 }
 
 /** A file whose name contains this fails the upload — the prototype's way to reach Import failure. */
