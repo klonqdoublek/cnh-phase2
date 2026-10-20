@@ -109,7 +109,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
      - No channel on: an Alert above the cards and a red stroke on each card.
 3. **Delivery Date.** One card, "Select Delivery Date", that also holds Do Not Disturb ([Figma 89:4665](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=89-4665), 15 Oct 2026):
    - **Send as soon as possible**, or **Schedule delivery** with Start date and time\* (5-minute steps, later than now).
-   - Optional **End date and time**, later than the start, with Clear, **for Schedule delivery only**. Send as soon as possible has no end (requester, 15 Oct, following the draft; the BA's Q2 answer on 14 Oct did not say which modes). End sits on the left and Start on the right (the requester kept it on 15 Oct).
+   - Optional **End date and time**, later than the start, with Clear, **for Schedule delivery only**. Send as soon as possible has no end (requester, 15 Oct, following the draft; the BA's Q2 answer on 14 Oct did not say which modes). Start sits on the left and End on the right (requester, 20 Oct; draft 2.2 draws End first).
    - **Select DND** ("Prevent sending messages during quiet hours."): the Do Not Disturb (DND) switch, then any number of quiet periods, one row each: days, hours (5-minute steps) or **All day**, and a trash when there are two or more. **Add period** under the periods. The one time zone, Asia/Bangkok (GMT+7), shows as text.
 
 ### Delivery rules
@@ -155,6 +155,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 15 Oct 2026 | Do Not Disturb moves into the Delivery Date step (Figma 89:4665): three steps. |
 | 15 Oct 2026 | Broadcast End is for Schedule delivery only; Send as soon as possible has no end (requester, following draft 2.2). |
 | 15 Oct 2026 | Create broadcast follows draft 2.2 webds-matched (Figma 85:19401): four steps (three since DND joined Delivery Date); message content under the audience step; channels switched on their own cards; content fields and limits from the Template form's TH fields; End left of Start. See "Create: the three steps". |
+| 20 Oct 2026 | Start date and time comes before End date and time, Start on the left (requester). This departs from draft 2.2, which draws End first. |
 
 ## Open items
 

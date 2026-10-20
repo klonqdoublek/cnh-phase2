@@ -611,28 +611,11 @@ export function Delivery({ f }: F) {
           onSelect={() => f.setMode('schedule')}
         />
       </div>
-      {/* Schedule delivery only: End on the left, Start on the right (draft
-          2.2; kept by the requester, 15 Oct 2026). Send as soon as possible
-          has no end (requester, 15 Oct 2026). */}
+      {/* Schedule delivery only: Start on the left, End on the right
+          (requester, 20 Oct 2026; draft 2.2 drew End first). Send as soon
+          as possible has no end (requester, 15 Oct 2026). */}
       {f.mode === 'schedule' && (
         <div className="grid grid-cols-2 items-start gap-[var(--space-6)]">
-          {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
-              Expiry date. Sending stops here; whoever is left is Not sent. */}
-          <DateTimeInput
-            label="End date and time"
-            optional
-            clearable
-            className="w-full"
-            value={f.end}
-            min={f.startDate || ymd(new Date())}
-            minuteStep={5}
-            error={!!f.errors.end}
-            message={f.errors.end}
-            onChange={(v) => {
-              f.setEnd(v)
-              f.clear('end')
-            }}
-          />
           {/* One field, as CMS's Effective date: webds' Date Time Picker. The
               form still keeps the date and the time apart. */}
           <DateTimeInput
@@ -648,6 +631,23 @@ export function Delivery({ f }: F) {
               f.setStartDate(v.slice(0, 10))
               f.setStartTime(v.slice(11, 16))
               f.clear('startDate', 'startTime', 'end')
+            }}
+          />
+          {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
+              Expiry date. Sending stops here; whoever is left is Not sent. */}
+          <DateTimeInput
+            label="End date and time"
+            optional
+            clearable
+            className="w-full"
+            value={f.end}
+            min={f.startDate || ymd(new Date())}
+            minuteStep={5}
+            error={!!f.errors.end}
+            message={f.errors.end}
+            onChange={(v) => {
+              f.setEnd(v)
+              f.clear('end')
             }}
           />
         </div>
