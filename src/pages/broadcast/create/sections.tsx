@@ -1,33 +1,37 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
+import { ContainedIconButton } from '@/bbl/contained-icon-button'
 import { Divider } from '@/bbl/divider'
 import { GhostButton } from '@/bbl/ghost-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
+import { OutlineButton } from '@/bbl/outline-button'
 import { PillChip } from '@/bbl/pill-chip'
 import { ScrollBar } from '@/bbl/scroll-bar'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
 import { ToggleSwitch } from '@/bbl/toggle-switch'
+import { DropdownMenu } from '@/patterns/dropdown-menu'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { FormStep } from '@/patterns/console-page'
 import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
+import type { Concept } from '@/prototype/dynamic-field'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
 /* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
  * 85:19401, 15 Oct 2026): the audience step carries the message content —
- * one set of field chips over three channel cards — and channels are
- * switched on their own cards. */
+ * the file's fields and the channel cards, drawn as the dynamic field draft
+ * the Concept panel picks — and channels are switched on their own cards. */
 
 type F = { f: BroadcastForm }
 /** The message box the cursor was last in, so a field chip knows where to insert. */
@@ -464,24 +468,47 @@ function ColumnSelect({ f }: F) {
 
 /* ── Message content (under the audience step) ─────────────────────────── */
 
-/** The file's columns as chips that insert `{{COLUMN}}` into the message box
- *  the cursor was last in. */
-export function FieldChips({ f, focus }: F & { focus: FocusRef }) {
-  const [needsField, setNeedsField] = useState(false)
-  if (!f.fields.length) return <p className={NOTE}>Available fields appear here once the audience file is uploaded.</p>
-  const insert = (token: string) => {
-    const target = focus.current
-    if (!target || target.el.disabled || !target.el.isConnected) return setNeedsField(true)
-    setNeedsField(false)
+/** Each channel's message boxes, in order — where a per-channel picker
+ *  inserts when the cursor is not in one of that channel's boxes. */
+const CHANNEL_BOXES: Record<Channel, (keyof BroadcastContent)[]> = {
+  'Push notification': ['pushTitle', 'pushBody'],
+  Email: ['emailSubject', 'emailBody'],
+  SMS: ['smsMessage'],
+}
+
+/** Inserts `{{COLUMN}}` at the caret of the message box the cursor was last
+ *  in. Scoped to a channel, it falls back to that channel's first box. False
+ *  when there is no box to insert into. */
+function useInsertField(f: BroadcastForm, focus: FocusRef) {
+  return (token: string, channel?: Channel) => {
+    type Target = NonNullable<FocusRef['current']>
+    const usable = (t: Target | null): t is Target => !!t && !t.el.disabled && t.el.isConnected
+    let target = focus.current
+    if (channel && !(usable(target) && CHANNEL_BOXES[channel].includes(target.key as keyof BroadcastContent))) {
+      const key = CHANNEL_BOXES[channel][0]
+      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `[data-field="${key}"] input, [data-field="${key}"] textarea`,
+      )
+      target = el ? { key, el } : null
+    }
+    if (!usable(target)) return false
     const { el, key } = target
     const from = el.selectionStart ?? el.value.length
     const to = el.selectionEnd ?? el.value.length
-    f.setC(key as never)(el.value.slice(0, from) + token + el.value.slice(to))
+    f.setC(key as keyof BroadcastContent)(el.value.slice(0, from) + token + el.value.slice(to))
+    focus.current = { key, el }
     requestAnimationFrame(() => {
       el.focus()
       el.setSelectionRange(from + token.length, from + token.length)
     })
+    return true
   }
+}
+
+type Insert = (token: string) => void
+
+/** Idea 1 / 1.2: the file's columns as chips, always on show. */
+function FieldPills({ f, onInsert, disabled }: F & { onInsert: Insert; disabled?: boolean }) {
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
       <span className={LABEL}>Available fields</span>
@@ -489,18 +516,73 @@ export function FieldChips({ f, focus }: F & { focus: FocusRef }) {
         {f.fields.map((field) => (
           /* mousedown would blur the message box and lose the caret first */
           <span key={field.column} onMouseDown={(e) => e.preventDefault()}>
-            <PillChip appearance="highlight" aria-label={`Insert ${field.token}`} onClick={() => insert(field.token)}>
+            <PillChip
+              appearance="highlight"
+              state={disabled ? 'disabled' : 'default'}
+              aria-label={`Insert ${field.token}`}
+              onClick={() => onInsert(field.token)}
+            >
               {field.column}
             </PillChip>
           </span>
         ))}
       </div>
-      {needsField && (
-        <InlineMessage appearance="negative" size="xs">
-          {BROADCAST_COPY.pickField}
-        </InlineMessage>
-      )}
     </div>
+  )
+}
+
+/** Idea 2 / 2.2: a button that opens the file's columns as a webds Dropdown
+ *  Menu. The drafts draw the button only; the menu is composed (gap). */
+function FieldMenuButton({
+  f,
+  onInsert,
+  icon,
+  disabled,
+  label,
+}: F & { onInsert: Insert; icon?: boolean; disabled?: boolean; label: string }) {
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const away = (e: MouseEvent) => !root.current?.contains(e.target as Node) && setOpen(false)
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', away)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', away)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open])
+  const off = disabled || !f.fields.length
+  return (
+    /* mousedown would blur the message box and lose the caret first */
+    <span ref={root} className="relative inline-flex" onMouseDown={(e) => e.preventDefault()}>
+      {icon ? (
+        <ContainedIconButton
+          label={label}
+          aria-expanded={open}
+          disabled={off}
+          icon={<Icon slug="plus" size={16} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />}
+          onClick={() => setOpen(!open)}
+        />
+      ) : (
+        <OutlineButton aria-expanded={open} disabled={off} onClick={() => setOpen(!open)}>
+          {label}
+          <Icon slug="plus" size={16} color="currentColor" />
+        </OutlineButton>
+      )}
+      {open && (
+        <DropdownMenu
+          width={240}
+          className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[320px] overflow-y-auto"
+          options={f.fields.map((field) => ({ value: field.token, label: field.column }))}
+          onSelect={(token) => {
+            onInsert(token)
+            setOpen(false)
+          }}
+        />
+      )}
+    </span>
   )
 }
 
@@ -517,42 +599,115 @@ function ChannelAlert({ f }: F) {
   )
 }
 
-/** The chips over one card per channel offered, three across. Each card is
- *  switched on its own title row (webds `form-section-card`): off keeps what
- *  was typed and disables it. Direct recipient offers Email and SMS, one at a
- *  time. */
-export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
+/** The message area under the audience file, drawn as one of the dynamic
+ *  field drafts (Figma 324:35732, 20 Oct 2026) — the Concept panel picks:
+ *
+ *    picker     pills always on show (Idea 1, 1.2) · a button and its menu (2, 2.2)
+ *    placement  one for every channel (1, 2) · one on each card (1.2, 2.2)
+ *    layout     cards three across (1, 2, 2.2) · stacked full width as CNH (1.2)
+ *
+ *  Each card is switched on its own title row (webds `form-section-card`):
+ *  off keeps what was typed and disables it. Direct recipient offers Email
+ *  and SMS, one at a time. */
+export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; concept: Concept }) {
   const invalid = !!f.errors.channels
-  return (
-    <StepSurface>
-      <FieldChips f={f} focus={focus} />
+  const insert = useInsertField(f, focus)
+  const [needsField, setNeedsField] = useState(false)
+  const shared = concept.placement === 'shared'
+  const hasFields = f.fields.length > 0
+  const insertShared: Insert = (token) => setNeedsField(!insert(token))
+
+  /* Idea 2 and 2.2 head the area "Broadcast Message"; Idea 1.2 "Select", as
+     drawn; Idea 1 has no heading. */
+  const heading = concept.picker === 'button' ? 'Broadcast Message' : concept.layout === 'stacked' ? 'Select' : null
+  const sharedButton = shared && concept.picker === 'button' && (
+    <FieldMenuButton f={f} label="Add dynamic field" onInsert={insertShared} />
+  )
+
+  const cards = (
+    <div
+      data-error={invalid ? 'true' : undefined}
+      className={cn(
+        'grid items-stretch',
+        concept.layout === 'columns' ? 'grid-cols-3 gap-[var(--space-8)]' : 'grid-cols-1 gap-[var(--space-6)]',
+      )}
+      onFocusCapture={(e) => {
+        const el = e.target as HTMLInputElement | HTMLTextAreaElement
+        const key = el.closest('[data-field]')?.getAttribute('data-field')
+        if (key && key in f.content) {
+          focus.current = { key, el }
+          setNeedsField(false)
+        }
+      }}
+    >
+      {f.offered.map((c) => {
+        const on = f.channels.includes(c)
+        const perCard = !shared && hasFields
+        const cardButton = perCard && concept.picker === 'button' && (
+          <FieldMenuButton f={f} icon label={`Add dynamic field to ${c}`} disabled={!on} onInsert={(t) => insert(t, c)} />
+        )
+        return (
+          <FormSectionCard
+            key={c}
+            className="min-w-0 border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
+            title={
+              cardButton ? (
+                <span className="flex items-center justify-between gap-[var(--space-4)]">
+                  {c}
+                  {cardButton}
+                </span>
+              ) : (
+                c
+              )
+            }
+            toggle={{ on, onToggle: (v) => f.setChannel(c, v) }}
+            invalid={invalid}
+            rowGap={4}
+          >
+            {perCard && concept.picker === 'pills' && (
+              <FieldPills f={f} disabled={!on} onInsert={(t) => insert(t, c)} />
+            )}
+            <ChannelFields f={f} channel={c} on={on} />
+          </FormSectionCard>
+        )
+      })}
+    </div>
+  )
+
+  const top = (
+    <>
+      {shared && concept.picker === 'pills' && hasFields && <FieldPills f={f} onInsert={insertShared} />}
+      {!hasFields && <p className={NOTE}>Available fields appear here once the audience file is uploaded.</p>}
+      {needsField && (
+        <InlineMessage appearance="negative" size="xs">
+          {BROADCAST_COPY.pickField}
+        </InlineMessage>
+      )}
       <ChannelAlert f={f} />
-      <div
-        data-error={invalid ? 'true' : undefined}
-        className="grid grid-cols-3 items-stretch gap-[var(--space-8)]"
-        onFocusCapture={(e) => {
-          const el = e.target as HTMLInputElement | HTMLTextAreaElement
-          const key = el.closest('[data-field]')?.getAttribute('data-field')
-          if (key && key in f.content) focus.current = { key, el }
-        }}
-      >
-        {f.offered.map((c) => {
-          const on = f.channels.includes(c)
-          return (
-            <FormSectionCard
-              key={c}
-              className="min-w-0 border border-[var(--color-border-primary-default)]"
-              title={c}
-              toggle={{ on, onToggle: (v) => f.setChannel(c, v) }}
-              invalid={invalid}
-              rowGap={4}
-            >
-              <ChannelFields f={f} channel={c} on={on} />
-            </FormSectionCard>
-          )
-        })}
-      </div>
-    </StepSurface>
+    </>
+  )
+
+  if (!heading)
+    return (
+      <StepSurface>
+        {top}
+        {cards}
+      </StepSurface>
+    )
+  return (
+    <FormSectionCard
+      className="[&_.webds-pattern-form-section-card-3]:flex-1"
+      title={
+        <span className="flex min-h-[44px] items-center justify-between gap-[var(--space-4)]">
+          {heading}
+          {sharedButton}
+        </span>
+      }
+      rowGap={6}
+    >
+      {top}
+      {cards}
+    </FormSectionCard>
   )
 }
 

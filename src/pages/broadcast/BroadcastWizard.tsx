@@ -8,6 +8,7 @@ import type { FormPreset } from '@/data/broadcast-presets'
 import { Dialogs } from './create/Dialogs'
 import { AudienceFile, BasicInfo, Delivery, MessageContent, Section, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
+import { useConcept } from '@/prototype/dynamic-field'
 
 export type SaveKind = 'draft' | 'submit'
 
@@ -33,6 +34,9 @@ export function BroadcastWizard({ onBack, onCreate, failNext, preset, initial }:
   const f = useBroadcastForm({ onCreate, failNext, preset, initial })
   const body = useRef<HTMLDivElement>(null)
   const focus: FocusRef = useRef(null)
+  /* Which dynamic-field draft the message area draws — the prototype's
+     Concept panel switches it (src/prototype/ConceptPanel.tsx). */
+  const concept = useConcept()
 
   return (
     <div className="relative h-full bg-[var(--color-surface-secondary-default)]">
@@ -67,7 +71,7 @@ export function BroadcastWizard({ onBack, onCreate, failNext, preset, initial }:
         <Section title="Step 2: Validate Audience file">
           <div className="flex flex-col gap-[var(--space-8)]">
             <AudienceFile f={f} />
-            <MessageContent f={f} focus={focus} />
+            <MessageContent f={f} focus={focus} concept={concept} />
           </div>
         </Section>
         <Section title="Step 3: Delivery Date">

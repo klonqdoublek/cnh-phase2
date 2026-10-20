@@ -90,3 +90,24 @@ The original build has none of this copy. Change it here if the BA rules otherwi
 | Do Not Disturb | `Add period`, `All day`. In the list, drawer and dialog: `Sat, Sun, All day`, and `+N more` after two lines. |
 | Quiet period picker | Header `Time`. Screen reader labels: `Hour`, `Minute`, `Remove quiet period N`. |
 | Broadcast End | Field `End date and time (optional)`, button `Clear`. Error `End must be later than the start`. Delivery note: `Sending stops at {end}; recipients not sent by then are counted as Not sent.` Drawer: `Broadcast end`, `Not sent`, `The broadcast ended at {end}. {n} recipients were not sent.` Report: `Not sent` / `Broadcast ended`. Confirm dialog: `No end date`. Fixture BC-0001 *Savings interest rate update*. |
+
+## Dynamic field concepts, 20 Oct 2026
+
+The designer drew four ways to insert a dynamic field (`{{COLUMN}}`) into the message, in the Figma section *dynamic mapping field idea* (324:35732). The prototype draws all four on Create and Edit broadcast. The **Dynamic field** button at the top right of the page opens a Prototype control panel. The panel picks a draft, or each of the three axes on its own. `?df=<picker>-<placement>-<layout>` opens a concept from a link. The panel is prototype chrome (`src/prototype/`), not product UI.
+
+| Draft | Figma | Picker | Placement | Channel layout |
+|---|---|---|---|---|
+| Idea 1 | 324:35734 | Pills | One for all channels | 3 columns |
+| Idea 1.2 | 324:36348 | Pills | One on each card | Stacked, as the CNH Template form |
+| Idea 2 | 324:49318 | `Add dynamic field` Outline Button | One for all channels | 3 columns |
+| Idea 2.2 | 359:112101 | `+` Contained Icon Button on the card title row | One on each card | 3 columns |
+
+The Figma labels *IDEA 1* and *IDEA 2* sit over different frames than the requester's numbering. This table follows the requester's numbering. The section also holds two frames not wired here: 324:50675 (an `Add dynamic field` button under each card's title) and 324:49820 (a `Select Dynamic Field` select beside the heading).
+
+What the drafts do not draw, and what the prototype does instead:
+
+- **The pop-up.** No draft draws what the button opens. The prototype opens a webds Dropdown Menu that lists the file's columns, 240 wide, scrolling past 320.
+- **Where a field goes.** A shared picker inserts at the caret of the message box the cursor was last in. If there is none, it shows `Click in a message field first, then choose a field to insert`. A per-card picker inserts into that card's last-focused box, or into the card's first box.
+- **A channel that is off.** Its per-card chips and `+` button are disabled.
+- **No file yet.** The pickers are hidden or disabled, and the note `Available fields appear here once the audience file is uploaded.` shows.
+- **Headings.** Idea 2 and 2.2 head the area `Broadcast Message`. Idea 1.2 heads it `Select`, as drawn. Idea 1 has no heading. A mixed concept follows the picker: a button gets `Broadcast Message`; pills stacked get `Select`.
