@@ -541,9 +541,10 @@ function FieldMenuButton({
   onInsert,
   icon,
   dialog,
+  braces,
   disabled,
   label,
-}: F & { onInsert: Insert; icon?: boolean; dialog?: boolean; disabled?: boolean; label: string }) {
+}: F & { onInsert: Insert; icon?: boolean; dialog?: boolean; braces?: boolean; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
   useEffect(() => {
@@ -559,6 +560,16 @@ function FieldMenuButton({
   }, [open, dialog])
   const off = disabled || !f.fields.length
   const options = f.fields.map((field) => ({ value: field.token, label: field.column }))
+  const color = icon && off ? 'var(--color-icon-disabled-default)' : icon ? 'var(--color-icon-highlight-default)' : 'currentColor'
+  /* `{ }` — webds ships no brace icon (gap), so it is the label face, at the
+     16 box the plus takes. */
+  const mark = braces ? (
+    <span aria-hidden className="inline-flex h-[16px] items-center type-label-l-emphasized" style={{ color }}>
+      {'{ }'}
+    </span>
+  ) : (
+    <Icon slug="plus" size={16} color={color} />
+  )
   return (
     <span ref={root} className="relative inline-flex">
       {/* mousedown would blur the message box and lose the caret first */}
@@ -568,13 +579,13 @@ function FieldMenuButton({
             label={label}
             aria-expanded={open}
             disabled={off}
-            icon={<Icon slug="plus" size={16} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />}
+            icon={mark}
             onClick={() => setOpen(!open)}
           />
         ) : (
           <OutlineButton aria-expanded={open} disabled={off} onClick={() => setOpen(!open)}>
             {label}
-            <Icon slug="plus" size={16} color="currentColor" />
+            {mark}
           </OutlineButton>
         )}
       </span>
@@ -645,7 +656,13 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   const menu = concept.picker !== 'pills'
   const heading = menu ? 'Broadcast Message' : concept.layout === 'stacked' ? 'Select' : null
   const sharedButton = shared && menu && (
-    <FieldMenuButton f={f} label="Add dynamic field" dialog={concept.picker === 'dialog'} onInsert={insertShared} />
+    <FieldMenuButton
+      f={f}
+      label="Add dynamic field"
+      dialog={concept.picker === 'dialog'}
+      braces={concept.mark === 'braces'}
+      onInsert={insertShared}
+    />
   )
 
   const cards = (
@@ -672,6 +689,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
             f={f}
             icon
             dialog={concept.picker === 'dialog'}
+            braces={concept.mark === 'braces'}
             label={`Add dynamic field to ${c}`}
             disabled={!on}
             onInsert={(t) => insert(t, c)}

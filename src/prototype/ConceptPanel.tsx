@@ -5,7 +5,7 @@ import { RadioButton } from '@/bbl/radio-button'
 import { SegmentedTab } from '@/bbl/segmented-tab'
 import { useHash } from '@/lib/hash'
 import { cn } from '@/lib/cn'
-import { DIALOG_IDEAS, FEW_FIELDS, FIGMA_FILE, VARIANTS, ideaOf, setConcept, useConcept, type Columns, type Layout } from './dynamic-field'
+import { DIALOG_IDEAS, FEW_FIELDS, FIGMA_FILE, VARIANTS, ideaOf, setConcept, useConcept, type Columns, type Layout, type Mark } from './dynamic-field'
 
 /* Prototype runner only — the floating Prototype control over Create / Edit
  * broadcast. Channel layout comes first; under it, the design drafts that
@@ -23,6 +23,11 @@ const LAYOUTS: { value: Layout; label: string }[] = [
 const COLUMNS: { value: Columns; label: string }[] = [
   { value: 'few', label: `Few fields (${FEW_FIELDS})` },
   { value: 'many', label: 'Many fields (54)' },
+]
+
+const MARKS: { value: Mark; label: string }[] = [
+  { value: 'plus', label: '+' },
+  { value: 'braces', label: '{ }' },
 ]
 
 const KEY = 'cnh-concept-panel'
@@ -196,6 +201,17 @@ export function ConceptPanel() {
               })}
             </div>
           </div>
+
+          {concept.picker !== 'pills' && (
+            <div className="flex flex-col gap-[var(--space-2)]">
+              <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">Button icon</span>
+              <SegmentedTab
+                items={MARKS.map((m) => m.label)}
+                selectedIndex={MARKS.findIndex((m) => m.value === concept.mark)}
+                onSelect={(i) => setConcept({ mark: MARKS[i].value })}
+              />
+            </div>
+          )}
 
           <div className="flex flex-col gap-[var(--space-2)]">
             <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">3. Audience file</span>

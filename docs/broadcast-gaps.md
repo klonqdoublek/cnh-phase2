@@ -109,6 +109,7 @@ The Figma labels *IDEA 1* and *IDEA 2* sit over different frames than the reques
 What the drafts do not draw, and what the prototype does instead:
 
 - **The pop-up.** No draft draws what the button opens. The prototype opens a webds Dropdown Menu that lists the file's columns, 240 wide, scrolling past 320.
+- **Button mark.** The Prototype control's *Button icon* switch puts `{ }` on every Add dynamic field button instead of the drafts' `+` (requester, 20 Oct 2026). webds ships no brace icon (gap), so `{ }` is text in Label L Emphasized, in the 16 box the plus takes.
 - **The dialog (Idea 3, 3.2).** webds `picker-dialog`, single pick (radio rows), search, Cancel and Confirm. There is no *Create new* button, because fields come from the file. Title `Dynamic field`, composed. Its empty state (`No fields in the audience file.` / `Upload a file with more columns.`) is composed too, and cannot show: the button is disabled when the file has no fields.
 - **Where a field goes.** A shared picker inserts at the caret of the message box the cursor was last in. If there is none, it shows `Click in a message field first, then choose a field to insert`. A per-card picker inserts into that card's last-focused box, or into the card's first box.
 - **A channel that is off.** Its per-card chips and `+` button are disabled.
