@@ -93,7 +93,7 @@ The original build has none of this copy. Change it here if the BA rules otherwi
 
 ## Dynamic field concepts, 20 Oct 2026
 
-The designer drew four ways to insert a dynamic field (`{{COLUMN}}`) into the message, in the Figma section *dynamic mapping field idea* (324:35732). The prototype draws all four on Create and Edit broadcast. The **Dynamic field** button at the top right of the page opens a Prototype control panel. The panel picks a draft, or each of the three axes on its own. `?df=<picker>-<placement>-<layout>` opens a concept from a link. The panel is prototype chrome (`src/prototype/`), not product UI.
+The designer drew four ways to insert a dynamic field (`{{COLUMN}}`) into the message, in the Figma section *dynamic mapping field idea* (324:35732). The prototype draws all four on Create and Edit broadcast. A floating **Prototype control** panel switches them: first the channel layout (3 columns or Stacked), then the design draft under that layout. Each layout lists the same four picker options; an option the designer did not draw in that layout is marked *Not drawn*. Drag the panel by its title bar; it remembers its position and whether it is collapsed. `?df=<picker>-<placement>-<layout>` opens a concept from a link. The panel is prototype chrome (`src/prototype/`), not product UI.
 
 | Draft | Figma | Picker | Placement | Channel layout |
 |---|---|---|---|---|

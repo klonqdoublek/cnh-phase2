@@ -23,6 +23,15 @@ export const IDEAS = [
   { id: '2.2', label: 'Idea 2.2', note: '+ button per card', node: '359-112101', concept: { picker: 'button', placement: 'channel', layout: 'columns' } },
 ] as const satisfies readonly { id: string; label: string; note: string; node: string; concept: Concept }[]
 
+/** The four picker × placement pairs — the panel lists them under each
+ *  channel layout, named after the draft that draws them in that layout. */
+export const VARIANTS = [
+  { picker: 'pills', placement: 'shared', note: 'Pills, one set for all channels' },
+  { picker: 'pills', placement: 'channel', note: 'Pills on each channel card' },
+  { picker: 'button', placement: 'shared', note: 'Add dynamic field button + pop-up' },
+  { picker: 'button', placement: 'channel', note: '+ button + pop-up on each card' },
+] as const satisfies readonly { picker: Picker; placement: Placement; note: string }[]
+
 export const FIGMA_FILE = 'https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--WIP_Broadcast-Message'
 
 const DEFAULT: Concept = IDEAS[0].concept
