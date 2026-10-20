@@ -117,6 +117,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
      - The system does not pick the ID column. After upload the select is empty (`Select column`) and the user picks any of the file's headers (requirement update, 21 Oct). Changing the recipient type, or switching Email ↔ SMS under Direct recipient, empties it again. The BA confirmed on 14 Oct that Direct recipient stays.
      - The header's name does not matter. The field only says which column holds the data, so CIS IDs may sit in a column called `Recipient` (BA meeting recording, reviewed 14 Oct; **to confirm with the BA**).
      - **On Submit**, once every section is valid, a spinner covers the page while the whole file is read (spinner only since 21 Oct 2026; it showed *Checking file…*):
+       - **PROPOSAL, pending BA (Q15):** before the row checks, a Direct column that holds the other channel's contacts (SMS with the email column, or Email with the mobile column) stops the submit. No dialog: the page scrolls to Step 2 and the column select says *{COLUMN} contains email addresses. Select the column that contains mobile numbers* (or the reverse). Without it the same file ends in *no valid recipients*.
        - Invalid rows are skipped. The confirm dialog lists them under *Invalid recipients are skipped. Only valid recipients will receive the broadcast.*, in a table of Row / {ID column} / Problem.
        - No rows, more than 1,000 rows or no valid recipient blocks the broadcast: *The audience file cannot be used* with the reason and Close, and the reason stays on Step 2. **PROPOSAL, pending BA confirmation** (Q16).
        - If the read fails, the system-fail dialog *Unable to submit the broadcast* (Close / Try again) appears, and Try again reads the file again.
@@ -213,10 +214,11 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 21 Oct 2026 | The message content card gets a title, *Create broadcast message*, like the step's other cards (requester; composed, draft 2.2 has no title there). Figma not updated yet. |
 | 22 Oct 2026 | Do Not Disturb is off by default on a new broadcast. The card still shows one period, Mon – Fri 20:00–08:00, disabled until the switch is on. Edit and the presets keep the broadcast's own setting (requester). Figma updated the same day: Do Not Disturb is its own card in the Create broadcast local component, and the DND Behavior section opens on Off. |
 | 22 Oct 2026 | Each Do Not Disturb quiet period sits on its own bordered card (Card Surface), and the add button becomes the Outline button **Add more period +** (was the Ghost button *Add period*, rule between periods). Requester's own design, Figma `436:243478` (section *DND - TBC*). |
+| 20 Oct 2026 | PROPOSAL, pending BA (Q15): on Submit, a wrong recipient column (Direct, the other channel's contacts) is marked on the column select before the row checks. Drawn on Figma Submit Result (325:68618) and in the prototype before the BA confirms. |
 
 ## Open items
 
-- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12, Q16 (a file Submit cannot use, PROPOSAL), Q17 and Q18. Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
+- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12, Q15 (wrong recipient column, PROPOSAL), Q16 (a file Submit cannot use, PROPOSAL), Q17 and Q18. Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy). Since 15 Oct the prototype answers three of them for demo, pending the BA: one file, 10 MB, and import over a file with the same name. Still to ask: duplicates by name or by content, and what happens to replaced templates that were edited or Published.
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.
@@ -224,6 +226,6 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 ## Working in this repo
 
 - Routes, commands and design system rules: [../CLAUDE.md](../CLAUDE.md). Every state has its own hash route.
-  - Broadcast presets are under `#/broadcast/create/<preset>`. They include `dnd-rules` and `end`, and Submit's file read: `checking`, `confirm-invalid`, `file-blocked`, `check-fail`.
+  - Broadcast presets are under `#/broadcast/create/<preset>`. They include `dnd-rules` and `end`, and Submit's file read: `checking`, `confirm-invalid`, `file-blocked`, `check-fail`, `wrong-column`.
 - **Copy:** transcribed from the original build. Copy written here is listed in the decision log of [broadcast-gaps.md](broadcast-gaps.md).
 - **Components:** webds first, then CMS ([cms-components.md](cms-components.md)), then hand-built. A hand-built control is a webds gap and is recorded as one.

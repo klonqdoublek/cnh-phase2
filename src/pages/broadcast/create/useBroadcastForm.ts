@@ -4,6 +4,7 @@ import {
   DEFAULT_DND,
   dndRule,
   checkAudience,
+  columnHolds,
   fieldsOf,
   firstSend,
   idKind,
@@ -279,6 +280,13 @@ export function useBroadcastForm({
     setReadingFile(true)
     window.setTimeout(() => {
       setReadingFile(false)
+      /* PROPOSAL, pending BA (Q15): a Direct column that holds the other channel's
+       * contacts, such as SMS with the email column, is a wrong column, not a bad file. */
+      const holds = columnHolds(audience, column)
+      if (holds && (kind === 'mobile' || kind === 'email') && holds !== kind) {
+        setErrors((prev) => ({ ...prev, column: BROADCAST_COPY.wrongColumn(column, holds, kind) }))
+        return scrollToError(document.body)
+      }
       const result = checkAudience(audience, column, kind)
       if (!result.ok) return setBlocked(result.message)
       setCheck(result.check)
