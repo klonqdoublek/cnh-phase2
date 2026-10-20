@@ -14,7 +14,7 @@ const ROW_RULE = 'shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]'
 export type ListColumn<Row> = {
   key: string
   label: string
-  /** Fixed width in px — the original's colgroup. */
+  /** Width in px at 1920 — the original's colgroup; wider screens grow it by ratio. */
   width: number
   /** Content in a slot of its own (badge), not a text run. */
   slot?: boolean
@@ -43,7 +43,7 @@ export function ListTable<Row>({
     <div role="table" aria-label={label} style={{ minWidth }} className="flex w-full flex-col">
       <div role="row" className="sticky top-0 z-10 flex w-full">
         {columns.map((column) => (
-          <div key={column.key} style={{ width: column.width }} className="shrink-0">
+          <div key={column.key} style={{ flex: `${column.width} 0 ${column.width}px` }}>
             <TableHeaderCell type="slot" state="hovered" className="w-full">
               <span role="columnheader" className="truncate type-label-xl text-[var(--color-text-tertiary-default)]">
                 {column.label}
@@ -70,7 +70,7 @@ export function ListTable<Row>({
             className="flex w-full cursor-pointer"
           >
             {columns.map((column) => (
-              <div key={column.key} style={{ width: column.width }} className="shrink-0">
+              <div key={column.key} style={{ flex: `${column.width} 0 ${column.width}px` }}>
                 <TableDataCell type="slot" state={state} className={cn('w-full', ROW_RULE)}>
                   {column.slot ? (
                     column.cell(row)
