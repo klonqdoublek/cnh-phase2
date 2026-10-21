@@ -119,7 +119,7 @@
   {
    "id": "bc-readable",
    "kind": "decision",
-   "label": "File .csv / .xlsx, ≤ 10 MB, 1–1,000 rows?",
+   "label": "File .csv / .xlsx, ≤ 10 MB?",
    "section": "Broadcast"
   },
   {
@@ -177,10 +177,56 @@
    "section": "Broadcast"
   },
   {
+   "id": "bc-checking",
+   "kind": "screen",
+   "label": "Checking file… — the whole file is read",
+   "route": "#/broadcast/create/checking",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-check-ok",
+   "kind": "decision",
+   "label": "Able to check the file?",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-check-fail",
+   "kind": "screen",
+   "label": "Unable to submit — file check failed",
+   "route": "#/broadcast/create/check-fail",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-usable",
+   "kind": "decision",
+   "label": "1–1,000 rows, at least 1 valid?",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-file-blocked",
+   "kind": "screen",
+   "label": "The audience file cannot be used",
+   "route": "#/broadcast/create/file-blocked",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-has-invalid",
+   "kind": "decision",
+   "label": "Any invalid rows?",
+   "section": "Broadcast"
+  },
+  {
    "id": "bc-confirm",
    "kind": "screen",
    "label": "Submit this broadcast?",
    "route": "#/broadcast/create/confirm",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-confirm-invalid",
+   "kind": "screen",
+   "label": "Submit this broadcast? — invalid rows skipped",
+   "route": "#/broadcast/create/confirm-invalid",
    "section": "Broadcast"
   },
   {
@@ -255,6 +301,20 @@
    "kind": "screen",
    "label": "Edit broadcast — the draft reopened",
    "route": "#/broadcast/edit/BC-0007",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-cancel-confirm",
+   "kind": "screen",
+   "label": "Cancel this broadcast?",
+   "route": "#/broadcast/view/BC-0007/cancel",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-cancelled",
+   "kind": "screen",
+   "label": "Broadcast cancelled",
+   "route": "#/broadcast/cancelled",
    "section": "Broadcast"
   }
  ],
@@ -535,9 +595,110 @@
   },
   {
    "from": "bc-valid",
-   "to": "bc-confirm",
+   "to": "bc-checking",
    "label": "Yes",
    "style": "solid"
+  },
+  {
+   "from": "bc-checking",
+   "to": "bc-check-ok",
+   "style": "solid"
+  },
+  {
+   "from": "bc-check-ok",
+   "to": "bc-usable",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-check-ok",
+   "to": "bc-check-fail",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "bc-check-fail",
+   "to": "bc-checking",
+   "label": "Try again",
+   "style": "back",
+   "touch": {
+    "x": 1144,
+    "y": 565,
+    "w": 100,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-check-fail",
+   "to": "bc-filled",
+   "label": "Close",
+   "style": "back",
+   "touch": {
+    "x": 1061,
+    "y": 565,
+    "w": 75,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-usable",
+   "to": "bc-has-invalid",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-usable",
+   "to": "bc-file-blocked",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "bc-file-blocked",
+   "to": "bc-filled",
+   "label": "Close",
+   "style": "back",
+   "touch": {
+    "x": 1171,
+    "y": 565,
+    "w": 73,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-has-invalid",
+   "to": "bc-confirm",
+   "label": "No",
+   "style": "solid"
+  },
+  {
+   "from": "bc-has-invalid",
+   "to": "bc-confirm-invalid",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-confirm-invalid",
+   "to": "bc-submitting",
+   "label": "Submit",
+   "style": "solid",
+   "touch": {
+    "x": 1159,
+    "y": 719,
+    "w": 85,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-confirm-invalid",
+   "to": "bc-filled",
+   "label": "Cancel",
+   "style": "back",
+   "touch": {
+    "x": 1066,
+    "y": 719,
+    "w": 86,
+    "h": 44
+   }
   },
   {
    "from": "bc-valid",
@@ -713,7 +874,7 @@
    "style": "solid",
    "touch": {
     "x": 320,
-    "y": 170,
+    "y": 379,
     "w": 1600,
     "h": 64
    }
@@ -724,9 +885,45 @@
    "label": "Edit",
    "style": "solid",
    "touch": {
-    "x": 1832,
+    "x": 1836,
     "y": 1020,
-    "w": 64,
+    "w": 61,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-view",
+   "to": "bc-cancel-confirm",
+   "label": "Cancel broadcast",
+   "style": "solid",
+   "touch": {
+    "x": 1655,
+    "y": 1020,
+    "w": 165,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-confirm",
+   "to": "bc-cancelled",
+   "label": "Cancel broadcast",
+   "style": "solid",
+   "touch": {
+    "x": 962,
+    "y": 565,
+    "w": 165,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-confirm",
+   "to": "bc-view",
+   "label": "Keep draft",
+   "style": "back",
+   "touch": {
+    "x": 1134,
+    "y": 565,
+    "w": 110,
     "h": 44
    }
   },
@@ -755,5 +952,5 @@
    }
   }
  ],
- "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself)"
+ "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself) · Cancel a draft 2026-10-19, same method on a static build (#/broadcast/view/BC-0007[/cancel]) · Audience file read on Submit 2026-10-19, same method on a static build (#/broadcast/create/confirm-invalid, file-blocked, check-fail)"
 }
