@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/bbl/button'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { OutlineButton } from '@/bbl/outline-button'
+import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { DetailDrawer } from '@/patterns/detail-drawer'
 import {
+  BROADCAST_COPY,
   deliveryReportCsv,
   deliveryReportName,
   firstSend,
@@ -26,6 +29,10 @@ export type BroadcastDrawerProps = {
   onClose: () => void
   /** Draft only. */
   onEdit: () => void
+  /** Draft only: the broadcast is cancelled once the dialog confirms it. */
+  onCancel: () => void
+  /** Open with the Cancel dialog already up (its preset route). */
+  confirmingCancel?: boolean
 }
 
 /** HH:mm the current quiet period ends, or the first rule's end when now is
@@ -46,14 +53,21 @@ const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
     b.notSent && b.end
       ? `The broadcast ended at ${fmtDateTime(new Date(b.end))}. ${fmtNumber(b.notSent)} recipients were not sent.`
       : 'Every recipient was sent a message.',
+  /* Failed and Cancelled (19 Oct 2026): composed, the original build has
+     neither. */
+  Failed: (b) =>
+    `A system error stopped the broadcast.${b.notSent ? ` ${fmtNumber(b.notSent)} recipients were not sent.` : ''}`,
+  Cancelled: () => 'Cancelled before it was submitted. Nothing was sent.',
 }
 
 function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
   const draft = b.status === 'Draft'
+  /* Never submitted, so nothing was attempted. */
+  const unsent = draft || b.status === 'Cancelled'
   const waiting = waitingOf(b)
   const c = b.content
   return [
-    ...(draft
+    ...(unsent
       ? []
       : [
           {
@@ -67,7 +81,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
               ['Waiting to send', fmtNumber(waiting)],
             ] as [string, string][],
             note: STATUS_LINE[b.status](b),
-            /* Only once something was attempted — Processing or Published. */
+            /* Only once something was attempted — Processing, Published or Failed. */
             action:
               b.success + b.failed > 0 ? (
                 <OutlineButton
@@ -96,7 +110,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
         ['Broadcast end', b.end ? fmtDateTime(new Date(b.end)) : ''],
         ['Do Not Disturb', fmtDnd(b.dnd)],
       ],
-      note: draft ? STATUS_LINE.Draft(b) : undefined,
+      note: unsent ? STATUS_LINE[b.status](b) : undefined,
     },
     ...(b.channels.includes('Push notification')
       ? [
@@ -133,12 +147,17 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
  * status and facts, scrolling body, footer at 44). This file supplies what the
  * pattern leaves to its consumer: fixed to the right edge over the list with
  * no scrim (as the original), the 225ms slide-in, the `sidebar-collapse`
- * close, Escape, a click outside, and a focus trap. Edit is a Draft's only
- * action.
+ * close, Escape, a click outside, and a focus trap. Only a Draft has
+ * actions: Cancel broadcast (behind a confirm dialog) and Edit. Once
+ * submitted, a broadcast cannot be cancelled (a system limit, 19 Oct 2026).
  */
-export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerProps) {
+export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmingCancel }: BroadcastDrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(!!confirmingCancel && broadcast.status === 'Draft')
+  /* The dialog owns Escape and clicks while it is up. */
+  const dialogUp = useRef(cancelOpen)
+  dialogUp.current = cancelOpen
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setShown(true))
@@ -149,6 +168,7 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerP
     const previous = document.activeElement as HTMLElement | null
     panel.current?.focus()
     const onKey = (event: KeyboardEvent) => {
+      if (dialogUp.current) return
       if (event.key === 'Escape') return onClose()
       if (event.key !== 'Tab' || !panel.current) return
       const focusable = [
@@ -169,6 +189,7 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerP
       }
     }
     const onPointer = (event: MouseEvent) => {
+      if (dialogUp.current) return
       if (!panel.current?.contains(event.target as Node)) onClose()
     }
     const timer = setTimeout(() => document.addEventListener('mousedown', onPointer), 0)
@@ -220,9 +241,14 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerP
         }
         actions={
           draft ? (
-            <Button onClick={onEdit} className="h-[44px]">
-              Edit
-            </Button>
+            <>
+              <OutlineButton appearance="negative" onClick={() => setCancelOpen(true)} className="h-[44px]">
+                {BROADCAST_COPY.cancel}
+              </OutlineButton>
+              <Button onClick={onEdit} className="h-[44px]">
+                Edit
+              </Button>
+            </>
           ) : undefined
         }
       >
@@ -230,6 +256,28 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerP
           <DrawerSection key={section.title} section={section} first={i === 0} />
         ))}
       </DetailDrawer>
+
+      {/* On the body: the panel's transform would pin a fixed dialog inside it. */}
+      {cancelOpen &&
+        createPortal(
+          <ConfirmDialog
+            anatomy="sectioned"
+            contentType="label-xl"
+            layer="fixed"
+            width={600}
+            destructive
+            title={BROADCAST_COPY.cancelTitle}
+            cancelLabel={BROADCAST_COPY.cancelKeep}
+            confirmLabel={BROADCAST_COPY.cancel}
+            onCancel={() => setCancelOpen(false)}
+            onConfirm={onCancel}
+            onDismiss={() => setCancelOpen(false)}
+            className="z-50"
+          >
+            {BROADCAST_COPY.cancelBody(broadcast.name)}
+          </ConfirmDialog>,
+          document.body,
+        )}
     </div>
   )
 }
