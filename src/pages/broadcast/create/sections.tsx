@@ -4,7 +4,6 @@ import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
-import { CardSurface } from '@/bbl/building-block-card-surface'
 import { Divider } from '@/bbl/divider'
 import { FieldLabel } from '@/bbl/field'
 import { GhostButton } from '@/bbl/ghost-button'
@@ -38,7 +37,7 @@ const sizeLabel = (bytes: number) =>
   bytes < 1048576 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
 /** One "Step N" — webds `FormStep`, its note under the heading. The step's
- *  card is the caller's: a titled `FormSectionCard` or a plain `StepSurface`. */
+ *  card is the caller's: a titled `FormSectionCard`. */
 export function Section({
   title,
   note,
@@ -66,18 +65,6 @@ export function Section({
     >
       {children}
     </FormStep>
-  )
-}
-
-/** A step's card with no title of its own (Delivery). */
-function StepSurface({ children }: { children: React.ReactNode }) {
-  return (
-    <CardSurface
-      tabIndex={-1}
-      className="flex h-auto w-full flex-col items-stretch gap-[var(--space-6)] p-[var(--space-6)] hover:bg-[var(--color-surface-primary-default)] active:bg-[var(--color-surface-primary-default)]"
-    >
-      {children}
-    </CardSurface>
   )
 }
 
@@ -476,14 +463,15 @@ function ChannelAlert({ f }: F) {
   )
 }
 
-/** The chips over one card per channel offered, three across. Each card is
+/** "Create broadcast message" (requester, 21 Oct 2026; draft 2.2 has no
+ *  title here): the chips over one card per channel offered, three across. Each card is
  *  switched on its own title row (webds `form-section-card`): off keeps what
  *  was typed and disables it. Direct recipient offers Email and SMS, one at a
  *  time. */
 export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   const invalid = !!f.errors.channels
   return (
-    <StepSurface>
+    <FormSectionCard title="Create broadcast message">
       <FieldChips f={f} focus={focus} />
       <ChannelAlert f={f} />
       <div
@@ -511,7 +499,7 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
           )
         })}
       </div>
-    </StepSurface>
+    </FormSectionCard>
   )
 }
 
