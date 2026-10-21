@@ -19,7 +19,7 @@ import { FilePreviewDialog, PREVIEW_COPY } from '@/components/upload/FilePreview
 
 /** `size` is `file.size`, except on a preset route that stands in for a large file. */
 type Picked = { key: number; file: File; size: number; check: FileCheck | null }
-/** `replace`: the upload found the file name imported before and asks "Import over …?". */
+/** `replace`: the upload found the file name imported before and asks "Replace imported templates?". */
 type Phase = 'idle' | 'uploading' | 'failed' | 'replace'
 
 /* CMS's `fileSizeLabel` and its "type • size" meta (useAssetSlotUpload, UploadedAssetSlot). */
@@ -49,10 +49,10 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * 20 Oct 2026; was the file's slot in error).
  *
  * A file whose name was imported before asks first (requester, 15 Oct 2026):
- * "Import over <name>?", and Import replaces that earlier import's templates.
+ * "Replace imported templates?", and Replace swaps that earlier import's templates.
  * Since the design critique (20 Oct 2026) it is never a dialog over a dialog:
  * Import closes this dialog, the upload spinner validates the file, and only
- * then does "Import over <name>?" open, alone on the list. Its Import uploads
+ * then does "Replace imported templates?" open, alone on the list. Its Replace uploads
  * again, its Cancel closes it and stays on the list. The Import dialog is
  * hidden for the whole upload, so the spinner's scrim is the only one.
  *
@@ -229,7 +229,7 @@ export function ImportDialog({
           contentType="label-xl"
           layer="fixed"
           width={444}
-          title={IMPORT_COPY.replaceTitle(picked.file.name)}
+          title={IMPORT_COPY.replaceTitle}
           cancelLabel="Cancel"
           confirmLabel={IMPORT_COPY.replaceConfirm}
           onCancel={close}
@@ -237,7 +237,7 @@ export function ImportDialog({
           onDismiss={close}
           className="relative z-50"
         >
-          <p className="type-body-m text-[var(--color-text-primary-default)]">{IMPORT_COPY.replaceBody}</p>
+          <p className="type-body-m text-[var(--color-text-primary-default)]">{IMPORT_COPY.replaceBody(picked.file.name)}</p>
         </ConfirmDialog>
       )}
       {uploading && (
