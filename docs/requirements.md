@@ -100,7 +100,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 
 ### Create: the three steps
 
-Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=85-19401), 15 Oct 2026). The draft numbers its steps 1, 2, 5, 6; the build numbers them 1–3, with Do Not Disturb inside Delivery Date (Figma 89:4665).
+Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=85-19401), 15 Oct 2026). The draft numbers its steps 1, 2, 5, 6; the build numbers them 1–3, with Do Not Disturb as its own card in the Delivery Date step (Figma 409:75574).
 
 1. **Basic information.** One card, "General information": Broadcast name\* (max 100) above Description (max 250).
 2. **Validate Audience file.** Two cards.
@@ -119,10 +119,10 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
      - Each card is switched on and off in its own title row. The switches replace the channel checkboxes and Direct recipient's Email / SMS radio. Under Direct recipient, switching one on switches the other off. A card that is off keeps what was typed and disables it.
      - Fields are the Template form's TH fields: Push title (TH)\* (255) and Push message (TH)\* (2048); Email subject (TH)\* (255) and Email content (TH)\* (2048); SMS message (TH)\* (800).
      - No channel on: an Alert above the cards and a red stroke on each card.
-3. **Delivery Date.** One card, "Select Delivery Date", that also holds Do Not Disturb ([Figma 89:4665](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=89-4665), 15 Oct 2026):
+3. **Delivery Date.** Two cards in one step: "Select Delivery Date" ([Figma 89:4665](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=89-4665), 15 Oct 2026), then Do Not Disturb ([Figma 409:75574](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--WIP_Broadcast-Message?node-id=409-75574), 21 Oct 2026):
    - **Send as soon as possible**, or **Schedule delivery** with Start date and time\* (5-minute steps, later than now).
    - Optional **End date and time**, later than the start, with Clear, **for Schedule delivery only**. Send as soon as possible has no end (requester, 15 Oct, following the draft; the BA's Q2 answer on 14 Oct did not say which modes). Start sits on the left and End on the right (requester, 20 Oct; draft 2.2 draws End first).
-   - **Select DND** ("Prevent sending messages during quiet hours."): the Do Not Disturb (DND) switch, then any number of quiet periods, one row each: days, hours (5-minute steps) or **All day**, and a trash when there are two or more. **Add period** under the periods. The one time zone, Asia/Bangkok (GMT+7), shows as text.
+   - **Do Not Disturb (DND)** card: the switch before the title, "Prevent sending messages during quiet hours." under it (no "Select DND" heading), then any number of quiet periods, one row each: days, hours (5-minute steps) or **All day**, and a trash when there are two or more. **Add period** under the periods. The one time zone, Asia/Bangkok (GMT+7), shows as text.
 
 ### Delivery rules
 
@@ -195,6 +195,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 19 Oct 2026 | Validate the audience file: on pick, only the file type and size; the preview shows, but the whole file is read on Submit. Showing invalid recipients (Row / column / Problem) on Submit is possible. Design decisions with the requester: the read runs before the confirm dialog, which carries the invalid table; Step 2 drops the row count and the recipients summary; no rows, over 1,000 or no valid recipient blocks the submit (PROPOSAL, pending BA confirmation). |
 | 19 Oct 2026 | Meaning of each status (Q13 answered): Failed is a system error; Cancelled is a saved draft cancelled by the user. Only a Draft can be cancelled; after Submit it cannot (system limit). Design decisions with the requester: Cancel sits in the Draft drawer footer behind a confirm dialog; a Cancelled broadcast stays in the list read only; a Failed drawer keeps Delivery result and Download report, no retry; badges Failed = Negative, Cancelled = Disabled. |
 | 20 Oct 2026 | Start date and time comes before End date and time, Start on the left (requester). This departs from draft 2.2, which draws End first. |
+| 21 Oct 2026 | Do Not Disturb leaves the Select Delivery Date card for its own card in the same step; still three steps. Its header is the switch, the title and the note only; "Select DND" is gone (requester, Figma 409:75574). |
 
 ## Open items
 
