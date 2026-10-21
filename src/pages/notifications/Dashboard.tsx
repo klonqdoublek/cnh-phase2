@@ -369,7 +369,7 @@ export function Dashboard({
                       </GhostButton>
                     </div>
                   )}
-                  <table aria-label="Notification management" className="w-[1600px] table-fixed border-collapse">
+                  <table aria-label="Notification management" className="w-full min-w-[1600px] table-fixed border-collapse">
                     <colgroup>
                       <col style={{ width: 56 }} />
                       {COLUMNS.map((c) => (
