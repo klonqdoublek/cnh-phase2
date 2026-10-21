@@ -28,6 +28,7 @@ import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import type { Concept } from '@/prototype/dynamic-field'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
+import type { Tint } from './highlight'
 import { triggerMark, useFieldShortcut } from './shortcut'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
@@ -660,7 +661,8 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   /* Composed (21 Oct 2026), as Clay's "Type '/' to …" under each box. */
   const hint = typed && hasFields ? `Type ${triggerMark(concept.trigger)} to add a dynamic field` : undefined
   const columns = f.fields.map((field) => field.column).join('\n')
-  const tint = useMemo(() => new Set(columns.split('\n')), [columns])
+  const mark = triggerMark(concept.trigger)
+  const tint = useMemo<Tint>(() => ({ columns: new Set(columns.split('\n')), erase: concept.erase, mark }), [columns, concept.erase, mark])
 
   /* Idea 2, 2.2 and the dialog head the area "Broadcast Message"; Idea 1.2
      "Select", as drawn; Idea 1 and the shortcut have no heading. */
@@ -850,7 +852,7 @@ function DirectChannelCard({
 }
 
 /** A channel's message boxes — the Template form's TH fields. */
-function ChannelFields({ f, channel, on, hint, tint }: F & { channel: Channel; on: boolean; hint?: string; tint?: Set<string> }) {
+function ChannelFields({ f, channel, on, hint, tint }: F & { channel: Channel; on: boolean; hint?: string; tint?: Tint }) {
   const box = (id: keyof BroadcastContent, label: string, placeholder: string, extra?: { multiline?: boolean; boxHeight?: 77 }) => (
     <Text
       id={id}

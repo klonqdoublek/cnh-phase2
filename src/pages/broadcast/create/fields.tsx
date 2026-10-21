@@ -3,7 +3,7 @@ import { RadioButton } from '@/bbl/radio-button'
 import { FormField } from '@/patterns/form-field'
 import { useRef } from 'react'
 import { cn } from '@/lib/cn'
-import { FieldTint, hasField } from './highlight'
+import { FieldTint, hasField, type Tint } from './highlight'
 
 /* The Create form's fields. Text, text area and select are webds `form-field`
  * (the CNH pattern); the rest are composed from webds parts where the library
@@ -47,12 +47,13 @@ export function Text({
   /** Helper text under the box, where an error is not. */
   hint?: string
   /** The file's columns: their `{{COLUMN}}` tokens are drawn as tinted chips
-   *  (./highlight.tsx). The box's own text goes transparent under the layer. */
-  tint?: Set<string>
+   *  and erased whole (./highlight.tsx). The box's own text goes transparent
+   *  under the layer. */
+  tint?: Tint
   className?: string
 }) {
   const root = useRef<HTMLDivElement>(null)
-  const tinted = !!tint && !disabled && hasField(value, tint)
+  const tinted = !!tint && !disabled && hasField(value, tint.columns)
   return (
     <div
       ref={root}
@@ -74,7 +75,7 @@ export function Text({
         disabled={disabled}
         onChange={onChange}
       />
-      {tint && !disabled && <FieldTint root={root} value={value} columns={tint} />}
+      {tint && !disabled && <FieldTint root={root} value={value} tint={tint} onChange={onChange} />}
     </div>
   )
 }

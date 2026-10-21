@@ -13,6 +13,7 @@ import {
   setConcept,
   useConcept,
   type Columns,
+  type Erase,
   type Layout,
   type Look,
   type Mark,
@@ -65,15 +66,21 @@ const LOOKS: { value: Look; label: string }[] = [
   { value: 'tint', label: 'Highlight' },
 ]
 
+const ERASES: { value: Erase; label: string }[] = [
+  { value: 'whole', label: 'Whole' },
+  { value: 'select', label: 'Select' },
+  { value: 'trigger', label: 'Re-pick' },
+]
+
 const MARKS: { value: Mark; label: string }[] = [
   { value: 'plus', label: '+' },
   { value: 'braces', label: '{ }' },
 ]
 
 /** A direction's own option: a small label over its control. */
-function Option({ label, children }: { label: string; children: React.ReactNode }) {
+function Option({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-1)]">
+    <div className={cn('flex min-w-0 flex-col gap-[var(--space-1)]', wide && 'col-span-2')}>
       <span className="type-label-s text-[var(--color-text-secondary-default)]">{label}</span>
       {children}
     </div>
@@ -241,6 +248,15 @@ export function ConceptPanel() {
                     items={LOOKS.map((l) => l.label)}
                     selectedIndex={LOOKS.findIndex((l) => l.value === concept.look)}
                     onSelect={(i) => setConcept({ look: LOOKS[i].value })}
+                  />
+                </Option>
+              )}
+              {concept.picker === 'shortcut' && concept.look === 'tint' && (
+                <Option label="Backspace on a field" wide>
+                  <SegmentedTab
+                    items={ERASES.map((x) => x.label)}
+                    selectedIndex={ERASES.findIndex((x) => x.value === concept.erase)}
+                    onSelect={(i) => setConcept({ erase: ERASES[i].value })}
                   />
                 </Option>
               )}

@@ -32,14 +32,21 @@ export type Trigger = 'slash' | 'at' | 'braces'
  *  tinted as a chip (requester, 21 Oct 2026, after Churnkey). */
 export type Look = 'plain' | 'tint'
 
-export type Concept = { picker: Picker; placement: Placement; layout: Layout; columns: Columns; mark: Mark; trigger: Trigger; look: Look }
+/** What Backspace does to a chip (research, 21 Oct 2026): take it whole
+ *  (Tiptap `deleteTriggerWithBackspace`, Element Plus Mention `whole`),
+ *  select it first and take it on the second press (Materialize chips), or
+ *  leave the trigger in its place so the menu opens to pick again (Tiptap
+ *  Mention's default). */
+export type Erase = 'whole' | 'select' | 'trigger'
+
+export type Concept = { picker: Picker; placement: Placement; layout: Layout; columns: Columns; mark: Mark; trigger: Trigger; look: Look; erase: Erase }
 
 export const IDEAS = [
   { id: '1', label: 'Idea 1', note: 'Pills over the cards', node: '324-35734', concept: { picker: 'pills', placement: 'shared', layout: 'columns' } },
   { id: '1.2', label: 'Idea 1.2', note: 'Pills per card, CNH layout', node: '324-36348', concept: { picker: 'pills', placement: 'channel', layout: 'stacked' } },
   { id: '2', label: 'Idea 2', note: 'Add dynamic field button', node: '324-49318', concept: { picker: 'button', placement: 'shared', layout: 'columns' } },
   { id: '2.2', label: 'Idea 2.2', note: '+ button per card', node: '359-112101', concept: { picker: 'button', placement: 'channel', layout: 'columns' } },
-] as const satisfies readonly { id: string; label: string; note: string; node: string; concept: Omit<Concept, 'columns' | 'mark' | 'trigger' | 'look'> }[]
+] as const satisfies readonly { id: string; label: string; note: string; node: string; concept: Pick<Concept, 'picker' | 'placement' | 'layout'> }[]
 
 /** Idea 3 / 3.2 — the requester's (20 Oct 2026): the button opens CMS's
  *  picker dialog (Link Document Type) instead of a menu, single pick. No
@@ -66,12 +73,12 @@ export const VARIANTS = [
 
 export const FIGMA_FILE = 'https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--WIP_Broadcast-Message'
 
-const DEFAULT: Concept = { ...IDEAS[0].concept, columns: 'many', mark: 'plus', trigger: 'slash', look: 'tint' }
+const DEFAULT: Concept = { ...IDEAS[0].concept, columns: 'many', mark: 'plus', trigger: 'slash', look: 'tint', erase: 'whole' }
 
-const keyOf = (c: Concept) => `${c.picker}-${c.placement}-${c.layout}-${c.columns}-${c.mark}-${c.trigger}-${c.look}`
+const keyOf = (c: Concept) => `${c.picker}-${c.placement}-${c.layout}-${c.columns}-${c.mark}-${c.trigger}-${c.look}-${c.erase}`
 
 const parse = (raw: string | null): Concept => {
-  const [picker, placement, layout, columns, mark, trigger, look] = (raw ?? '').split('-')
+  const [picker, placement, layout, columns, mark, trigger, look, erase] = (raw ?? '').split('-')
   return {
     picker: picker === 'button' || picker === 'dialog' || picker === 'pills' || picker === 'shortcut' ? picker : DEFAULT.picker,
     placement: placement === 'channel' ? 'channel' : placement === 'shared' ? 'shared' : DEFAULT.placement,
@@ -80,6 +87,7 @@ const parse = (raw: string | null): Concept => {
     mark: mark === 'braces' ? 'braces' : mark === 'plus' ? 'plus' : DEFAULT.mark,
     trigger: trigger === 'at' || trigger === 'braces' || trigger === 'slash' ? trigger : DEFAULT.trigger,
     look: look === 'plain' || look === 'tint' ? look : DEFAULT.look,
+    erase: erase === 'whole' || erase === 'select' || erase === 'trigger' ? erase : DEFAULT.erase,
   }
 }
 
@@ -112,12 +120,12 @@ const read = () => {
 export const useConcept = () => useSyncExternalStore(subscribe, read)
 
 /** The draft a concept matches, if any — a mixed one matches none. */
-export const ideaOf = (c: Omit<Concept, 'columns' | 'mark' | 'trigger' | 'look'>) =>
+export const ideaOf = (c: Pick<Concept, 'picker' | 'placement' | 'layout'>) =>
   IDEAS.find((i) => i.concept.picker === c.picker && i.concept.placement === c.placement && i.concept.layout === c.layout)
 
 /** What the requester calls a concept — a draft, Idea 3 / 3.2, Idea 4 — or
  *  null when no draft draws that picker in that layout. */
-export const nameOf = (c: Omit<Concept, 'columns' | 'mark' | 'trigger' | 'look'>) =>
+export const nameOf = (c: Pick<Concept, 'picker' | 'placement' | 'layout'>) =>
   c.picker === 'shortcut' ? SHORTCUT_IDEA : c.picker === 'dialog' ? DIALOG_IDEAS[c.placement] : (ideaOf(c)?.label ?? null)
 
 /** Fields the few-column file keeps after its ID column — the drafts' own four. */
