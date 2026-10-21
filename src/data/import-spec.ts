@@ -57,10 +57,13 @@ export const IMPORT_COPY = {
   successBody: (n: number) => `${n} ${n === 1 ? 'template was' : 'templates were'} added as draft`,
   /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
      before it imports over that file. Since the design critique (20 Oct 2026) it opens
-     after the upload spinner, alone, not over the Import dialog. */
-  replaceTitle: (name: string) => `Import over ${name}?`,
-  replaceBody: 'This file has already been imported. Its templates will be replaced with the ones in this file.',
-  replaceConfirm: 'Import',
+     after the upload spinner, alone, not over the Import dialog. Reworded 21 Oct 2026
+     (requester): was "Import over <name>?" with Import, which did not say what goes.
+     Title and button share the verb, as "Submit this broadcast?" does. */
+  replaceTitle: 'Replace imported templates?',
+  replaceBody: (name: string) =>
+    `${name} was imported before. The templates from that import will be deleted and replaced with the ones in this file.`,
+  replaceConfirm: 'Replace',
 }
 
 /** A file whose name contains this fails the upload — the prototype's way to reach Import failure. */
