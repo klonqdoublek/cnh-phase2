@@ -23,6 +23,7 @@ The **Customer Notification Hub (CNH)** is Bangkok Bank's back-office console fo
 
 | Date | Source | What it settles |
 |---|---|---|
+| 15 Oct 2026 | Requester's call | Import takes one file at a time, with the CMS checks (one file, 10 MB); a file imported before asks before it imports over it |
 | 14 Oct 2026 | BA feedback on the prototype, and BA answers to Q1, Q2 and Q5 | List columns, report download, 5-minute steps, several DND periods, Broadcast End, Direct recipient stays, DND rather than Service Window |
 | 12 Oct 2026 | Requester's call | File upload uses the CMS prototype's upload slots |
 | 12 Oct 2026 | This repo starts | Rebuild of Korn's prototype on webds |
@@ -34,6 +35,7 @@ The **Customer Notification Hub (CNH)** is Bangkok Bank's back-office console fo
 Where the sources live:
 
 - **Original prototype:** https://cnh-tm-phase2.vercel.app. The mirrored build is in `.reference/`.
+- **Import design (Figma):** [CNH Phase 2 Import Template](https://www.figma.com/design/Yd9yyAx8ko3q2Atg0kfxe2/-CNH-Phase-2--Import-Template?node-id=54-890), page *Flow [15 Oct 2026] Single file*: all 12 states of the one-file Import as webds-library screens, with the task flow. The CMS upload slot is a local component set there (webds gap).
 - **Flow archive:** webds `get_flow("cnh-phase2")`. It holds routes, rulings and gaps. Its open questions P2-1…P2-20 are in the original repo's `docs/open-questions.md`, which is not on this machine.
 - **Decks:** in the BA's hands. Summaries are in the Obsidian vault under `BBL/CNH - Requirement - …`.
 - **Gap detail:** [broadcast-gaps.md](broadcast-gaps.md). Borrowed components: [cms-components.md](cms-components.md).
@@ -63,13 +65,15 @@ From the kick-off deck. `*` means required in the deck.
 | Rule | Value |
 |---|---|
 | File format | `.jsonl` (JSON Lines): one template per line. It is the same format the list downloads, so a downloaded file imports back. |
-| Files per import | One or many. At most 50; the rest are left out with a message. Sized for 10–50 files. |
-| When a file is checked | As soon as it is picked. Files in error sort to the top. One action removes all of them. |
-| Blocking | Any file in error blocks Import until it is removed. |
+| Files per import | **One** (requester, 15 Oct 2026; before that, one or many up to 50). Dropping two or more takes none: the zone turns Negative and reads **1 File Only**, as CMS's asset slot does. |
+| File size | At most **10 MB**, CMS's limit (`MAX_ASSET_BYTES`). Over it, the slot turns Negative and **Max file size: 10 MB** shows under it. PROPOSAL, pending BA confirmation: the BA has not set a size limit (P2-1…P2-9). |
+| When a file is checked | As soon as it is picked: format, then size (before the file is read), then structure. |
+| Blocking | A file in error blocks Import until it is removed (trash mark). Import with it reads **Remove the file and choose another to continue**. |
+| Duplicate file | A file whose **name** was imported before asks first, in a dialog over Import: **Import over \<file name\>?** · *This file has already been imported. Its templates will be replaced with the ones in this file.* · Cancel / **Import**. Import removes the templates that file's last import added and adds the new ones (requester, 15 Oct 2026). Open: what happens to those templates once they are edited or Published; whether the check should be by name or by content. |
 | Required per line | `recordType: "TEMPLATE"`, `templateName`, `description`, `serviceCodes` (from the value list), `channels` (PUSH, EMAIL, SMS) and `templateLanguages`. |
-| Result | Every imported template is a **Draft**. Imports land on page 1 in the order the files were picked; the list sorts by Last updated, newest first. |
-| States | Initial; no file; invalid format; invalid structure; files selected; uploading (covers the whole dialog); failure with Import again; success (back on the list, toast for 3 s). |
-| Upload UI | CMS upload slots: `UploadZone` and `UploadedFile`, one column that scrolls, with **Preview** (`FilePreviewDialog`). |
+| Result | Every imported template is a **Draft** and lands on page 1; the list sorts by Last updated, newest first. |
+| States | Initial; no file; more than one file; file over 10 MB; invalid format; invalid structure; file selected; duplicate (import over?); uploading (a Scrim Strong and spinner over the whole page, as CMS `SubmitOverlay`; before 15 Oct it covered the dialog only); failure with Import again; success (back on the list, toast for 3 s). Each has a route, `#/list/import/<state>`. |
+| Upload UI | CMS upload slot: `UploadZone` until a file is picked, then `UploadedFile` in its place with **Preview** (`FilePreviewDialog`). |
 
 Still open from the original build (P2-1…P2-9): the schema, size limits, duplicates, and all copy.
 
@@ -166,6 +170,10 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 
 | Date | Ruling |
 |---|---|
+| 20 Oct 2026 | Import dialog and Import over…? 444 wide, webds Dialog `Max Width=XS` (was 600, `S`). Requester's call; Figma task flow updated the same day. Layout only. |
+| 19 Oct 2026 | Import dialog 600 wide, was 800: too wide for one file (review comment). 600 is the sectioned dialog's measured width and the Import over…? dialog's. Layout only. |
+| 15 Oct 2026 | Import uploading: the spinner covers the whole page (Scrim Strong, on-inverse spinner, CMS `SubmitOverlay`), not only the dialog. Requester's call. |
+| 15 Oct 2026 | Import: one file per import; 10 MB (CMS's limit, pending BA); duplicate file name asks "Import over …?" and replaces that file's earlier templates. Requester's call, not the BA's. |
 | 14 Oct 2026 | Remove Recipients and Result from the broadcast list; the drawer shows them. |
 | 14 Oct 2026 | Add a download to the drawer, built as the Delivery report. |
 | 14 Oct 2026 | Times in 5-minute steps, for Start and for DND. |
@@ -186,7 +194,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 ## Open items
 
 - **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12 and Q16 (a file Submit cannot use, PROPOSAL). Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
-- **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy).
+- **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy). Since 15 Oct the prototype answers three of them for demo, pending the BA: one file, 10 MB, and import over a file with the same name. Still to ask: duplicates by name or by content, and what happens to replaced templates that were edited or Published.
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.
 
