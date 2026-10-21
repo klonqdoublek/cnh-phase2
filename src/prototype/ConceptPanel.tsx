@@ -1,15 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
-import { RadioButton } from '@/bbl/radio-button'
 import { SegmentedTab } from '@/bbl/segmented-tab'
 import { useHash } from '@/lib/hash'
 import { cn } from '@/lib/cn'
-import { DIALOG_IDEAS, FEW_FIELDS, FIGMA_FILE, VARIANTS, ideaOf, setConcept, useConcept, type Columns, type Layout, type Mark } from './dynamic-field'
+import {
+  FEW_FIELDS,
+  FIGMA_FILE,
+  VARIANTS,
+  ideaOf,
+  nameOf,
+  setConcept,
+  useConcept,
+  type Columns,
+  type Layout,
+  type Mark,
+  type Picker,
+  type Placement,
+  type Trigger,
+} from './dynamic-field'
 
 /* Prototype runner only — the floating Prototype control over Create / Edit
- * broadcast. Channel layout comes first; under it, the design drafts that
- * layout can draw (./dynamic-field.ts). Drag it by its title bar; it remembers
+ * broadcast. Channel layout comes first; under it, the design direction —
+ * how a field is picked — with its own options in one row, and a line naming
+ * the draft that combination is (./dynamic-field.ts). Drag it by its title bar; it remembers
  * where it was left and whether it was collapsed. `?panel=0` keeps it out of
  * the task flow's frames, as the Task flow button. Not product UI: never hand
  * this file to a dev team. */
@@ -25,10 +39,40 @@ const COLUMNS: { value: Columns; label: string }[] = [
   { value: 'many', label: 'Many fields (54)' },
 ]
 
+/* The requester's four directions (20–21 Oct 2026); Idea N under each is the
+   caption's job, so the tabs stay short enough for four across. */
+const DIRECTIONS: { value: Picker; label: string }[] = [
+  { value: 'pills', label: 'Pills' },
+  { value: 'button', label: 'Menu' },
+  { value: 'dialog', label: 'Dialog' },
+  { value: 'shortcut', label: 'Shortcut' },
+]
+
+const PLACEMENTS: { value: Placement; label: string }[] = [
+  { value: 'shared', label: 'Shared' },
+  { value: 'channel', label: 'Per card' },
+]
+
+const TRIGGERS: { value: Trigger; label: string }[] = [
+  { value: 'slash', label: '/' },
+  { value: 'at', label: '@' },
+  { value: 'braces', label: '{{' },
+]
+
 const MARKS: { value: Mark; label: string }[] = [
   { value: 'plus', label: '+' },
   { value: 'braces', label: '{ }' },
 ]
+
+/** A direction's own option: a small label over its control. */
+function Option({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-[var(--space-1)]">
+      <span className="type-label-s text-[var(--color-text-secondary-default)]">{label}</span>
+      {children}
+    </div>
+  )
+}
 
 const KEY = 'cnh-concept-panel'
 type Saved = { x: number; y: number; open: boolean }
@@ -87,7 +131,9 @@ export function ConceptPanel() {
   if (new URLSearchParams(location.search).get('panel') === '0') return null
   if (!/^#\/broadcast\/(create|edit)/.test(hash)) return null
 
-  const idea = ideaOf(concept)
+  const idea = concept.picker === 'shortcut' ? undefined : ideaOf(concept)
+  const name = nameOf(concept)
+  const variant = VARIANTS.find((v) => v.picker === concept.picker && v.placement === concept.placement)
 
   const drag = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button')) return
@@ -128,7 +174,7 @@ export function ConceptPanel() {
         {!open && (
           <span className="type-label-m text-[var(--color-text-secondary-default)]">
             · {LAYOUTS.find((l) => l.value === concept.layout)?.label} ·{' '}
-            {concept.picker === 'dialog' ? DIALOG_IDEAS[concept.placement] : idea ? idea.label : 'Not drawn'} ·{' '}
+            {name ?? 'Not drawn'} ·{' '}
             {concept.columns === 'few' ? 'Few' : 'Many'} fields
           </span>
         )}
@@ -153,65 +199,66 @@ export function ConceptPanel() {
           </div>
 
           <div className="flex flex-col gap-[var(--space-2)]">
-            <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">2. Design draft</span>
-            <div role="radiogroup" aria-label="Design draft" className="flex flex-col">
-              {VARIANTS.map((v) => {
-                const draft = ideaOf({ ...v, layout: concept.layout })
-                const named = v.picker === 'dialog' ? DIALOG_IDEAS[v.placement] : draft?.label
-                const on = v.picker === concept.picker && v.placement === concept.placement
-                return (
-                  <label
-                    key={`${v.picker}-${v.placement}`}
-                    className="flex cursor-pointer items-start gap-[var(--space-2)] rounded-[var(--radius-2)] px-[var(--space-2)] py-[var(--space-2)] hover:bg-[var(--color-surface-secondary-default)]"
+            <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">2. Design direction</span>
+            <SegmentedTab
+              items={DIRECTIONS.map((d) => d.label)}
+              selectedIndex={DIRECTIONS.findIndex((d) => d.value === concept.picker)}
+              onSelect={(i) => setConcept({ picker: DIRECTIONS[i].value })}
+            />
+            <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-[var(--space-3)]">
+              {concept.picker === 'shortcut' ? (
+                <Option label="Type to open">
+                  <SegmentedTab
+                    items={TRIGGERS.map((t) => t.label)}
+                    selectedIndex={TRIGGERS.findIndex((t) => t.value === concept.trigger)}
+                    onSelect={(i) => setConcept({ trigger: TRIGGERS[i].value })}
+                  />
+                </Option>
+              ) : (
+                <Option label="Placement">
+                  <SegmentedTab
+                    items={PLACEMENTS.map((p) => p.label)}
+                    selectedIndex={PLACEMENTS.findIndex((p) => p.value === concept.placement)}
+                    onSelect={(i) => setConcept({ placement: PLACEMENTS[i].value })}
+                  />
+                </Option>
+              )}
+              {(concept.picker === 'button' || concept.picker === 'dialog') && (
+                <Option label="Button icon">
+                  <SegmentedTab
+                    items={MARKS.map((m) => m.label)}
+                    selectedIndex={MARKS.findIndex((m) => m.value === concept.mark)}
+                    onSelect={(i) => setConcept({ mark: MARKS[i].value })}
+                  />
+                </Option>
+              )}
+            </div>
+            <p className="type-body-s text-[var(--color-text-secondary-default)]">
+              <span
+                className={cn(
+                  'type-label-m-emphasized',
+                  name ? 'text-[var(--color-text-primary-default)]' : 'text-[var(--color-text-secondary-default)]',
+                )}
+              >
+                {name ?? 'Not drawn'}
+              </span>
+              {' · '}
+              {variant?.note}
+              {idea && (
+                <>
+                  {' · '}
+                  <a
+                    href={`${FIGMA_FILE}?node-id=${idea.node}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[var(--color-text-link-default)] hover:underline"
                   >
-                    <RadioButton
-                      selected={on}
-                      aria-label={named ?? v.note}
-                      onClick={() => setConcept({ picker: v.picker, placement: v.placement })}
-                    />
-                    <span className="flex min-w-0 flex-col">
-                      <span
-                        className={cn(
-                          'type-label-l-emphasized',
-                          named ? 'text-[var(--color-text-primary-default)]' : 'text-[var(--color-text-secondary-default)]',
-                        )}
-                      >
-                        {named ?? 'Not drawn'}
-                      </span>
-                      <span className="type-body-s text-[var(--color-text-secondary-default)]">
-                        {v.note}
-                        {draft && (
-                          <>
-                            {' · '}
-                            <a
-                              href={`${FIGMA_FILE}?node-id=${draft.node}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-[var(--color-text-link-default)] hover:underline"
-                            >
-                              Figma
-                            </a>
-                          </>
-                        )}
-                      </span>
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
+                    Figma
+                  </a>
+                </>
+              )}
+            </p>
           </div>
-
-          {concept.picker !== 'pills' && (
-            <div className="flex flex-col gap-[var(--space-2)]">
-              <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">Button icon</span>
-              <SegmentedTab
-                items={MARKS.map((m) => m.label)}
-                selectedIndex={MARKS.findIndex((m) => m.value === concept.mark)}
-                onSelect={(i) => setConcept({ mark: MARKS[i].value })}
-              />
-            </div>
-          )}
 
           <div className="flex flex-col gap-[var(--space-2)]">
             <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">3. Audience file</span>

@@ -28,6 +28,7 @@ import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import type { Concept } from '@/prototype/dynamic-field'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
+import { triggerMark, useFieldShortcut } from './shortcut'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
 /* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
@@ -638,7 +639,9 @@ function ChannelAlert({ f }: F) {
  *
  *    picker     pills always on show (Idea 1, 1.2) · a button and its menu (2, 2.2)
  *               · a button and a picker dialog (3, 3.2 — CMS's)
- *    placement  one for every channel (1, 2) · one on each card (1.2, 2.2)
+ *               · a character typed in the box, menu at the caret (4, ./shortcut.tsx)
+ *    placement  one for every channel (1, 2) · one on each card (1.2, 2.2);
+ *               a shortcut is in every box, so it has none
  *    layout     cards three across (1, 2, 2.2) · stacked full width as CNH (1.2)
  *
  *  Each card is switched on its own title row (webds `form-section-card`):
@@ -652,11 +655,15 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   const direct = f.recipientType === 'direct'
   const hasFields = f.fields.length > 0
   const insertShared: Insert = (token) => setNeedsField(!insert(token))
+  const typed = concept.picker === 'shortcut'
+  const shortcut = useFieldShortcut(f, concept.trigger, typed)
+  /* Composed (21 Oct 2026), as Clay's "Type '/' to …" under each box. */
+  const hint = typed && hasFields ? `Type ${triggerMark(concept.trigger)} to add a dynamic field` : undefined
 
   /* Idea 2, 2.2 and the dialog head the area "Broadcast Message"; Idea 1.2
-     "Select", as drawn; Idea 1 has no heading. */
-  const menu = concept.picker !== 'pills'
-  const heading = menu ? 'Broadcast Message' : concept.layout === 'stacked' ? 'Select' : null
+     "Select", as drawn; Idea 1 and the shortcut have no heading. */
+  const menu = concept.picker === 'button' || concept.picker === 'dialog'
+  const heading = menu ? 'Broadcast Message' : concept.picker === 'pills' && concept.layout === 'stacked' ? 'Select' : null
   const sharedButton = shared && menu && (
     <FieldMenuButton
       f={f}
@@ -678,6 +685,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
             ? 'grid-cols-2 gap-[var(--space-8)]'
             : 'grid-cols-3 gap-[var(--space-8)]',
       )}
+      {...shortcut.handlers}
       onFocusCapture={(e) => {
         const el = e.target as HTMLInputElement | HTMLTextAreaElement
         const key = el.closest('[data-field]')?.getAttribute('data-field')
@@ -708,7 +716,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
             {perCard && concept.picker === 'pills' && (
               <FieldPills f={f} disabled={!editable} onInsert={(t) => insert(t, c)} />
             )}
-            <ChannelFields f={f} channel={c} on={editable} />
+            <ChannelFields f={f} channel={c} on={editable} hint={hint} />
           </>
         )
         if (direct)
@@ -752,13 +760,20 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   const top = (
     <>
       {shared && concept.picker === 'pills' && hasFields && <FieldPills f={f} onInsert={insertShared} />}
-      {!hasFields && <p className={NOTE}>Available fields appear here once the audience file is uploaded.</p>}
+      {!hasFields && (
+        <p className={NOTE}>
+          {typed
+            ? 'Dynamic fields can be added once the audience file is uploaded.'
+            : 'Available fields appear here once the audience file is uploaded.'}
+        </p>
+      )}
       {needsField && (
         <InlineMessage appearance="negative" size="xs">
           {BROADCAST_COPY.pickField}
         </InlineMessage>
       )}
       <ChannelAlert f={f} />
+      {shortcut.menu}
     </>
   )
 
@@ -833,7 +848,7 @@ function DirectChannelCard({
 }
 
 /** A channel's message boxes — the Template form's TH fields. */
-function ChannelFields({ f, channel, on }: F & { channel: Channel; on: boolean }) {
+function ChannelFields({ f, channel, on, hint }: F & { channel: Channel; on: boolean; hint?: string }) {
   const box = (id: keyof BroadcastContent, label: string, placeholder: string, extra?: { multiline?: boolean; boxHeight?: 77 }) => (
     <Text
       id={id}
@@ -845,6 +860,7 @@ function ChannelFields({ f, channel, on }: F & { channel: Channel; on: boolean }
       error={f.errors[id]}
       placeholder={placeholder}
       onChange={f.setC(id)}
+      hint={hint}
       {...extra}
     />
   )

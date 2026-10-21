@@ -27,6 +27,7 @@ export function Text({
   multiline,
   boxHeight,
   disabled,
+  hint,
   className,
 }: {
   id: string
@@ -40,6 +41,8 @@ export function Text({
   multiline?: boolean
   boxHeight?: 77
   disabled?: boolean
+  /** Helper text under the box, where an error is not. */
+  hint?: string
   className?: string
 }) {
   return (
@@ -50,7 +53,7 @@ export function Text({
       className={cn('min-w-0', multiline && 'whitespace-pre-line', className)}
     >
       <FormField
-        spec={{ label, kind: multiline ? 'textarea' : 'text', required, max, boxHeight, placeholder: placeholder ?? '' }}
+        spec={{ label, kind: multiline ? 'textarea' : 'text', required, max, boxHeight, hint, placeholder: placeholder ?? '' }}
         value={value}
         error={error}
         disabled={disabled}
