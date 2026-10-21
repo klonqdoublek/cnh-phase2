@@ -190,12 +190,11 @@ export function formSeed(preset: FormPreset): FormSeed {
     case 'file-error':
       return { file: { name: 'recipients.txt', text: 'CIS_ID\n100001\n' } }
     case 'cis':
-      return { file: filled.file, recipientType: 'cis', column: 'CIS_ID' }
+      return { file: filled.file, recipientType: 'cis' }
     case 'direct':
       return {
         file: { name: 'audience-direct.csv', text: DIRECT_CSV },
         recipientType: 'direct',
-        column: 'MOBILE_NO',
         channels: ['SMS'],
       }
     case 'errors':

@@ -6,7 +6,6 @@ import {
   checkAudience,
   fieldsOf,
   firstSend,
-  guessColumn,
   idKind,
   readAudience,
   readAudienceFile,
@@ -185,14 +184,10 @@ export function useBroadcastForm({
     setFile(f)
     setRead(null)
     setFileText('')
+    setColumn('')
     f.text().then(setFileText, () => setFileText(''))
     clear('file', 'column')
-    readAudienceFile(f).then((result) =>
-      window.setTimeout(() => {
-        setRead(result)
-        setColumn(result.ok && kind ? guessColumn(result.audience.headers, kind) : '')
-      }, CHECK_MS),
-    )
+    readAudienceFile(f).then((result) => window.setTimeout(() => setRead(result), CHECK_MS))
   }
   const clearFile = () => {
     setFile(null)
@@ -205,8 +200,7 @@ export function useBroadcastForm({
     setType(type)
     const next = type === 'direct' ? channels.filter((c) => DIRECT_CHANNELS.includes(c)).slice(0, 1) : channels
     setChannels(next)
-    const k = idKind(type, next)
-    setColumn(audience && k ? guessColumn(audience.headers, k) : '')
+    setColumn('')
     clear('channels', 'column', 'file')
   }
   const toggleChannel = (channel: Channel, on: boolean) => {
@@ -215,8 +209,7 @@ export function useBroadcastForm({
   }
   const chooseDirect = (channel: Channel) => {
     setChannels([channel])
-    const k = idKind('direct', [channel])
-    if (audience && k) setColumn(guessColumn(audience.headers, k) || column)
+    if (idKind('direct', [channel]) !== kind) setColumn('')
     clear('channels', 'column', 'file', ...CHANNEL_FIELDS[channel === 'SMS' ? 'Email' : 'SMS'])
   }
   /** A channel card's switch. Direct recipient sends by Email or SMS, never

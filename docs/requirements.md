@@ -23,6 +23,7 @@ The **Customer Notification Hub (CNH)** is Bangkok Bank's back-office console fo
 
 | Date | Source | What it settles |
 |---|---|---|
+| 21 Oct 2026 | Requirement update | After upload the recipient column starts unselected; the system cannot count rows or columns, so no counts are shown |
 | 15 Oct 2026 | Requester's call | Import takes one file at a time, with the CMS checks (one file, 10 MB); a file imported before asks before it imports over it |
 | 14 Oct 2026 | BA feedback on the prototype, and BA answers to Q1, Q2 and Q5 | List columns, report download, 5-minute steps, several DND periods, Broadcast End, Direct recipient stays, DND rather than Service Window |
 | 12 Oct 2026 | Requester's call | File upload uses the CMS prototype's upload slots |
@@ -108,8 +109,9 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
      - Select Recipient type\*: **CIS** (CIS ID column; any of Push, Email, SMS) or **Direct recipient** (a mobile or email column; Email *or* SMS only), as plain radios side by side.
      - Upload File\* beside the ID column. The file is `.csv` or `.xlsx`, at most 10 MB and 1,000 recipients.
      - **On pick, only the file type and size are checked** (BA, 19 Oct). The browser can show a preview but cannot read the whole file, so the full read happens on Submit.
-     - After upload: the file row (name, size, *File validated*) and a preview of the whole file in a box five rows tall at the column's width, scrolling both ways under a fixed header, with the file's size beside its title ("100 Rows • 25 Columns", Figma 89:4665). No valid / invalid count. Every Create preset with a CIS file (`filled`, `cis`, `large-file`, …) loads `audience-cis-large.csv`, 100 rows × 55 columns. The box scrolls under webds' own Scroll Bars (Thick), shown as soon as the file overflows; the browser's are hidden, since macOS keeps them out of sight until a scroll starts. webds' `ScrollBar` only draws a position (gap), so pressing or dragging a track is wired in the page. Two sample files.
-     - The ID column is guessed from the preview's header row and can be changed to any of the file's headers. The BA confirmed on 14 Oct that Direct recipient stays.
+     - After upload: the file row (name, size, *File validated*) and a preview of the whole file in a box five rows tall at the column's width, scrolling both ways under a fixed header, with no count. The system cannot count the file's rows or columns (requirement update, 21 Oct), so the "100 Rows • 25 Columns" beside the title in Figma 89:4665 is left out, and there is no valid / invalid count. Every Create preset with a CIS file (`filled`, `cis`, `large-file`, …) loads `audience-cis-large.csv`, 100 rows × 55 columns. The box scrolls under webds' own Scroll Bars (Thick), shown as soon as the file overflows; the browser's are hidden, since macOS keeps them out of sight until a scroll starts. webds' `ScrollBar` only draws a position (gap), so pressing or dragging a track is wired in the page. Two sample files.
+     - The system does not pick the ID column. After upload the select is empty (`Select column`) and the user picks any of the file's headers (requirement update, 21 Oct). Changing the recipient type, or switching Email ↔ SMS under Direct recipient, empties it again. The BA confirmed on 14 Oct that Direct recipient stays.
+     - The header's name does not matter. The field only says which column holds the data, so CIS IDs may sit in a column called `Recipient` (BA meeting recording, reviewed 14 Oct; **to confirm with the BA**).
      - **On Submit**, once every section is valid, a spinner covers the page while the whole file is read (spinner only since 21 Oct 2026; it showed *Checking file…*):
        - Invalid rows are skipped. The confirm dialog lists them under *Invalid recipients are skipped. Only valid recipients will receive the broadcast.*, in a table of Row / {ID column} / Problem.
        - No rows, more than 1,000 rows or no valid recipient blocks the broadcast: *The audience file cannot be used* with the reason and Close, and the reason stays on Step 2. **PROPOSAL, pending BA confirmation** (Q16).
@@ -161,7 +163,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 ### Recipient file (from the BA deck; not every rule is in the prototype)
 
 - One row per recipient (CIS).
-- Columns: CIS ID\*, Mobile number, Email address, First name, Last name, Tier.
+- Columns: CIS ID\*, Mobile number, Email address, First name, Last name, Tier. These names are the deck's example, not required headers (see step 2).
 - **Prototype checks** (on Submit since 19 Oct): ID required; mobile and email well formed; no duplicate IDs.
 - **Deck checks the prototype does not:** at least one contact method per row; no duplicate mobile or email in the file; data "valid and active". This is Q7.
 - **Push:** finds device tokens from CIS ID.
@@ -187,6 +189,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2; Published since 16 Oct). |
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
+| 14 Oct 2026 | From the meeting recording, to confirm with the BA on 15 Oct: the file's headers are free. The Field select says which column holds the recipient data; it does not check the header's name. |
 | 15 Oct 2026 | The file preview shows every row and column, five rows tall at the column's width, scrolling both ways (requester). |
 | 15 Oct 2026 | Do Not Disturb moves into the Delivery Date step (Figma 89:4665): three steps. |
 | 15 Oct 2026 | Broadcast End is for Schedule delivery only; Send as soon as possible has no end (requester, following draft 2.2). |
@@ -196,10 +199,11 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 19 Oct 2026 | Meaning of each status (Q13 answered): Failed is a system error; Cancelled is a saved draft cancelled by the user. Only a Draft can be cancelled; after Submit it cannot (system limit). Design decisions with the requester: Cancel sits in the Draft drawer footer behind a confirm dialog; a Cancelled broadcast stays in the list read only; a Failed drawer keeps Delivery result and Download report, no retry; badges Failed = Negative, Cancelled = Disabled. |
 | 20 Oct 2026 | Start date and time comes before End date and time, Start on the left (requester). This departs from draft 2.2, which draws End first. |
 | 21 Oct 2026 | Do Not Disturb leaves the Select Delivery Date card for its own card in the same step; still three steps. Its header is the switch, the title and the note only; "Select DND" is gone (requester, Figma 409:75574). |
+| 21 Oct 2026 | Requirement update: the system does not pick the recipient column; the user picks it from an empty select. The system cannot count the file's rows or columns, so no count is shown: not beside the preview, not in the confirm dialog, not in the over-1,000 message. The invalid-rows table stays, without a count. |
 
 ## Open items
 
-- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12 and Q16 (a file Submit cannot use, PROPOSAL). Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
+- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12, Q16 (a file Submit cannot use, PROPOSAL), Q17 and Q18. Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy). Since 15 Oct the prototype answers three of them for demo, pending the BA: one file, 10 MB, and import over a file with the same name. Still to ask: duplicates by name or by content, and what happens to replaced templates that were edited or Published.
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.

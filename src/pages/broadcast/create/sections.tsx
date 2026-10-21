@@ -206,12 +206,7 @@ function Preview({ f }: F) {
   const idIndex = a.headers.indexOf(f.column)
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <span className="flex items-baseline gap-[var(--space-4)]">
-        <span className={LABEL}>{BROADCAST_COPY.previewTitle}</span>
-        <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">
-          {BROADCAST_COPY.previewSize(a.rows.length, a.headers.length)}
-        </span>
-      </span>
+      <span className={LABEL}>{BROADCAST_COPY.previewTitle}</span>
       <MiniTable
         columns={a.headers}
         widths={a.headers.map((_, i) => (i === a.headers.length - 1 ? 'minmax(max-content,1fr)' : 'max-content')).join(' ')}

@@ -66,7 +66,7 @@ export function Dialogs({ f, onBack }: { f: BroadcastForm; onBack: () => void })
             <dd className="m-0 text-[var(--color-text-primary-default)]">{f.name}</dd>
             <dt className="text-[var(--color-text-secondary-default)]">Recipients</dt>
             <dd className="m-0 text-[var(--color-text-primary-default)]">
-              {(f.check?.valid ?? 0).toLocaleString('en-US')} from {f.file?.name} · by {f.column}
+              {f.file?.name} · by {f.column}
             </dd>
             <dt className="text-[var(--color-text-secondary-default)]">Channel</dt>
             <dd className="m-0 text-[var(--color-text-primary-default)]">

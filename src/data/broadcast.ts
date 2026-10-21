@@ -26,7 +26,7 @@ export const BROADCAST_COPY = {
   fileFormat: 'Invalid file format. Only .csv and .xlsx files can be uploaded',
   xlsxNotInPrototype: 'This prototype can only read .csv. Save the sheet as .csv and upload it again',
   fileEmpty: 'The file has no recipients',
-  tooManyRows: (n: number) => `The file has ${n.toLocaleString('en-US')} recipients. The maximum is 1,000`,
+  tooManyRows: 'The file has more than 1,000 recipients',
   checking: 'Checking file…',
   validated: 'File validated',
   /* Composed (docs/broadcast-gaps.md): the original build has no dialog for a
@@ -34,9 +34,6 @@ export const BROADCAST_COPY = {
   fileBlockedTitle: 'The audience file cannot be used',
   invalidNote: 'Invalid recipients are skipped. Only valid recipients will receive the broadcast.',
   previewTitle: 'Preview (first 5 rows)',
-  /** Beside the preview title (Figma 89:4665). */
-  previewSize: (rows: number, columns: number) =>
-    `${rows.toLocaleString('en-US')} Rows • ${columns.toLocaleString('en-US')} Columns`,
   required: 'This field is required',
   noColumn: 'Select the column that identifies each recipient',
   noChannel: 'Please enable at least 1 notification channel',
@@ -134,8 +131,6 @@ export const idKind = (type: RecipientType, channels: Channel[]): IdKind | null 
   type === 'cis' ? 'cis' : channels.includes('SMS') ? 'mobile' : channels.includes('Email') ? 'email' : null
 
 export const ID_LABEL: Record<IdKind, string> = { cis: 'CIS ID', mobile: 'Mobile number', email: 'Email address' }
-const GUESS: Record<IdKind, RegExp> = { cis: /cis/i, mobile: /mobile|phone|tel/i, email: /e-?mail/i }
-export const guessColumn = (headers: string[], kind: IdKind) => headers.find((h) => GUESS[kind].test(h)) ?? ''
 const DUPLICATE: Record<IdKind, string> = {
   cis: 'Duplicate CIS ID',
   mobile: 'Duplicate mobile number',
@@ -171,7 +166,7 @@ export type AudienceCheck = { ok: true; check: RecipientCheck } | { ok: false; m
 export function checkAudience(audience: Audience, column: string, kind: IdKind): AudienceCheck {
   const total = audience.rows.length
   if (total === 0) return { ok: false, message: BROADCAST_COPY.fileEmpty }
-  if (total > MAX_RECIPIENTS) return { ok: false, message: BROADCAST_COPY.tooManyRows(total) }
+  if (total > MAX_RECIPIENTS) return { ok: false, message: BROADCAST_COPY.tooManyRows }
   const check = checkRecipients(audience, column, kind)
   if (check.valid === 0) return { ok: false, message: BROADCAST_COPY.noValidRows }
   return { ok: true, check }
