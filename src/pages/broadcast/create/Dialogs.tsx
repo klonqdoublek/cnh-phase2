@@ -15,18 +15,14 @@ export function Dialogs({ f, onBack }: { f: BroadcastForm; onBack: () => void })
     <>
       {(f.creating || f.readingFile) && (
         /* Submitting covers the whole page, opaque, with the brand spinner; so
-           does Submit's full read of the file, which says what it is doing. */
+           does Submit's full read of the file. Spinner only, no text (requester,
+           21 Oct 2026; the read showed "Checking file…"), which stays its label. */
         <div
           role="status"
           aria-live="polite"
           className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-[var(--space-4)] bg-[var(--color-surface-primary-default)] opacity-90"
         >
-          <SpinnerLoader size="l" appearance="brand" />
-          {f.readingFile && (
-            <span className="type-label-l-emphasized text-[var(--color-text-primary-default)]">
-              {BROADCAST_COPY.checking}
-            </span>
-          )}
+          <SpinnerLoader size="l" appearance="brand" label={f.readingFile ? BROADCAST_COPY.checking : undefined} />
         </div>
       )}
 
