@@ -41,7 +41,8 @@ export const IMPORT_COPY = {
   browse: 'Browse file',
   format: 'Invalid file format. Only .jsonl files can be imported',
   structure: 'Invalid template structure',
-  /* CMS's slot hint, in Text/Negative under a file over the limit (ASSET_COPY.sizeHint). */
+  /* CMS's slot hint (ASSET_COPY.sizeHint). Since 20 Oct 2026 it is the empty zone's hint in
+     Text/Negative when a file over the limit was picked; the file is not taken. */
   size: 'Max file size: 10 MB',
   /* CMS's two-files message in the drop zone (ASSET_COPY.tooMany). */
   oneFile: '1 File Only',
@@ -203,7 +204,6 @@ const VALID_FILES: DemoFile[] = [
   },
 ]
 
-const TOO_LARGE: DemoFile = { ...VALID_FILES[2], name: 'all-templates.jsonl', size: 14.2 * 1024 * 1024 }
 const BAD_FORMAT: DemoFile = { name: 'customers.csv', text: 'name,description\nPromotion offer,not a template' }
 const BAD_STRUCTURE: DemoFile = {
   name: 'broken-template.jsonl',
@@ -212,8 +212,8 @@ const BAD_STRUCTURE: DemoFile = {
 
 /** One file per import (15 Oct 2026); `duplicate` picks a file the history already holds. */
 export function presetFile(preset: ImportPreset): DemoFile | null {
-  if (preset === 'initial' || preset === 'no-file' || preset === 'too-many') return null
-  if (preset === 'too-large') return TOO_LARGE
+  /* `too-large` opens with no file: an over-10 MB file is not taken (20 Oct 2026). */
+  if (preset === 'initial' || preset === 'no-file' || preset === 'too-many' || preset === 'too-large') return null
   if (preset === 'invalid-format') return BAD_FORMAT
   if (preset === 'invalid-structure') return BAD_STRUCTURE
   if (preset === 'duplicate') return VALID_FILES[2]
