@@ -26,7 +26,6 @@ type F = { f: BroadcastForm }
 /** The message box the cursor was last in, so a field chip knows where to insert. */
 export type FocusRef = React.MutableRefObject<{ key: string; el: HTMLInputElement | HTMLTextAreaElement } | null>
 
-const n = (v: number) => v.toLocaleString('en-US')
 const sizeLabel = (bytes: number) =>
   bytes < 1048576 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
@@ -136,7 +135,7 @@ function FileResult({ f }: F) {
         meta={
           f.read
             ? f.read.ok
-              ? `${sizeLabel(file.size)} · ${n(f.read.audience.rows.length)} rows`
+              ? sizeLabel(file.size)
               : f.read.message
             : BROADCAST_COPY.checking
         }
@@ -156,33 +155,16 @@ function FileResult({ f }: F) {
         </div>
       )}
       {f.audience && <Preview f={f} />}
-      {f.check && (
+      {f.check && f.check.invalid > 0 && (
         <>
-          <p className="type-label-m-emphasized text-[var(--color-text-primary-default)]">
-            {BROADCAST_COPY.rowsSummary(f.check.rows.length, f.check.valid)}
-            {f.check.invalid > 0 && (
-              <span className="text-[var(--color-text-negative-default)]">
-                {' · '}
-                {BROADCAST_COPY.invalidCount(f.check.invalid)}
-              </span>
-            )}
-            <span className="text-[var(--color-text-secondary-default)]">
-              {' · by '}
-              {f.column}
-            </span>
-          </p>
-          {f.check.invalid > 0 && (
-            <>
-              <p className={NOTE}>{BROADCAST_COPY.invalidNote}</p>
-              <MiniTable
-                columns={['Row', f.column, 'Problem']}
-                widths="80px 200px 1fr"
-                rows={invalidRows.map((r) => [String(r.line), r.id || '–', r.errors.join(' · ')])}
-                negativeLast
-                maxHeight
-              />
-            </>
-          )}
+          <p className={NOTE}>{BROADCAST_COPY.invalidNote}</p>
+          <MiniTable
+            columns={['Row', f.column, 'Problem']}
+            widths="80px 200px 1fr"
+            rows={invalidRows.map((r) => [String(r.line), r.id || '–', r.errors.join(' · ')])}
+            negativeLast
+            maxHeight
+          />
         </>
       )}
     </div>

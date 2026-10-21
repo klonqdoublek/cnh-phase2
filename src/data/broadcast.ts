@@ -22,12 +22,9 @@ export const BROADCAST_COPY = {
   fileFormat: 'Invalid file format. Only .csv and .xlsx files can be uploaded',
   xlsxNotInPrototype: 'This prototype can only read .csv. Save the sheet as .csv and upload it again',
   fileEmpty: 'The file has no recipients',
-  tooManyRows: (n: number) => `The file has ${n.toLocaleString('en-US')} recipients. The maximum is 1,000`,
+  tooManyRows: 'The file has more than 1,000 recipients',
   checking: 'Checking file…',
   validated: 'File validated',
-  rowsSummary: (total: number, valid: number) =>
-    `${total.toLocaleString('en-US')} ${total === 1 ? 'recipient' : 'recipients'} · ${valid.toLocaleString('en-US')} valid`,
-  invalidCount: (n: number) => `${n} invalid`,
   invalidNote: 'Invalid recipients are skipped. Only valid recipients will receive the broadcast.',
   previewTitle: 'Preview (first 5 rows)',
   required: 'This field is required',
@@ -100,7 +97,7 @@ export function readAudience(name: string, text: string, size = text.length): Au
   const all = parseCsv(text)
   const rows = all.slice(1)
   if (all.length === 0 || rows.length === 0) return { ok: false, message: BROADCAST_COPY.fileEmpty }
-  if (rows.length > MAX_RECIPIENTS) return { ok: false, message: BROADCAST_COPY.tooManyRows(rows.length) }
+  if (rows.length > MAX_RECIPIENTS) return { ok: false, message: BROADCAST_COPY.tooManyRows }
   return { ok: true, audience: { headers: all[0].map((h) => h.trim()), rows } }
 }
 
@@ -119,8 +116,6 @@ export const idKind = (type: RecipientType, channels: Channel[]): IdKind | null 
   type === 'cis' ? 'cis' : channels.includes('SMS') ? 'mobile' : channels.includes('Email') ? 'email' : null
 
 export const ID_LABEL: Record<IdKind, string> = { cis: 'CIS ID', mobile: 'Mobile number', email: 'Email address' }
-const GUESS: Record<IdKind, RegExp> = { cis: /cis/i, mobile: /mobile|phone|tel/i, email: /e-?mail/i }
-export const guessColumn = (headers: string[], kind: IdKind) => headers.find((h) => GUESS[kind].test(h)) ?? ''
 const DUPLICATE: Record<IdKind, string> = {
   cis: 'Duplicate CIS ID',
   mobile: 'Duplicate mobile number',

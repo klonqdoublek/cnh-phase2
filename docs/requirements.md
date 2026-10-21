@@ -23,6 +23,7 @@ The **Customer Notification Hub (CNH)** is Bangkok Bank's back-office console fo
 
 | Date | Source | What it settles |
 |---|---|---|
+| 21 Oct 2026 | Requirement update | After upload the recipient column starts unselected; the system cannot count rows or columns, so no counts are shown |
 | 14 Oct 2026 | BA feedback on the prototype, and BA answers to Q1, Q2 and Q5 | List columns, report download, 5-minute steps, several DND periods, Broadcast End, Direct recipient stays, DND rather than Service Window |
 | 12 Oct 2026 | Requester's call | File upload uses the CMS prototype's upload slots |
 | 12 Oct 2026 | This repo starts | Rebuild of Korn's prototype on webds |
@@ -98,11 +99,13 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 1. **Basic information.** Broadcast name\* (max 100) and Description (max 250).
 2. **Audience file.**
    - `.csv` or `.xlsx`, at most 10 MB and 1,000 recipients.
-   - After upload: a 5-row preview, a valid / invalid count, and a table of invalid rows. Invalid rows are skipped.
+   - After upload: a 5-row preview and a table of invalid rows. Invalid rows are skipped.
+   - No counts. The system cannot count the file's rows or columns, so the file slot, the result and the confirm dialog show no number of recipients, rows, valid or invalid (21 Oct). A file over 1,000 recipients still fails, without a number.
    - Two sample files.
 3. **Recipient mapping and channels.**
    - Recipient type **CIS** (CIS ID column; any of Push, Email, SMS) or **Direct recipient** (a mobile or email column; Email *or* SMS only).
    - The ID column is chosen from the file's headers. The BA confirmed on 14 Oct that Direct recipient stays.
+   - The system does not pick the column. After upload the select is empty (`Select column`) and the user must choose (21 Oct). Changing the recipient type, or Email ↔ SMS in Direct, empties it again.
    - The header's name does not matter. The field only says which column holds the data, so CIS IDs may sit in a column called `Recipient` (BA meeting recording, reviewed 14 Oct; **to confirm with the BA on 15 Oct**).
 4. **Manual content.**
    - The file's columns become chips that insert `{{COLUMN}}`.
@@ -156,6 +159,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
 | 14 Oct 2026 | From the meeting recording, to confirm with the BA on 15 Oct: the file's headers are free. The Field select says which column holds the recipient data; it does not check the header's name. |
+| 21 Oct 2026 | Requirement update: no auto-selected recipient column; the user picks it from an empty select. No row or column counts after upload; the invalid-rows table stays, without a count. |
 
 ## Open items
 

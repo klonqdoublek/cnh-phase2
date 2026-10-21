@@ -34,7 +34,7 @@ BA answers on 14 Oct 2026:
 
 From the BA meeting recording (reviewed 14 Oct; to confirm with the BA on 15 Oct):
 
-- **Free headers.** The file does not need a header called CIS ID. The Field select says which column holds the data; CIS IDs may sit in a column called `Recipient`. The prototype already works this way: it guesses the column from the header and asks the user when the guess fails. This leaves Q13 and Q14 open.
+- **Free headers.** The file does not need a header called CIS ID. The Field select says which column holds the data; CIS IDs may sit in a column called `Recipient`. The prototype already works this way. Since 21 Oct it no longer guesses the column from the header: the select starts empty and the user picks the column. This leaves Q13 and Q14 open.
 
 The rest are still open.
 
@@ -95,4 +95,5 @@ The original build has none of this copy. Change it here if the BA rules otherwi
 | Report reasons | SMS: `Invalid mobile number`, `Number not reachable`. Email: `Mailbox not found`, `Message rejected`. Push: `No active device`. |
 | Do Not Disturb | `Add period`, `All day`. In the list, drawer and dialog: `Sat, Sun, All day`, and `+N more` after two lines. |
 | Quiet period picker | Header `Time`. Screen reader labels: `Hour`, `Minute`, `Remove quiet period N`. |
+| Recipient file, no counts (21 Oct) | Over the limit: `The file has more than 1,000 recipients` (was `The file has {n} recipients. The maximum is 1,000`). Confirm dialog Recipients: `{file} · by {column}` (was `{valid} from {file} · by {column}`). |
 | Broadcast End | Field `End date and time (optional)`, button `Clear`. Error `End must be later than the start`. Delivery note: `Sending stops at {end}; recipients not sent by then are counted as Not sent.` Drawer: `Broadcast end`, `Not sent`, `The broadcast ended at {end}. {n} recipients were not sent.` Report: `Not sent` / `Broadcast ended`. Confirm dialog: `No end date`. Fixture BC-0001 *Savings interest rate update*. |
