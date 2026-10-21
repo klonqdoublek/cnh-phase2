@@ -625,7 +625,6 @@ export function Delivery({ f }: F) {
         </div>
       )}
       <Outlook f={f} />
-      <DndBlock f={f} />
     </FormSectionCard>
   )
 }
@@ -649,7 +648,7 @@ function Outlook({ f }: F) {
   )
 }
 
-/* ── DND (inside Delivery Date) ────────────────────────────────────────────────────────── */
+/* ── DND (its own card under Delivery Date) ──────────────────────────────── */
 
 /** One quiet period on one row: its days, its hours or All day, and — when
  *  there is more than one — a trash to remove it (draft 2.2, Figma 89:4665). */
@@ -737,21 +736,26 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   )
 }
 
-/** Do Not Disturb, inside the Delivery Date card (Figma 89:4665): the
- *  switch and title, the quiet periods divided by a rule, Add period, and the
- *  one time zone there is, shown as text. */
-function DndBlock({ f }: F) {
+/** Do Not Disturb, its own card under the Delivery Date card in the same
+ *  step (requester, 21 Oct 2026; Figma 409:75574): the switch before the
+ *  title and its note, the quiet periods divided by a rule, Add period, and
+ *  the one time zone there is, shown as text. The switch is drawn in the
+ *  title rather than through the card's `toggle`, which names the switch only
+ *  from a string title. */
+export function DndCard({ f }: F) {
   const dnd = f.dnd
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-6)]">
-      <span className="flex flex-col gap-[var(--space-1)]">
-        <span className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">Select DND</span>
-        <span className={NOTE}>Prevent sending messages during quiet hours.</span>
-      </span>
-      <span className="flex items-center gap-[var(--space-3)]">
-        <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
-        <span className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">Do Not Disturb (DND)</span>
-      </span>
+    <FormSectionCard
+      title={
+        <span className="flex items-center gap-[var(--space-4)]">
+          <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
+          <span className="flex flex-col">
+            <span>Do Not Disturb (DND)</span>
+            <span className={NOTE}>Prevent sending messages during quiet hours.</span>
+          </span>
+        </span>
+      }
+    >
       {/* Any number of quiet periods (BA, 2026-10-14): each its own days and
           hours, divided by a rule; a day may sit in more than one. */}
       {dnd.rules.map((rule, i) => (
@@ -773,6 +777,6 @@ function DndBlock({ f }: F) {
           {TIME_ZONES.find((z) => z.value === dnd.timeZone)?.label ?? dnd.timeZone}
         </span>
       </span>
-    </div>
+    </FormSectionCard>
   )
 }
