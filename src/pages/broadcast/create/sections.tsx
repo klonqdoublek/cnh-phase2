@@ -1,26 +1,34 @@
-import { useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
+import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { Divider } from '@/bbl/divider'
+import { FieldLabel } from '@/bbl/field'
 import { GhostButton } from '@/bbl/ghost-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
 import { PillChip } from '@/bbl/pill-chip'
+import { ScrollBar } from '@/bbl/scroll-bar'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
 import { ToggleSwitch } from '@/bbl/toggle-switch'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { FormStep } from '@/patterns/console-page'
-import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type DndRule } from '@/data/broadcast'
+import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import { Choice, LABEL, ModeOption, NOTE, Select, SmsField, Text } from './fields'
-import { ymd, type BroadcastForm } from './useBroadcastForm'
+import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
+import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
+
+/* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
+ * 85:19401, 15 Oct 2026): the audience step carries the message content —
+ * one set of field chips over three channel cards — and channels are
+ * switched on their own cards. */
 
 type F = { f: BroadcastForm }
 /** The message box the cursor was last in, so a field chip knows where to insert. */
@@ -29,23 +37,47 @@ export type FocusRef = React.MutableRefObject<{ key: string; el: HTMLInputElemen
 const sizeLabel = (bytes: number) =>
   bytes < 1048576 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
-const CHANNEL_ICON: Record<Channel, string> = { Email: 'mail', SMS: 'message', 'Push notification': 'alert' }
-
-/** One "Step N" — webds `FormStep` over a white card (or bare, for Step 4). */
-export function Section({ title, bare, children }: { title: string; bare?: boolean; children: React.ReactNode }) {
+/** One "Step N" — webds `FormStep`, its note under the heading. The step's
+ *  card is the caller's: a titled `FormSectionCard` or a plain `StepSurface`. */
+export function Section({
+  title,
+  note,
+  alert,
+  children,
+}: {
+  title: string
+  note?: string
+  alert?: React.ReactNode
+  children: React.ReactNode
+}) {
   return (
-    <FormStep title={title}>
-      {bare ? (
-        children
-      ) : (
-        <CardSurface
-          tabIndex={-1}
-          className="flex h-auto w-full flex-col items-stretch gap-[var(--space-6)] p-[var(--space-6)] hover:bg-[var(--color-surface-primary-default)] active:bg-[var(--color-surface-primary-default)]"
-        >
-          {children}
-        </CardSurface>
-      )}
+    <FormStep
+      title={
+        note ? (
+          <span className="flex flex-col gap-[var(--space-1)]">
+            <span>{title}</span>
+            <span className={NOTE}>{note}</span>
+          </span>
+        ) : (
+          title
+        )
+      }
+      alert={alert}
+    >
+      {children}
     </FormStep>
+  )
+}
+
+/** A step's card with no title of its own (Delivery). */
+function StepSurface({ children }: { children: React.ReactNode }) {
+  return (
+    <CardSurface
+      tabIndex={-1}
+      className="flex h-auto w-full flex-col items-stretch gap-[var(--space-6)] p-[var(--space-6)] hover:bg-[var(--color-surface-primary-default)] active:bg-[var(--color-surface-primary-default)]"
+    >
+      {children}
+    </CardSurface>
   )
 }
 
@@ -53,7 +85,7 @@ export function Section({ title, bare, children }: { title: string; bare?: boole
 
 export function BasicInfo({ f }: F) {
   return (
-    <div className="flex w-full items-start gap-[var(--space-6)]">
+    <FormSectionCard title="General information" rowGap={4}>
       <Text
         id="name"
         label="Broadcast name"
@@ -63,7 +95,6 @@ export function BasicInfo({ f }: F) {
         error={f.errors.name}
         placeholder="e.g. October Customer Campaign"
         onChange={f.edit('name', f.setName)}
-        className="flex-1"
       />
       <Text
         id="description"
@@ -73,40 +104,48 @@ export function BasicInfo({ f }: F) {
         error={f.errors.description}
         placeholder="What this broadcast is for"
         onChange={f.edit('description', f.setDescription)}
-        className="flex-1"
       />
-    </div>
+    </FormSectionCard>
   )
 }
 
 /* ── Step 2 ─────────────────────────────────────────────────────────────── */
 
-/** The CMS prototype's upload zone and file slot (components/upload) —
- *  webds ships no upload control (gap). */
+/** Recipient type, then the file beside its ID column. The upload is the
+ *  CMS prototype's zone and file slot (components/upload) — webds ships no
+ *  upload control (gap). */
 export function AudienceFile({ f }: F) {
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
-      {f.file ? (
-        <FileResult f={f} />
-      ) : (
-        <UploadZone
-          buttonLabel={BROADCAST_COPY.browse}
-          hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
-          accept=".csv,.xlsx,text/csv"
-          error={!!f.errors.file}
-          onFiles={f.pick}
-        />
-      )}
-      {f.errors.file && (
-        <InlineMessage appearance="negative" size="s">
-          {f.errors.file}
-        </InlineMessage>
-      )}
-      <div className="flex flex-wrap gap-[var(--space-6)]">
-        <SampleLink href="/samples/audience-cis.csv">Sample file · CIS</SampleLink>
-        <SampleLink href="/samples/audience-direct.csv">Sample file · Direct recipient</SampleLink>
+    <FormSectionCard title="Upload Audience file">
+      <RecipientType f={f} />
+      <div className="flex items-start gap-[var(--space-6)]">
+        <div data-error={f.errors.file ? 'true' : undefined} className="flex w-[672px] min-w-0 shrink-0 flex-col gap-[var(--space-2)]">
+          <FieldLabel required>Upload File</FieldLabel>
+          {f.file ? (
+            <FileResult f={f} />
+          ) : (
+            <UploadZone
+              buttonLabel={BROADCAST_COPY.browse}
+              hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
+              accept=".csv,.xlsx,text/csv"
+              error={!!f.errors.file}
+              onFiles={f.pick}
+              className="min-h-[164px]"
+            />
+          )}
+          {f.errors.file && (
+            <InlineMessage appearance="negative" size="s">
+              {f.errors.file}
+            </InlineMessage>
+          )}
+          <div className="flex flex-wrap gap-[var(--space-6)] pt-[var(--space-2)]">
+            <SampleLink href="/samples/audience-cis.csv">Sample file · CIS</SampleLink>
+            <SampleLink href="/samples/audience-direct.csv">Sample file · Direct recipient</SampleLink>
+          </div>
+        </div>
+        <ColumnSelect f={f} />
       </div>
-    </div>
+    </FormSectionCard>
   )
 }
 
@@ -123,10 +162,11 @@ function SampleLink({ href, children }: { href: string; children: React.ReactNod
   )
 }
 
+/** The file row and its preview. A pick checks type and size only (BA,
+ *  19 Oct 2026), so nothing here counts rows; the full read is on Submit. */
 function FileResult({ f }: F) {
   const file = f.file!
   const bad = !!f.read && !f.read.ok
-  const invalidRows = f.check ? f.check.rows.filter((r) => r.errors.length) : []
   return (
     <div className="flex flex-col gap-[var(--space-3)]">
       <UploadedFile
@@ -155,37 +195,111 @@ function FileResult({ f }: F) {
         </div>
       )}
       {f.audience && <Preview f={f} />}
-      {f.check && f.check.invalid > 0 && (
-        <>
-          <p className={NOTE}>{BROADCAST_COPY.invalidNote}</p>
-          <MiniTable
-            columns={['Row', f.column, 'Problem']}
-            widths="80px 200px 1fr"
-            rows={invalidRows.map((r) => [String(r.line), r.id || '–', r.errors.join(' · ')])}
-            negativeLast
-            maxHeight
-          />
-        </>
-      )}
     </div>
   )
 }
 
-/** The first five rows of the file, the ID column marked. */
+/** The whole file in a box five rows tall at the column's width; the rest
+ *  scrolls, both ways, under a header that stays put. The ID column is marked. */
 function Preview({ f }: F) {
   const a = f.audience!
   const idIndex = a.headers.indexOf(f.column)
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
       <span className={LABEL}>{BROADCAST_COPY.previewTitle}</span>
-      <div className="overflow-x-auto">
-        <MiniTable
-          columns={a.headers}
-          widths={a.headers.map((_, i) => (i === a.headers.length - 1 ? 'minmax(max-content,1fr)' : 'max-content')).join(' ')}
-          rows={a.rows.slice(0, 5).map((r) => a.headers.map((_, i) => r[i] ?? ''))}
-          highlight={idIndex}
-        />
+      <MiniTable
+        columns={a.headers}
+        widths={a.headers.map((_, i) => (i === a.headers.length - 1 ? 'minmax(max-content,1fr)' : 'max-content')).join(' ')}
+        rows={a.rows.map((r) => a.headers.map((_, i) => r[i] ?? ''))}
+        highlight={idIndex}
+        visibleRows={5}
+      />
+    </div>
+  )
+}
+
+/** A box that scrolls both ways under the library's Scroll Bars instead of
+ *  the browser's. The browser's are hidden: on macOS they are overlays that
+ *  stay out of sight until a scroll starts, so a freshly uploaded preview
+ *  said nothing about the rows below or the columns to the right. The bars
+ *  show as soon as the content overflows. webds' `ScrollBar` only draws a
+ *  position (gap), so pressing or dragging a track is wired here: the thumb
+ *  centres on the pointer. */
+function ScrollBox({ maxHeight, children }: { maxHeight: string; children: React.ReactNode }) {
+  const view = useRef<HTMLDivElement>(null)
+  type Thumb = { size: number; offset: number } | null
+  const [bars, setBars] = useState<{ x: Thumb; y: Thumb }>({ x: null, y: null })
+
+  const measure = useCallback(() => {
+    const el = view.current
+    if (!el) return
+    const thumb = (client: number, total: number, pos: number): Thumb => {
+      if (total <= client + 1) return null
+      /* A floor of 15%, or a 100-row file draws a thumb too short to see. */
+      const size = Math.max(15, (client / total) * 100)
+      return { size, offset: (pos / (total - client)) * (100 - size) }
+    }
+    setBars({
+      x: thumb(el.clientWidth, el.scrollWidth, el.scrollLeft),
+      y: thumb(el.clientHeight, el.scrollHeight, el.scrollTop),
+    })
+  }, [])
+
+  useLayoutEffect(() => {
+    const el = view.current
+    if (!el) return
+    measure()
+    el.addEventListener('scroll', measure, { passive: true })
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    if (el.firstElementChild) ro.observe(el.firstElementChild)
+    return () => {
+      el.removeEventListener('scroll', measure)
+      ro.disconnect()
+    }
+  }, [measure])
+
+  const press = (axis: 'x' | 'y') => (e: React.PointerEvent<HTMLDivElement>) => {
+    const track = e.currentTarget
+    const el = view.current
+    if (!el) return
+    e.preventDefault()
+    track.setPointerCapture(e.pointerId)
+    const to = (ev: PointerEvent) => {
+      const r = track.getBoundingClientRect()
+      if (axis === 'x') el.scrollLeft = ((ev.clientX - r.left) / r.width) * el.scrollWidth - el.clientWidth / 2
+      else el.scrollTop = ((ev.clientY - r.top) / r.height) * el.scrollHeight - el.clientHeight / 2
+    }
+    to(e.nativeEvent)
+    const up = () => {
+      track.removeEventListener('pointermove', to)
+      track.removeEventListener('pointerup', up)
+    }
+    track.addEventListener('pointermove', to)
+    track.addEventListener('pointerup', up)
+  }
+
+  return (
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] overflow-hidden rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]">
+      <div
+        ref={view}
+        className="min-w-0 overflow-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ maxHeight }}
+      >
+        {children}
       </div>
+      {bars.y ? (
+        <div className="flex cursor-pointer touch-none" onPointerDown={press('y')}>
+          <ScrollBar appearance="thick" orientation="vertical" thumbSize={`${bars.y.size}%`} thumbOffset={`${bars.y.offset}%`} />
+        </div>
+      ) : (
+        <span />
+      )}
+      {bars.x && (
+        <div className="flex cursor-pointer touch-none flex-col" onPointerDown={press('x')}>
+          <ScrollBar appearance="thick" orientation="horizontal" thumbSize={`${bars.x.size}%`} thumbOffset={`${bars.x.offset}%`} />
+        </div>
+      )}
     </div>
   )
 }
@@ -193,13 +307,14 @@ function Preview({ f }: F) {
 /** webds Table Header / Data Cells at a compact row height in a bordered grid.
  *  The cells' own 64 row is the data grid's; a validation list inside a card
  *  reads at 36 — the original's own reason for not using its Table. */
-function MiniTable({
+export function MiniTable({
   columns,
   rows,
   widths,
   highlight = -1,
   negativeLast,
   maxHeight,
+  visibleRows,
 }: {
   columns: string[]
   rows: string[][]
@@ -207,14 +322,19 @@ function MiniTable({
   highlight?: number
   negativeLast?: boolean
   maxHeight?: boolean
+  /** Show this many rows under the header and scroll the rest, both ways. */
+  visibleRows?: number
 }) {
   const cell =
     'h-auto min-h-0 whitespace-nowrap border-b border-[var(--color-border-primary-default)] px-[var(--space-4)] py-[var(--space-2)] [&>span]:type-body-s'
-  return (
+  const table = (
     <div
       role="table"
       className={cn(
-        'grid min-w-full rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]',
+        'grid',
+        visibleRows
+          ? 'w-max min-w-full'
+          : 'min-w-full rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]',
         maxHeight && 'max-h-[280px] overflow-y-auto',
       )}
       style={{ gridTemplateColumns: widths }}
@@ -224,8 +344,11 @@ function MiniTable({
           key={`h${i}`}
           className={cn(
             cell,
-            'sticky top-0 bg-[var(--color-surface-secondary-default)] [&>span]:text-[var(--color-text-tertiary-default)]',
-            i === highlight && 'bg-[var(--color-surface-highlight-subtle-default)]',
+            'sticky top-0 z-[1] bg-[var(--color-surface-secondary-default)] [&>span]:text-[var(--color-text-tertiary-default)]',
+            /* Highlight Subtle is 10% blue: lay it over the opaque header fill,
+               or the rows scrolling under the header show through. */
+            i === highlight &&
+              'bg-[image:linear-gradient(var(--color-surface-highlight-subtle-default),var(--color-surface-highlight-subtle-default))]',
           )}
         >
           {c}
@@ -247,35 +370,32 @@ function MiniTable({
       )}
     </div>
   )
-}
-
-/* ── Step 3 ─────────────────────────────────────────────────────────────── */
-
-export function Mapping({ f }: F) {
+  if (!visibleRows) return table
+  /* A row is a Body S line, py 8 and a 1px rule; the header is one more row. */
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.6fr)] items-start gap-[var(--space-6)]">
-      <RecipientType f={f} />
-      <ColumnSelect f={f} />
-      <ChannelPicker f={f} />
-    </div>
+    <ScrollBox maxHeight={`calc(${visibleRows + 1} * (var(--type-body-s-line-height) + 2 * var(--space-2) + 1px))`}>
+      {table}
+    </ScrollBox>
   )
 }
 
 function RecipientType({ f }: F) {
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <span className={LABEL}>Recipient type*</span>
-      <div role="radiogroup" aria-label="Recipient type" className="flex flex-col gap-[var(--space-4)]">
+      <FieldLabel required>Select Recipient type</FieldLabel>
+      <div role="radiogroup" aria-label="Recipient type" className="flex gap-[var(--space-2)] py-[var(--space-3)]">
         <ModeOption
           on={f.recipientType === 'cis'}
           label="CIS"
           description="Send to customers using CIS ID from file"
+          className="w-[377px]"
           onSelect={() => f.setRecipientType('cis')}
         />
         <ModeOption
           on={f.recipientType === 'direct'}
           label="Direct recipient"
           description="Send to phone / email from file · Email or SMS only"
+          className="w-[377px]"
           onSelect={() => f.setRecipientType('direct')}
         />
       </div>
@@ -293,6 +413,7 @@ function ColumnSelect({ f }: F) {
   return (
     <Select
       label={label}
+      className="w-[456px]"
       required
       value={f.column}
       options={f.audience?.headers ?? []}
@@ -308,39 +429,10 @@ function ColumnSelect({ f }: F) {
   )
 }
 
-function ChannelPicker({ f }: F) {
-  const direct = f.recipientType === 'direct'
-  return (
-    <div data-error={f.errors.channels ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <span className={LABEL}>Channels*</span>
-      <div role={direct ? 'radiogroup' : 'group'} aria-label="Channels" className="flex flex-col gap-[var(--space-2)]">
-        {f.offered.map((c) => (
-          <Choice
-            key={c}
-            kind={direct ? 'radio' : 'checkbox'}
-            on={f.channels.includes(c)}
-            ariaLabel={c}
-            onChange={(on) => (direct ? f.chooseDirect(c) : f.toggleChannel(c, on))}
-            label={
-              <span className="inline-flex items-center gap-[var(--space-2)]">
-                <Icon slug={CHANNEL_ICON[c]} size={16} color="var(--color-icon-secondary-default)" />
-                {c}
-              </span>
-            }
-          />
-        ))}
-      </div>
-      {f.errors.channels && (
-        <InlineMessage appearance="negative" size="xs">
-          {f.errors.channels}
-        </InlineMessage>
-      )}
-    </div>
-  )
-}
+/* ── Message content (under the audience step) ─────────────────────────── */
 
-/* ── Step 4 ─────────────────────────────────────────────────────────────── */
-
+/** The file's columns as chips that insert `{{COLUMN}}` into the message box
+ *  the cursor was last in. */
 export function FieldChips({ f, focus }: F & { focus: FocusRef }) {
   const [needsField, setNeedsField] = useState(false)
   if (!f.fields.length) return <p className={NOTE}>Available fields appear here once the audience file is uploaded.</p>
@@ -379,111 +471,104 @@ export function FieldChips({ f, focus }: F & { focus: FocusRef }) {
   )
 }
 
-/** One card per channel offered — webds `form-section-card`. A channel not
- *  ticked in Step 3 keeps its card, disabled, and says why. */
-export function ChannelCards({ f, focus }: F & { focus: FocusRef }) {
+/** "Turn on at least one channel" has no field of its own: the cards carry
+ *  the stroke and this Alert carries the message (webds `form-section-card`). */
+function ChannelAlert({ f }: F) {
+  if (!f.errors.channels) return null
   return (
-    <div
-      className={cn('grid items-stretch gap-[var(--space-6)]', f.offered.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}
-      onFocusCapture={(e) => {
-        const el = e.target as HTMLInputElement | HTMLTextAreaElement
-        const key = el.closest('[data-field]')?.getAttribute('data-field')
-        if (key && key in f.content) focus.current = { key, el }
-      }}
-    >
-      {f.offered.map((c) => {
-        const on = f.channels.includes(c)
-        return (
-          <FormSectionCard
-            key={c}
-            className="h-full min-w-0"
-            title={
-              <span className="flex items-center gap-[var(--space-4)]">
-                <Icon
-                  slug={CHANNEL_ICON[c]}
-                  size={24}
-                  color={on ? 'var(--color-icon-highlight-default)' : 'var(--color-icon-disabled-default)'}
-                />
-                <span className="flex min-w-0 flex-col">
-                  <span>{c}</span>
-                  {!on && <span className={NOTE}>Not selected in step 3</span>}
-                </span>
-              </span>
-            }
-          >
-            {c === 'Push notification' && (
-              <>
-                <Text
-                  id="pushTitle"
-                  label="Push title"
-                  required
-                  disabled={!on}
-                  value={f.content.pushTitle}
-                  max={100}
-                  error={f.errors.pushTitle}
-                  onChange={f.setC('pushTitle')}
-                />
-                <Text
-                  id="pushBody"
-                  label="Push message"
-                  required
-                  multiline
-                  disabled={!on}
-                  value={f.content.pushBody}
-                  max={250}
-                  error={f.errors.pushBody}
-                  onChange={f.setC('pushBody')}
-                />
-              </>
-            )}
-            {c === 'Email' && (
-              <>
-                <Text
-                  id="emailSubject"
-                  label="Email subject"
-                  required
-                  disabled={!on}
-                  value={f.content.emailSubject}
-                  max={100}
-                  error={f.errors.emailSubject}
-                  onChange={f.setC('emailSubject')}
-                />
-                <Text
-                  id="emailBody"
-                  label="Email body"
-                  required
-                  multiline
-                  disabled={!on}
-                  value={f.content.emailBody}
-                  max={1000}
-                  error={f.errors.emailBody}
-                  onChange={f.setC('emailBody')}
-                />
-              </>
-            )}
-            {c === 'SMS' && (
-              <SmsField disabled={!on} value={f.content.smsMessage} error={f.errors.smsMessage} onChange={f.setC('smsMessage')} />
-            )}
-          </FormSectionCard>
-        )
-      })}
-    </div>
+    <Alert
+      appearance="negative"
+      title={f.errors.channels}
+      icon={<Icon slug="close-circle" size={24} color="var(--color-icon-negative-default)" />}
+    />
   )
 }
 
-/* ── Step 5 ─────────────────────────────────────────────────────────────── */
+/** The chips over one card per channel offered, three across. Each card is
+ *  switched on its own title row (webds `form-section-card`): off keeps what
+ *  was typed and disables it. Direct recipient offers Email and SMS, one at a
+ *  time. */
+export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
+  const invalid = !!f.errors.channels
+  return (
+    <StepSurface>
+      <FieldChips f={f} focus={focus} />
+      <ChannelAlert f={f} />
+      <div
+        data-error={invalid ? 'true' : undefined}
+        className="grid grid-cols-3 items-stretch gap-[var(--space-8)]"
+        onFocusCapture={(e) => {
+          const el = e.target as HTMLInputElement | HTMLTextAreaElement
+          const key = el.closest('[data-field]')?.getAttribute('data-field')
+          if (key && key in f.content) focus.current = { key, el }
+        }}
+      >
+        {f.offered.map((c) => {
+          const on = f.channels.includes(c)
+          return (
+            <FormSectionCard
+              key={c}
+              className="min-w-0 border border-[var(--color-border-primary-default)]"
+              title={c}
+              toggle={{ on, onToggle: (v) => f.setChannel(c, v) }}
+              invalid={invalid}
+              rowGap={4}
+            >
+              <ChannelFields f={f} channel={c} on={on} />
+            </FormSectionCard>
+          )
+        })}
+      </div>
+    </StepSurface>
+  )
+}
+
+/** A channel's message boxes — the Template form's TH fields. */
+function ChannelFields({ f, channel, on }: F & { channel: Channel; on: boolean }) {
+  const box = (id: keyof BroadcastContent, label: string, placeholder: string, extra?: { multiline?: boolean; boxHeight?: 77 }) => (
+    <Text
+      id={id}
+      label={label}
+      required
+      disabled={!on}
+      value={f.content[id]}
+      max={CONTENT_MAX[id]}
+      error={f.errors[id]}
+      placeholder={placeholder}
+      onChange={f.setC(id)}
+      {...extra}
+    />
+  )
+  if (channel === 'Push notification')
+    return (
+      <>
+        {box('pushTitle', 'Push title (TH)', 'Enter push title in Thai')}
+        {box('pushBody', 'Push message (TH)', 'Enter push message in Thai', { boxHeight: 77 })}
+      </>
+    )
+  if (channel === 'Email')
+    return (
+      <>
+        {box('emailSubject', 'Email subject (TH)', 'Enter email subject')}
+        {box('emailBody', 'Email content (TH)', 'Enter email content', { multiline: true })}
+      </>
+    )
+  return box('smsMessage', 'SMS message (TH)', 'Enter SMS message in Thai', { multiline: true })
+}
+
+/* ── Delivery ───────────────────────────────────────────────────────────── */
 
 export function Delivery({ f }: F) {
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
-      <div role="radiogroup" aria-label="When to send" className="flex gap-[var(--space-4)]">
+    <FormSectionCard title="Select Delivery Date">
+      <div role="radiogroup" aria-label="When to send" className="flex flex-col gap-[var(--space-10)] py-[var(--space-3)]">
         <ModeOption
           on={f.mode === 'now'}
           label="Send as soon as possible"
           description="Start sending after you submit this broadcast."
           onSelect={() => {
             f.setMode('now')
-            f.clear('startDate', 'startTime')
+            f.clear('startDate', 'startTime', 'end')
           }}
         />
         <ModeOption
@@ -493,16 +578,17 @@ export function Delivery({ f }: F) {
           onSelect={() => f.setMode('schedule')}
         />
       </div>
-      {/* Start under Schedule delivery, End under the second card's column:
-          each field is one mode card wide. */}
-      <div className="flex items-start gap-[var(--space-4)]">
-        {f.mode === 'schedule' ? (
-          /* One field, as CMS's Effective date: webds' Date Time Picker. The
-             form still keeps the date and the time apart. */
+      {/* Schedule delivery only: Start on the left, End on the right
+          (requester, 20 Oct 2026; draft 2.2 drew End first). Send as soon
+          as possible has no end (requester, 15 Oct 2026). */}
+      {f.mode === 'schedule' && (
+        <div className="grid grid-cols-2 items-start gap-[var(--space-6)]">
+          {/* One field, as CMS's Effective date: webds' Date Time Picker. The
+              form still keeps the date and the time apart. */}
           <DateTimeInput
             label="Start date and time"
             required
-            className="w-[604px]"
+            className="w-full"
             value={f.startDate && f.startTime ? `${f.startDate}T${f.startTime}` : ''}
             min={ymd(new Date())}
             minuteStep={5}
@@ -514,29 +600,27 @@ export function Delivery({ f }: F) {
               f.clear('startDate', 'startTime', 'end')
             }}
           />
-        ) : (
-          <span className="w-[604px] shrink-0" />
-        )}
-        {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
-            Expiry date. Sending stops here; whoever is left is Not sent. */}
-        <DateTimeInput
-          label="End date and time"
-          optional
-          clearable
-          className="w-[604px]"
-          value={f.end}
-          min={f.mode === 'schedule' && f.startDate ? f.startDate : ymd(new Date())}
-          minuteStep={5}
-          error={!!f.errors.end}
-          message={f.errors.end}
-          onChange={(v) => {
-            f.setEnd(v)
-            f.clear('end')
-          }}
-        />
-      </div>
+          {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
+              Expiry date. Sending stops here; whoever is left is Not sent. */}
+          <DateTimeInput
+            label="End date and time"
+            optional
+            clearable
+            className="w-full"
+            value={f.end}
+            min={f.startDate || ymd(new Date())}
+            minuteStep={5}
+            error={!!f.errors.end}
+            message={f.errors.end}
+            onChange={(v) => {
+              f.setEnd(v)
+              f.clear('end')
+            }}
+          />
+        </div>
+      )}
       <Outlook f={f} />
-    </div>
+    </FormSectionCard>
   )
 }
 
@@ -559,10 +643,10 @@ function Outlook({ f }: F) {
   )
 }
 
-/* ── Step 6 ─────────────────────────────────────────────────────────────── */
+/* ── DND (its own card under Delivery Date) ──────────────────────────────── */
 
-/** One quiet period: its days, its hours or All day, and — when there is more
- *  than one — a trash to remove it. */
+/** One quiet period on one row: its days, its hours or All day, and — when
+ *  there is more than one — a trash to remove it (draft 2.2, Figma 89:4665). */
 function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const off = !f.dnd.enabled
   const daysError = f.errors[`dndDays:${rule.id}`]
@@ -647,17 +731,26 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   )
 }
 
-export function DndPanel({ f }: F) {
+/** Do Not Disturb, its own card under the Delivery Date card in the same
+ *  step (requester, 21 Oct 2026; Figma 409:75574): the switch before the
+ *  title and its note, the quiet periods divided by a rule, Add period, and
+ *  the one time zone there is, shown as text. The switch is drawn in the
+ *  title rather than through the card's `toggle`, which names the switch only
+ *  from a string title. */
+export function DndCard({ f }: F) {
   const dnd = f.dnd
   return (
-    <div className="flex flex-col gap-[var(--space-6)]">
-      <div className="flex items-start gap-[var(--space-3)]">
-        <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
-        <div className="flex flex-col pt-[var(--space-2)]">
-          <span className={LABEL}>{dnd.enabled ? 'Enabled' : 'Disabled'}</span>
-          <span className={NOTE}>Prevent sending messages during quiet hours.</span>
-        </div>
-      </div>
+    <FormSectionCard
+      title={
+        <span className="flex items-center gap-[var(--space-4)]">
+          <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
+          <span className="flex flex-col">
+            <span>Do Not Disturb (DND)</span>
+            <span className={NOTE}>Prevent sending messages during quiet hours.</span>
+          </span>
+        </span>
+      }
+    >
       {/* Any number of quiet periods (BA, 2026-10-14): each its own days and
           hours, divided by a rule; a day may sit in more than one. */}
       {dnd.rules.map((rule, i) => (
@@ -672,14 +765,13 @@ export function DndPanel({ f }: F) {
           Add period
         </GhostButton>
       </span>
-      <Select
-        label="Time zone"
-        className="w-[260px]"
-        value={dnd.timeZone}
-        options={TIME_ZONES}
-        disabled={!dnd.enabled}
-        onChange={f.setDndTimeZone}
-      />
-    </div>
+      {/* One time zone only, so no select (Figma 89:4665). */}
+      <span className="flex flex-col gap-[var(--space-1)]">
+        <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Time zone</span>
+        <span className="type-body-m text-[var(--color-text-primary-default)]">
+          {TIME_ZONES.find((z) => z.value === dnd.timeZone)?.label ?? dnd.timeZone}
+        </span>
+      </span>
+    </FormSectionCard>
   )
 }

@@ -3,8 +3,7 @@ import {
   BROADCAST_COPY,
   DEFAULT_DND,
   dndRule,
-  MESSAGE_MAX,
-  checkRecipients,
+  checkAudience,
   fieldsOf,
   firstSend,
   idKind,
@@ -16,6 +15,7 @@ import {
   type BroadcastStatus,
   type Dnd,
   type DndRule,
+  type RecipientCheck,
   type RecipientType,
 } from '@/data/broadcast'
 import { formSeed, type FormPreset, type FormSeed } from '@/data/broadcast-presets'
@@ -24,7 +24,9 @@ import type { SaveKind } from '../BroadcastWizard'
 
 /* The Create / Edit broadcast form's state and rules — `useBroadcastForm` in the
  * original build, ported as is. Waits are the original's: the file is "checked"
- * for 600 ms, a submit takes 900 ms. */
+ * for 600 ms, a submit takes 900 ms. Since 19 Oct 2026 (BA) a pick checks only
+ * type and size; Submit reads the whole file, for the same 600 ms, before the
+ * confirm dialog. */
 
 const CHECK_MS = 600
 const CREATE_MS = 900
@@ -35,6 +37,15 @@ export const CHANNEL_FIELDS: Record<Channel, (keyof BroadcastContent)[]> = {
   SMS: ['smsMessage'],
 }
 export const DIRECT_CHANNELS: Channel[] = ['Email', 'SMS']
+/** Each message box's maximum — the Template form's TH fields, which draft 2.2
+ *  (Figma 85:19401, 15 Oct 2026) copies into the channel cards. */
+export const CONTENT_MAX: Record<keyof BroadcastContent, number> = {
+  pushTitle: 255,
+  pushBody: 2048,
+  emailSubject: 255,
+  emailBody: 2048,
+  smsMessage: 800,
+}
 
 const EMPTY_CONTENT: BroadcastContent = { smsMessage: '', emailSubject: '', emailBody: '', pushTitle: '', pushBody: '' }
 
@@ -137,10 +148,16 @@ export function useBroadcastForm({
 
   const audience = read && read.ok ? read.audience : null
   const kind = idKind(recipientType, channels)
-  const check = useMemo(
-    () => (audience && column && kind ? checkRecipients(audience, column, kind) : null),
-    [audience, column, kind],
+  /** The full read on Submit; a preset that opens on its result runs it on arrival. */
+  const [arrival] = useState(() =>
+    (seed.open === 'confirm' || seed.open === 'blocked') && audience && column && kind
+      ? checkAudience(audience, column, kind)
+      : null,
   )
+  const [check, setCheck] = useState<RecipientCheck | null>(arrival?.ok ? arrival.check : null)
+  const [readingFile, setReadingFile] = useState(seed.open === 'checking')
+  const [blocked, setBlocked] = useState<string | null>(arrival && !arrival.ok ? arrival.message : null)
+  const [checkFailed, setCheckFailed] = useState(seed.open === 'check-fail')
   const fields = useMemo(() => fieldsOf(audience, column), [audience, column])
   const checking = file !== null && read === null
   const dirty = !!(file || name || description || channels.length || Object.values(content).some(Boolean))
@@ -195,8 +212,16 @@ export function useBroadcastForm({
     if (idKind('direct', [channel]) !== kind) setColumn('')
     clear('channels', 'column', 'file', ...CHANNEL_FIELDS[channel === 'SMS' ? 'Email' : 'SMS'])
   }
+  /** A channel card's switch. Direct recipient sends by Email or SMS, never
+   *  both, so switching one on there switches the other off. */
+  const setChannel = (channel: Channel, on: boolean) =>
+    recipientType === 'direct' && on ? chooseDirect(channel) : toggleChannel(channel, on)
 
   const start = mode === 'now' ? new Date() : combine(startDate, startTime)
+  /** Broadcast End belongs to Schedule delivery only (requester, 15 Oct 2026):
+   *  Send as soon as possible has no end. The typed value is kept, so
+   *  switching back to Schedule delivery brings it back. */
+  const endUsed = mode === 'schedule' ? end : ''
   const first = start ? firstSend(start, dnd) : null
   const waits = !!(start && first && first.getTime() !== start.getTime())
 
@@ -224,18 +249,17 @@ export function useBroadcastForm({
     else if (read && !read.ok) e.file = read.message
     if (recipientType === 'direct' && !channels.length) e.channels = BROADCAST_COPY.noDirectChannel
     else if (!channels.length) e.channels = BROADCAST_COPY.noChannel
-    if (audience && kind && !column) e.column = BROADCAST_COPY.noColumn
-    if (check && check.valid === 0) e.file = BROADCAST_COPY.noValidRows
-    for (const c of channels) for (const k of CHANNEL_FIELDS[c]) if (!content[k].trim()) e[k] = BROADCAST_COPY.required
-    if (channels.includes('Push notification') && content.pushBody.length > 250) e.pushBody = BROADCAST_COPY.msgMax(250)
-    if (channels.includes('Email') && content.emailSubject.length > 100) e.emailSubject = BROADCAST_COPY.msgMax(100)
-    if (channels.includes('Email') && content.emailBody.length > 1000) e.emailBody = BROADCAST_COPY.msgMax(MESSAGE_MAX)
+    if (audience?.headers.length && kind && !column) e.column = BROADCAST_COPY.noColumn
+    for (const c of channels)
+      for (const k of CHANNEL_FIELDS[c])
+        if (!content[k].trim()) e[k] = BROADCAST_COPY.required
+        else if (content[k].length > CONTENT_MAX[k]) e[k] = BROADCAST_COPY.msgMax(CONTENT_MAX[k])
     if (mode === 'schedule') {
       if (!startDate) e.startDate = BROADCAST_COPY.required
       if (!startTime) e.startTime = BROADCAST_COPY.required
       if (start && start <= new Date()) e.startDate = BROADCAST_COPY.startPast
     }
-    if (end && start && new Date(end) <= start) e.end = BROADCAST_COPY.endBeforeStart
+    if (endUsed && start && new Date(endUsed) <= start) e.end = BROADCAST_COPY.endBeforeStart
     if (dnd.enabled)
       for (const rule of dnd.rules) {
         if (!rule.days.length) e[`dndDays:${rule.id}`] = BROADCAST_COPY.dndNoDay
@@ -249,12 +273,34 @@ export function useBroadcastForm({
       root?.querySelector('[data-error="true"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
     )
 
+  /** Read the whole file: a file that cannot be used blocks the broadcast,
+   *  otherwise its result goes into the confirm dialog. */
+  const readFile = () => {
+    if (!audience || !kind) return
+    setCheck(null)
+    setReadingFile(true)
+    window.setTimeout(() => {
+      setReadingFile(false)
+      const result = checkAudience(audience, column, kind)
+      if (!result.ok) return setBlocked(result.message)
+      setCheck(result.check)
+      setConfirmOpen(true)
+    }, CHECK_MS)
+  }
+
+  /** Close on the blocked dialog: the reason stays on Step 2, scrolled to. */
+  const closeBlocked = () => {
+    if (blocked) setErrors((prev) => ({ ...prev, file: blocked }))
+    setBlocked(null)
+    scrollToError(document.body)
+  }
+
   const submit = (root: HTMLElement | null) => {
-    if (checking) return
+    if (checking || readingFile) return
     const e = validate()
     setErrors(e)
     if (Object.keys(e).length) return scrollToError(root)
-    setConfirmOpen(true)
+    readFile()
   }
 
   const record = (status: BroadcastStatus): Omit<Broadcast, 'id'> => ({
@@ -268,7 +314,7 @@ export function useBroadcastForm({
     recipientColumn: column,
     startMode: mode,
     start: iso(start ?? new Date()),
-    end: end || undefined,
+    end: endUsed || undefined,
     dnd,
     status,
     success: 0,
@@ -288,7 +334,7 @@ export function useBroadcastForm({
         setFailed(true)
         return
       }
-      onCreate(record(mode === 'now' && !waits ? 'Sending' : 'Scheduled'), 'submit')
+      onCreate(record(mode === 'now' && !waits ? 'Processing' : 'Queue'), 'submit')
     }, CREATE_MS)
   }
 
@@ -333,6 +379,7 @@ export function useBroadcastForm({
     channels,
     toggleChannel,
     chooseDirect,
+    setChannel,
     content,
     fields,
     mode,
@@ -344,7 +391,7 @@ export function useBroadcastForm({
     start,
     first,
     waits,
-    end,
+    end: endUsed,
     setEnd,
     dnd,
     setDndEnabled,
@@ -357,6 +404,12 @@ export function useBroadcastForm({
     setLeaveOpen,
     confirmOpen,
     setConfirmOpen,
+    readingFile,
+    readFile,
+    blocked,
+    closeBlocked,
+    checkFailed,
+    setCheckFailed,
     creating,
     failed,
     setFailed,

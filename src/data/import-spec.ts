@@ -19,9 +19,12 @@ import {
 export const IMPORT_PRESETS = [
   'initial',
   'no-file',
-  'selected',
+  'too-many',
+  'too-large',
   'invalid-format',
   'invalid-structure',
+  'selected',
+  'duplicate',
   'uploading',
   'failure',
   'success',
@@ -30,32 +33,43 @@ export type ImportPreset = (typeof IMPORT_PRESETS)[number]
 
 export const IMPORT_COPY = {
   title: 'Import templates',
-  dropTitle: 'Drag and drop .jsonl files here',
-  /* The original's second hint line, "You can import one or more template files at
-     a time", is gone: the CMS drop zone carries one hint line, 84 tall (12 Oct 2026). */
-  browse: 'Browse files',
+  /* One file per import (requester, 15 Oct 2026): the hint is singular and carries
+     CMS's size hint, "Max file size: 10 MB", on the same line so the zone stays 84 tall.
+     The original's second hint line, "You can import one or more template files at
+     a time", is gone: the CMS drop zone carries one hint line (12 Oct 2026). */
+  dropTitle: 'Drag and drop a .jsonl file here · Max file size: 10 MB',
+  browse: 'Browse file',
   format: 'Invalid file format. Only .jsonl files can be imported',
   structure: 'Invalid template structure',
-  noFile: 'Select at least one .jsonl file to import',
-  hasErrors: 'Remove the files with errors to continue',
-  /* The original's one-line "Drag and drop more .jsonl files here, or" is gone:
-     the CMS drop zone keeps its own hint once files are picked (12 Oct 2026). */
-  summary: (files: number, templates: number) =>
-    `${files} ${files === 1 ? 'file' : 'files'} · ${templates} ${templates === 1 ? 'template' : 'templates'}`,
-  errorCount: (n: number) => `${n} with ${n === 1 ? 'error' : 'errors'}`,
-  removeErrors: (n: number) => `Remove ${n} ${n === 1 ? 'file' : 'files'} with errors`,
-  tooMany: (max: number, left: number) =>
-    `You can import up to ${max} files at a time. ${left} ${left === 1 ? 'file was' : 'files were'} not added`,
+  /* CMS's slot hint (ASSET_COPY.sizeHint). Since 20 Oct 2026 it is the empty zone's hint in
+     Text/Negative when a file over the limit was picked; the file is not taken. */
+  size: 'Max file size: 10 MB',
+  /* CMS's two-files message in the drop zone (ASSET_COPY.tooMany). */
+  oneFile: '1 File Only',
+  noFile: 'Select a .jsonl file to import',
+  hasErrors: 'Remove the file and choose another to continue',
   uploading: 'Importing templates…',
+  /* Inside the file slot since 20 Oct 2026 (CMS's upload-failed slot); the banner's
+     second line, "Please try again", became CMS's Try again button. */
   failTitle: 'Unable to import templates',
-  failBody: 'Please try again',
+  retry: 'Try again',
   successTitle: 'Templates imported',
   successBody: (n: number) => `${n} ${n === 1 ? 'template was' : 'templates were'} added as draft`,
+  /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
+     before it imports over that file. Since the design critique (20 Oct 2026) it opens
+     after the upload spinner, alone, not over the Import dialog. Reworded 21 Oct 2026
+     (requester): was "Import over <name>?" with Import, which did not say what goes.
+     Title and button share the verb, as "Submit this broadcast?" does. */
+  replaceTitle: 'Replace imported templates?',
+  replaceBody: (name: string) =>
+    `${name} was imported before. The templates from that import will be deleted and replaced with the ones in this file.`,
+  replaceConfirm: 'Replace',
 }
 
 /** A file whose name contains this fails the upload — the prototype's way to reach Import failure. */
 export const IMPORT_FAIL_SENTINEL = 'error'
-export const MAX_IMPORT_FILES = 50
+/** CMS's limit (MAX_ASSET_BYTES); the BA has not set one for Import yet (size limits, P2-1…P2-9). */
+export const MAX_IMPORT_BYTES = 10 * 1024 * 1024
 export const UPLOAD_MS = 1200
 
 const isText = (v: unknown): v is string => typeof v === 'string' && v.trim() !== ''
@@ -124,7 +138,7 @@ export function fromExport(r: TemplateExport): Template {
 
 export type FileCheck =
   | { ok: true; templates: Template[] }
-  | { ok: false; problem: 'format' | 'structure'; message: string }
+  | { ok: false; problem: 'format' | 'size' | 'structure'; message: string }
 
 export function parseTemplates(name: string, body: string): FileCheck {
   if (!name.toLowerCase().endsWith('.jsonl')) return { ok: false, problem: 'format', message: IMPORT_COPY.format }
@@ -149,10 +163,12 @@ export function parseTemplates(name: string, body: string): FileCheck {
   return { ok: true, templates: (records as TemplateExport[]).map(fromExport) }
 }
 
-export async function checkFile(file: File): Promise<FileCheck> {
-  return file.name.toLowerCase().endsWith('.jsonl')
-    ? parseTemplates(file.name, await file.text())
-    : { ok: false, problem: 'format', message: IMPORT_COPY.format }
+/** Format, then size (before the file is read), then structure. `size` stands in
+ *  for `file.size` on the preset routes, which cannot carry a 10 MB file. */
+export async function checkFile(file: File, size = file.size): Promise<FileCheck> {
+  if (!file.name.toLowerCase().endsWith('.jsonl')) return { ok: false, problem: 'format', message: IMPORT_COPY.format }
+  if (size > MAX_IMPORT_BYTES) return { ok: false, problem: 'size', message: IMPORT_COPY.size }
+  return parseTemplates(file.name, await file.text())
 }
 
 /* ── preset files: what each `#/list/import/<preset>` route opens with ── */
@@ -169,7 +185,7 @@ const demo = (name: string, description: string, productName: string, channels: 
     detail: { ...EMPTY_DETAIL, serviceCode },
   })
 
-type DemoFile = { name: string; text: string }
+type DemoFile = { name: string; text: string; size?: number }
 
 const VALID_FILES: DemoFile[] = [
   {
@@ -197,16 +213,22 @@ const BAD_STRUCTURE: DemoFile = {
   text: toJsonl([{ ...demo('No channels', 'x', 'AIA', [], 'NANOTI') }]),
 }
 
-export function presetFiles(preset: ImportPreset): DemoFile[] {
-  if (preset === 'initial' || preset === 'no-file') return []
-  if (preset === 'invalid-format') return [BAD_FORMAT, ...VALID_FILES]
-  if (preset === 'invalid-structure') return [BAD_STRUCTURE, ...VALID_FILES]
-  return VALID_FILES
+/** One file per import (15 Oct 2026); `duplicate` picks a file the history already holds. */
+export function presetFile(preset: ImportPreset): DemoFile | null {
+  /* `too-large` opens with no file: an over-10 MB file is not taken (20 Oct 2026). */
+  if (preset === 'initial' || preset === 'no-file' || preset === 'too-many' || preset === 'too-large') return null
+  if (preset === 'invalid-format') return BAD_FORMAT
+  if (preset === 'invalid-structure') return BAD_STRUCTURE
+  if (preset === 'duplicate') return VALID_FILES[2]
+  return VALID_FILES[0]
 }
 
-/** The templates the success route lands on the list. */
-export const presetTemplates = () =>
-  VALID_FILES.flatMap((f) => {
-    const check = parseTemplates(f.name, f.text)
-    return check.ok ? check.templates : []
-  })
+/** Files imported before this session, so `#/list/import/duplicate` has one to import over.
+ *  Their templates are not on the seeded list, so importing over one replaces nothing. */
+export const IMPORT_HISTORY: Record<string, string[]> = { [VALID_FILES[2].name]: [] }
+
+/** The templates the success route lands on the list: the one file `selected` picks. */
+export const presetTemplates = () => {
+  const check = parseTemplates(VALID_FILES[0].name, VALID_FILES[0].text)
+  return check.ok ? check.templates : []
+}
