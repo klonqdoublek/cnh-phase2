@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { Scrim } from '@/bbl/building-block-scrim'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import {
@@ -51,10 +50,9 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * A file whose name was imported before asks first (requester, 15 Oct 2026):
  * "Replace imported templates?", and Replace swaps that earlier import's templates.
  * Since the design critique (20 Oct 2026) it is never a dialog over a dialog:
- * Import closes this dialog, the upload spinner validates the file, and only
- * then does "Replace imported templates?" open, alone on the list. Its Replace uploads
- * again, its Cancel closes it and stays on the list. The Import dialog is
- * hidden for the whole upload, so the spinner's scrim is the only one.
+ * the upload spinner validates the file inside this dialog, and only then does
+ * this dialog close and "Replace imported templates?" open, alone on the list.
+ * Its Replace uploads again, its Cancel closes it and stays on the list.
  *
  * Preview hides this dialog while Document Preview is open — one scrim, not a
  * darker one on top — and Preview's Import imports from there (critique,
@@ -171,7 +169,7 @@ export function ImportDialog({
   return (
     <>
       <ConfirmDialog
-        open={open && !previewing && !uploading && phase !== 'replace'}
+        open={open && !previewing && phase !== 'replace'}
         anatomy="sectioned"
         layer="fixed"
         width={444}
@@ -184,6 +182,19 @@ export function ImportDialog({
         className="relative z-50"
       >
         <div className="flex flex-col gap-[var(--space-4)]">
+          {uploading && (
+            /* Uploading covers the whole dialog — title, body and actions (requester, 21 Oct 2026,
+               back to Korn 2026-10-05; 15–21 Oct it was a Scrim Strong over the whole page, CMS's SubmitOverlay).
+               Spinner only, no text (requester, 21 Oct 2026): the copy stays as its label for screen readers. */
+            <div
+              role="status"
+              aria-live="polite"
+              className="absolute inset-0 z-[1] flex items-center justify-center rounded-[var(--radius-3)] bg-[var(--color-surface-primary-default)]"
+            >
+              <SpinnerLoader size="l" label={IMPORT_COPY.uploading} />
+            </div>
+          )}
+
           {picked ? (
             <UploadedFile
               name={picked.file.name}
@@ -239,19 +250,6 @@ export function ImportDialog({
         >
           <p className="type-body-m text-[var(--color-text-primary-default)]">{IMPORT_COPY.replaceBody(picked.file.name)}</p>
         </ConfirmDialog>
-      )}
-      {uploading && (
-        /* Uploading covers the whole page (requester, 15 Oct 2026; was the dialog only,
-           Korn 2026-10-05): CMS's SubmitOverlay — Scrim Strong and an on-inverse spinner. The Import dialog is hidden meanwhile, so this is the one scrim.
-           Spinner only, no text (requester, 21 Oct 2026; was "Importing templates…" under it): the copy stays as its label for screen readers. */
-        <Scrim
-          appearance="strong"
-          role="status"
-          aria-live="polite"
-          className="fixed inset-0 z-[200] flex-col items-center justify-center gap-[var(--space-3)] px-0"
-        >
-          <SpinnerLoader size="l" appearance="on-inverse" label={IMPORT_COPY.uploading} />
-        </Scrim>
       )}
       <FilePreviewDialog
         file={previewing}
