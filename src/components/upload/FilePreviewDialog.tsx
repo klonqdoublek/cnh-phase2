@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/bbl/button'
-import { Icon } from '@/bbl/icon'
 import { OutlineButton } from '@/bbl/outline-button'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 
 export const PREVIEW_COPY = {
   preview: 'Preview',
   eyebrow: 'Document Preview',
-  download: 'Download',
   ok: 'OK',
 }
 
@@ -39,15 +37,6 @@ function previewHtml(text: string): string {
   }
 }
 
-function download(file: File) {
-  const url = URL.createObjectURL(file)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = file.name
-  anchor.click()
-  URL.revokeObjectURL(url)
-}
-
 /**
  * Document Preview, taken from the CMS prototype's `AssetPreviewModal`
  * (`~/kkdevmode/CMS/src/components/asset/AssetPreviewModal.tsx`, board
@@ -56,12 +45,28 @@ function download(file: File) {
  *   title    "Document Preview" (Body S, Text/Tertiary) over the file name
  *   content  a 600-tall pane on Surface/Secondary, p 24, scrolling — the
  *            file's own text, JSON keys on Text/Highlight
- *   actions  Outline **Download** with its download mark, then **OK**
+ *   actions  Outline **OK**, then the filled `confirmLabel` (Import)
  *
  * CMS's "Reference ID" line is left out: CNH files carry none. Unlike CMS,
  * the pane shows the picked file's real content, not mock copy.
+ *
+ * Design critique, 20 Oct 2026: CMS's Download / OK became OK / Import, so a
+ * file can be imported straight from its preview, and OK goes back. The
+ * caller hides its own dialog while this one is open, so only one scrim is
+ * ever drawn — a second scrim over the first read as a darker overlay.
  */
-export function FilePreviewDialog({ file, onClose }: { file: File | null; onClose: () => void }) {
+export function FilePreviewDialog({
+  file,
+  onClose,
+  confirmLabel,
+  onConfirm,
+}: {
+  file: File | null
+  /** OK, Escape and the scrim. */
+  onClose: () => void
+  confirmLabel?: React.ReactNode
+  onConfirm?: () => void
+}) {
   const [html, setHtml] = useState('')
   useEffect(() => {
     if (!file) return
@@ -90,11 +95,14 @@ export function FilePreviewDialog({ file, onClose }: { file: File | null; onClos
       onDismiss={onClose}
       actions={
         <>
-          <OutlineButton onClick={() => download(file)}>
-            {PREVIEW_COPY.download}
-            <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
-          </OutlineButton>
-          <Button onClick={onClose}>{PREVIEW_COPY.ok}</Button>
+          {onConfirm ? (
+            <>
+              <OutlineButton onClick={onClose}>{PREVIEW_COPY.ok}</OutlineButton>
+              <Button onClick={onConfirm}>{confirmLabel}</Button>
+            </>
+          ) : (
+            <Button onClick={onClose}>{PREVIEW_COPY.ok}</Button>
+          )}
         </>
       }
     >

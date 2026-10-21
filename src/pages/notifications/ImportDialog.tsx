@@ -19,7 +19,8 @@ import { FilePreviewDialog, PREVIEW_COPY } from '@/components/upload/FilePreview
 
 /** `size` is `file.size`, except on a preset route that stands in for a large file. */
 type Picked = { key: number; file: File; size: number; check: FileCheck | null }
-type Phase = 'idle' | 'uploading' | 'failed'
+/** `replace`: the upload found the file name imported before and asks "Import over …?". */
+type Phase = 'idle' | 'uploading' | 'failed' | 'replace'
 
 /* CMS's `fileSizeLabel` and its "type • size" meta (useAssetSlotUpload, UploadedAssetSlot). */
 const sizeLabel = (bytes: number) =>
@@ -35,8 +36,10 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  *
  * One file per import (requester, 15 Oct 2026), the way a CMS asset slot
  * takes one: the 84-tall drop zone until a file is picked, then the file's
- * slot with a Preview in its place. Dropping two or more files takes none and
- * turns the zone Negative with CMS's "1 File Only". The file is checked the
+ * slot with a Preview in its place. A drag of two or more files turns the
+ * zone Negative with CMS's "1 File Only" while it is over the zone, and the
+ * drop is refused, so the files fly back (design critique, 20 Oct 2026; was:
+ * the drop landed and took none). The file is checked the
  * moment it is picked — format, then size (10 MB, CMS's limit), then
  * structure — and a file in error blocks Import until it is removed. Files
  * with a wrong extension are still taken and flagged — the original build's
@@ -44,6 +47,15 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  *
  * A file whose name was imported before asks first (requester, 15 Oct 2026):
  * "Import over <name>?", and Import replaces that earlier import's templates.
+ * Since the design critique (20 Oct 2026) it is never a dialog over a dialog:
+ * Import closes this dialog, the upload spinner validates the file, and only
+ * then does "Import over <name>?" open, alone on the list. Its Import uploads
+ * again, its Cancel closes it and stays on the list. The Import dialog is
+ * hidden for the whole upload, so the spinner's scrim is the only one.
+ *
+ * Preview hides this dialog while Document Preview is open — one scrim, not a
+ * darker one on top — and Preview's Import imports from there (critique,
+ * 20 Oct 2026).
  */
 export function ImportDialog({
   open,
@@ -63,8 +75,8 @@ export function ImportDialog({
   const [picked, setPicked] = useState<Picked | null>(null)
   const [phase, setPhase] = useState<Phase>('idle')
   const [message, setMessage] = useState<string | null>(null)
+  /* Only the `too-many` route sets this: it draws the refused drag, which a live drop never leaves behind. */
   const [tooMany, setTooMany] = useState(false)
-  const [confirmReplace, setConfirmReplace] = useState(false)
   const [previewing, setPreviewing] = useState<File | null>(null)
   const nextKey = useRef(0)
   const uploading = phase === 'uploading'
@@ -79,10 +91,9 @@ export function ImportDialog({
       setPicked({ key, file, size, check: null })
       checkFile(file, size).then((check) => setPicked((p) => (p?.key === key ? { ...p, check } : p)))
     } else setPicked(null)
-    setPhase(preset === 'uploading' ? 'uploading' : preset === 'failure' ? 'failed' : 'idle')
+    setPhase(preset === 'uploading' ? 'uploading' : preset === 'failure' ? 'failed' : preset === 'duplicate' ? 'replace' : 'idle')
     setMessage(preset === 'no-file' ? IMPORT_COPY.noFile : null)
     setTooMany(preset === 'too-many')
-    setConfirmReplace(preset === 'duplicate')
   }, [open, preset])
 
   const bad = !!picked?.check && !picked.check.ok
@@ -93,7 +104,6 @@ export function ImportDialog({
     setPhase('idle')
     setMessage(null)
     setTooMany(false)
-    setConfirmReplace(false)
     setPreviewing(null)
   }
   const close = () => {
@@ -104,10 +114,10 @@ export function ImportDialog({
 
   const add = (list: FileList | null) => {
     if (!list?.length) return
+    /* The zone refuses a drop of two or more (maxFiles); the chooser takes one. */
+    if (list.length > 1) return
     setMessage(null)
     setPhase('idle')
-    /* CMS: two or more files are not taken; the zone says "1 File Only". */
-    if (list.length > 1) return setTooMany(true)
     setTooMany(false)
     const file = list[0]
     const key = nextKey.current++
@@ -123,12 +133,12 @@ export function ImportDialog({
 
   const upload = (replace: boolean) => {
     if (!picked?.check?.ok) return
-    setConfirmReplace(false)
     setMessage(null)
     setPhase('uploading')
     const { file, check } = picked
     const fails = file.name.toLowerCase().includes(IMPORT_FAIL_SENTINEL)
     window.setTimeout(() => {
+      if (!replace && importedNames.includes(file.name)) return setPhase('replace')
       if (fails) return setPhase('failed')
       reset()
       onImported(check.templates, file.name, replace)
@@ -138,14 +148,13 @@ export function ImportDialog({
   const submit = () => {
     if (!picked) return setMessage(IMPORT_COPY.noFile)
     if (!picked.check || !picked.check.ok) return setMessage(IMPORT_COPY.hasErrors)
-    if (importedNames.includes(picked.file.name)) return setConfirmReplace(true)
     upload(false)
   }
 
   return (
     <>
       <ConfirmDialog
-        open={open}
+        open={open && !previewing && !uploading && phase !== 'replace'}
         anatomy="sectioned"
         layer="fixed"
         width={444}
@@ -154,7 +163,7 @@ export function ImportDialog({
         confirmLabel="Import"
         onCancel={close}
         onConfirm={submit}
-        onDismiss={uploading || previewing || confirmReplace ? undefined : close}
+        onDismiss={uploading ? undefined : close}
         className="relative z-50"
       >
         <div className="flex flex-col gap-[var(--space-4)]">
@@ -193,6 +202,8 @@ export function ImportDialog({
               buttonLabel={IMPORT_COPY.browse}
               hint={IMPORT_COPY.dropTitle}
               accept=".jsonl"
+              maxFiles={1}
+              tooManyHint={IMPORT_COPY.oneFile}
               error={tooMany || message === IMPORT_COPY.noFile}
               errorHint={tooMany ? IMPORT_COPY.oneFile : undefined}
               onFiles={add}
@@ -204,7 +215,8 @@ export function ImportDialog({
         </div>
       </ConfirmDialog>
 
-      {confirmReplace && picked && (
+      {phase === 'replace' && picked && (
+        /* Alone on the list: the Import dialog is closed by now (design critique, 20 Oct 2026). */
         <ConfirmDialog
           anatomy="sectioned"
           contentType="label-xl"
@@ -213,17 +225,17 @@ export function ImportDialog({
           title={IMPORT_COPY.replaceTitle(picked.file.name)}
           cancelLabel="Cancel"
           confirmLabel={IMPORT_COPY.replaceConfirm}
-          onCancel={() => setConfirmReplace(false)}
+          onCancel={close}
           onConfirm={() => upload(true)}
-          onDismiss={() => setConfirmReplace(false)}
-          className="relative z-[60]"
+          onDismiss={close}
+          className="relative z-50"
         >
           <p className="type-body-m text-[var(--color-text-primary-default)]">{IMPORT_COPY.replaceBody}</p>
         </ConfirmDialog>
       )}
       {uploading && (
         /* Uploading covers the whole page (requester, 15 Oct 2026; was the dialog only,
-           Korn 2026-10-05): CMS's SubmitOverlay — Scrim Strong and an on-inverse spinner, above the dialog layer (z 100). */
+           Korn 2026-10-05): CMS's SubmitOverlay — Scrim Strong and an on-inverse spinner. The Import dialog is hidden meanwhile, so this is the one scrim. */
         <Scrim
           appearance="strong"
           role="status"
@@ -236,7 +248,15 @@ export function ImportDialog({
           </p>
         </Scrim>
       )}
-      <FilePreviewDialog file={previewing} onClose={() => setPreviewing(null)} />
+      <FilePreviewDialog
+        file={previewing}
+        onClose={() => setPreviewing(null)}
+        confirmLabel="Import"
+        onConfirm={() => {
+          setPreviewing(null)
+          submit()
+        }}
+      />
     </>
   )
 }

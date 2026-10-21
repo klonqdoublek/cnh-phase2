@@ -65,15 +65,15 @@ From the kick-off deck. `*` means required in the deck.
 | Rule | Value |
 |---|---|
 | File format | `.jsonl` (JSON Lines): one template per line. It is the same format the list downloads, so a downloaded file imports back. |
-| Files per import | **One** (requester, 15 Oct 2026; before that, one or many up to 50). Dropping two or more takes none: the zone turns Negative and reads **1 File Only**, as CMS's asset slot does. |
+| Files per import | **One** (requester, 15 Oct 2026; before that, one or many up to 50). A drag of two or more is refused before the drop: while it is over the zone, the zone turns Negative and reads **1 File Only** (CMS's copy), and the files fly back (design critique, 20 Oct 2026; before, the drop landed and took none). |
 | File size | At most **10 MB**, CMS's limit (`MAX_ASSET_BYTES`). Over it, the slot turns Negative and **Max file size: 10 MB** shows under it. PROPOSAL, pending BA confirmation: the BA has not set a size limit (P2-1…P2-9). |
 | When a file is checked | As soon as it is picked: format, then size (before the file is read), then structure. |
 | Blocking | A file in error blocks Import until it is removed (trash mark). Import with it reads **Remove the file and choose another to continue**. |
-| Duplicate file | A file whose **name** was imported before asks first, in a dialog over Import: **Import over \<file name\>?** · *This file has already been imported. Its templates will be replaced with the ones in this file.* · Cancel / **Import**. Import removes the templates that file's last import added and adds the new ones (requester, 15 Oct 2026). Open: what happens to those templates once they are edited or Published; whether the check should be by name or by content. |
+| Duplicate file | A file whose **name** was imported before asks first: **Import over \<file name\>?** · *This file has already been imported. Its templates will be replaced with the ones in this file.* · Cancel / **Import**. Since the design critique (20 Oct 2026) it is never a dialog over a dialog: Import closes the Import dialog, the upload spinner validates the file, and only then does the question open, alone on the list. Its Import uploads again; Cancel closes it and stays on the list. (Before, it opened over the Import dialog right after Import.) Import removes the templates that file's last import added and adds the new ones (requester, 15 Oct 2026). Open: what happens to those templates once they are edited or Published; whether the check should be by name or by content. |
 | Required per line | `recordType: "TEMPLATE"`, `templateName`, `description`, `serviceCodes` (from the value list), `channels` (PUSH, EMAIL, SMS) and `templateLanguages`. |
 | Result | Every imported template is a **Draft** and lands on page 1; the list sorts by Last updated, newest first. |
-| States | Initial; no file; more than one file; file over 10 MB; invalid format; invalid structure; file selected; duplicate (import over?); uploading (a Scrim Strong and spinner over the whole page, as CMS `SubmitOverlay`; before 15 Oct it covered the dialog only); failure with Import again; success (back on the list, toast for 3 s). Each has a route, `#/list/import/<state>`. |
-| Upload UI | CMS upload slot: `UploadZone` until a file is picked, then `UploadedFile` in its place with **Preview** (`FilePreviewDialog`). |
+| States | Initial; no file; more than one file; file over 10 MB; invalid format; invalid structure; file selected; duplicate (Import over?, after the spinner); uploading (a Scrim Strong and spinner over the whole page, as CMS `SubmitOverlay`, with the Import dialog hidden so only one scrim shows; before 15 Oct it covered the dialog only); failure with Import again; success (back on the list, toast for 3 s). Each has a route, `#/list/import/<state>`. |
+| Upload UI | CMS upload slot: `UploadZone` until a file is picked, then `UploadedFile` in its place with **Preview** (`FilePreviewDialog`). Preview replaces the Import dialog while it is open (one scrim, not a darker second one) and its actions are **OK** (back to Import) and **Import** (imports the file); CMS's Download is gone (design critique, 20 Oct 2026). |
 
 Still open from the original build (P2-1…P2-9): the schema, size limits, duplicates, and all copy.
 
@@ -170,6 +170,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 
 | Date | Ruling |
 |---|---|
+| 20 Oct 2026 | Import, design critique: a drag of two or more files is refused before the drop; the duplicate question opens alone after the upload spinner, not over the Import dialog (requester picked this over an alert inside the dialog); Preview replaces the Import dialog instead of stacking a darker scrim; Preview's Download / OK are now OK / Import. Figma task flow updated the same day. |
 | 20 Oct 2026 | Import dialog and Import over…? 444 wide, webds Dialog `Max Width=XS` (was 600, `S`). Requester's call; Figma task flow updated the same day. Layout only. |
 | 19 Oct 2026 | Import dialog 600 wide, was 800: too wide for one file (review comment). 600 is the sectioned dialog's measured width and the Import over…? dialog's. Layout only. |
 | 15 Oct 2026 | Import uploading: the spinner covers the whole page (Scrim Strong, on-inverse spinner, CMS `SubmitOverlay`), not only the dialog. Requester's call. |
