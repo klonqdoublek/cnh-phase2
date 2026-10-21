@@ -206,9 +206,21 @@ export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast
 
       <ListToast
         open={created !== null}
-        title={created?.draft ? BROADCAST_COPY.draftTitle : BROADCAST_COPY.createdTitle}
+        title={
+          created?.cancelled
+            ? BROADCAST_COPY.cancelledTitle
+            : created?.draft
+              ? BROADCAST_COPY.draftTitle
+              : BROADCAST_COPY.createdTitle
+        }
         description={
-          created ? (created.draft ? BROADCAST_COPY.draftBody(created.name) : BROADCAST_COPY.createdBody(created.name)) : ''
+          !created
+            ? ''
+            : created.cancelled
+              ? BROADCAST_COPY.cancelledBody(created.name)
+              : created.draft
+                ? BROADCAST_COPY.draftBody(created.name)
+                : BROADCAST_COPY.createdBody(created.name)
         }
         hold={holdToast}
         onClose={onCreatedClose}

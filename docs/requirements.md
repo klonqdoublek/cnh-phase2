@@ -94,30 +94,35 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
   - **Download report** in the Delivery result head.
   - Broadcast details: description, audience file, recipient type, start, end, Do Not Disturb.
   - One section per channel.
-  - **Edit** on a Draft only.
+  - A Draft and a Cancelled broadcast have no Delivery result; Broadcast details carries the status note.
+  - **Cancel broadcast** and **Edit** on a Draft only. Cancel asks first (*Cancel this broadcast?*: **Keep draft** / **Cancel broadcast**), then the list shows a *Broadcast cancelled* toast and the row turns Cancelled.
 - **Create and Edit broadcast:** one page with six steps, a sticky footer with **Save draft** and **Submit**, then a confirm dialog.
 
-### Create: the six steps
+### Create: the three steps
 
-1. **Basic information.** Broadcast name\* (max 100) and Description (max 250).
-2. **Audience file.**
-   - `.csv` or `.xlsx`, at most 10 MB and 1,000 recipients.
-   - After upload: a 5-row preview, a valid / invalid count, and a table of invalid rows. Invalid rows are skipped.
-   - Two sample files.
-3. **Recipient mapping and channels.**
-   - Recipient type **CIS** (CIS ID column; any of Push, Email, SMS) or **Direct recipient** (a mobile or email column; Email *or* SMS only).
-   - The ID column is chosen from the file's headers. The BA confirmed on 14 Oct that Direct recipient stays.
-4. **Manual content.**
-   - The file's columns become chips that insert `{{COLUMN}}`.
-   - One card per channel: Push title and message, Email subject and body, SMS message with an SMS segment counter.
-5. **Delivery.**
+Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=85-19401), 15 Oct 2026). The draft numbers its steps 1, 2, 5, 6; the build numbers them 1–3, with Do Not Disturb inside Delivery Date (Figma 89:4665).
+
+1. **Basic information.** One card, "General information": Broadcast name\* (max 100) above Description (max 250).
+2. **Validate Audience file.** Two cards.
+   - "Upload Audience file":
+     - Select Recipient type\*: **CIS** (CIS ID column; any of Push, Email, SMS) or **Direct recipient** (a mobile or email column; Email *or* SMS only), as plain radios side by side.
+     - Upload File\* beside the ID column. The file is `.csv` or `.xlsx`, at most 10 MB and 1,000 recipients.
+     - **On pick, only the file type and size are checked** (BA, 19 Oct). The browser can show a preview but cannot read the whole file, so the full read happens on Submit.
+     - After upload: the file row (name, size, *File validated*) and a preview of the whole file in a box five rows tall at the column's width, scrolling both ways under a fixed header, with the file's size beside its title ("100 Rows • 25 Columns", Figma 89:4665). No valid / invalid count. Every Create preset with a CIS file (`filled`, `cis`, `large-file`, …) loads `audience-cis-large.csv`, 100 rows × 55 columns. The box scrolls under webds' own Scroll Bars (Thick), shown as soon as the file overflows; the browser's are hidden, since macOS keeps them out of sight until a scroll starts. webds' `ScrollBar` only draws a position (gap), so pressing or dragging a track is wired in the page. Two sample files.
+     - The ID column is guessed from the preview's header row and can be changed to any of the file's headers. The BA confirmed on 14 Oct that Direct recipient stays.
+     - **On Submit**, once every section is valid, *Checking file…* covers the page while the whole file is read:
+       - Invalid rows are skipped. The confirm dialog lists them under *Invalid recipients are skipped. Only valid recipients will receive the broadcast.*, in a table of Row / {ID column} / Problem.
+       - No rows, more than 1,000 rows or no valid recipient blocks the broadcast: *The audience file cannot be used* with the reason and Close, and the reason stays on Step 2. **PROPOSAL, pending BA confirmation** (Q16).
+       - If the read fails, the system-fail dialog *Unable to submit the broadcast* (Close / Try again) appears, and Try again reads the file again.
+     - Save draft does not read the file.
+   - Message content: the file's columns as chips that insert `{{COLUMN}}` into the box the cursor was last in, over one card per channel, three across.
+     - Each card is switched on and off in its own title row. The switches replace the channel checkboxes and Direct recipient's Email / SMS radio. Under Direct recipient, switching one on switches the other off. A card that is off keeps what was typed and disables it.
+     - Fields are the Template form's TH fields: Push title (TH)\* (255) and Push message (TH)\* (2048); Email subject (TH)\* (255) and Email content (TH)\* (2048); SMS message (TH)\* (800).
+     - No channel on: an Alert above the cards and a red stroke on each card.
+3. **Delivery Date.** One card, "Select Delivery Date", that also holds Do Not Disturb ([Figma 89:4665](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=89-4665), 15 Oct 2026):
    - **Send as soon as possible**, or **Schedule delivery** with Start date and time\* (5-minute steps, later than now).
-   - Optional **End date and time**, later than the start, with Clear.
-6. **Do Not Disturb.**
-   - On or off.
-   - Any number of quiet periods. Each has its days and hours (5-minute steps) or **All day**.
-   - One time zone (Asia/Bangkok).
-   - **Add period** adds one; a trash removes one when there are two or more.
+   - Optional **End date and time**, later than the start, with Clear, **for Schedule delivery only**. Send as soon as possible has no end (requester, 15 Oct, following the draft; the BA's Q2 answer on 14 Oct did not say which modes). Start sits on the left and End on the right (requester, 20 Oct; draft 2.2 draws End first).
+   - **Select DND** ("Prevent sending messages during quiet hours."): the Do Not Disturb (DND) switch, then any number of quiet periods, one row each: days, hours (5-minute steps) or **All day**, and a trash when there are two or more. **Add period** under the periods. The one time zone, Asia/Bangkok (GMT+7), shows as text.
 
 ### Delivery rules
 
@@ -132,20 +137,32 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
   - There is no Expired status.
   - The end does not appear in the list.
 - **Status on submit:** **Processing** if it is sent now and not inside a quiet period, otherwise **Queue**.
-- **Statuses** (list of values, 16 Oct 2026): Draft, Queue, Processing, Published. The badge shows them in title case (DRAFT, QUEUE, PROCESSING, PUBLISHED in the list of values).
+- **Statuses** (list of values 16 Oct 2026; meanings 19 Oct 2026). The badge shows them in title case.
+
+  | Status | Meaning | Badge |
+  |---|---|---|
+  | DRAFT | Saved with **Save draft**. | Caution (yellow) |
+  | QUEUE | Submitted; the system has accepted it. | Disabled (grey) |
+  | PROCESSING | The system has started sending. | Accent (blue) |
+  | PUBLISHED | Finished. | Positive (green) |
+  | FAILED | A system error stopped it, in Queue or Processing. | Negative (red) |
+  | CANCELLED | A saved draft was cancelled because it is no longer needed. | Disabled (grey) |
+
   - The old Scheduled is Queue, Sending is Processing, Completed is Published.
   - The old Paused is Processing; the drawer still says it is inside the quiet period.
-  - **Failed** and **Cancelled** are in the list of values but on hold until the BA explains when they apply (Q13).
-- **Edit:** a Draft reopens in Edit and saves under the same ID. Queue and later cannot be edited (P2-20).
+  - **Cancel is for a Draft only.** Once submitted (Queue and later) a broadcast cannot be cancelled; this is a system limit.
+  - A Cancelled broadcast stays in the list, read only, with no actions.
+  - A Failed broadcast keeps its Delivery result. Recipients still waiting when it stopped are counted as **Not sent** (report reason `System error`), and Download report is offered once anything was attempted. There is no retry.
+- **Edit:** a Draft reopens in Edit and saves under the same ID. Queue and later cannot be edited (P2-20). Cancelled cannot be edited.
 - **Delivery report:** a CSV, `{id}-delivery-report.csv`, with one row per recipient: ID, Channel, Result (Success, Failed, Not sent, Waiting to send) and Reason.
-  - Offered once anything was attempted.
+  - Offered once anything was attempted (Processing, Published, Failed).
   - In the prototype the rows are mock data built from the counts.
 
 ### Recipient file (from the BA deck; not every rule is in the prototype)
 
 - One row per recipient (CIS).
 - Columns: CIS ID\*, Mobile number, Email address, First name, Last name, Tier.
-- **Prototype checks:** ID required; mobile and email well formed; no duplicate IDs.
+- **Prototype checks** (on Submit since 19 Oct): ID required; mobile and email well formed; no duplicate IDs.
 - **Deck checks the prototype does not:** at least one contact method per row; no duplicate mobile or email in the file; data "valid and active". This is Q7.
 - **Push:** finds device tokens from CIS ID.
 
@@ -167,11 +184,18 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 | 14 Oct 2026 | Broadcast End goes into the prototype: optional, Not sent, still Completed (Q2; Published since 16 Oct). |
 | 14 Oct 2026 | Direct recipient stays; the ID column is chosen from the file (Q5). |
 | 14 Oct 2026 | Overnight DND (Q11): TBC. |
+| 15 Oct 2026 | The file preview shows every row and column, five rows tall at the column's width, scrolling both ways (requester). |
+| 15 Oct 2026 | Do Not Disturb moves into the Delivery Date step (Figma 89:4665): three steps. |
+| 15 Oct 2026 | Broadcast End is for Schedule delivery only; Send as soon as possible has no end (requester, following draft 2.2). |
+| 15 Oct 2026 | Create broadcast follows draft 2.2 webds-matched (Figma 85:19401): four steps (three since DND joined Delivery Date); message content under the audience step; channels switched on their own cards; content fields and limits from the Template form's TH fields; End left of Start. See "Create: the three steps". |
 | 16 Oct 2026 | Broadcast statuses follow the list of values: Draft, Queue, Processing, Published; Paused folds into Processing. Failed and Cancelled are on hold (Q13). |
+| 19 Oct 2026 | Validate the audience file: on pick, only the file type and size; the preview shows, but the whole file is read on Submit. Showing invalid recipients (Row / column / Problem) on Submit is possible. Design decisions with the requester: the read runs before the confirm dialog, which carries the invalid table; Step 2 drops the row count and the recipients summary; no rows, over 1,000 or no valid recipient blocks the submit (PROPOSAL, pending BA confirmation). |
+| 19 Oct 2026 | Meaning of each status (Q13 answered): Failed is a system error; Cancelled is a saved draft cancelled by the user. Only a Draft can be cancelled; after Submit it cannot (system limit). Design decisions with the requester: Cancel sits in the Draft drawer footer behind a confirm dialog; a Cancelled broadcast stays in the list read only; a Failed drawer keeps Delivery result and Download report, no retry; badges Failed = Negative, Cancelled = Disabled. |
+| 20 Oct 2026 | Start date and time comes before End date and time, Start on the left (requester). This departs from draft 2.2, which draws End first. |
 
 ## Open items
 
-- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12 and Q13. See [broadcast-gaps.md](broadcast-gaps.md).
+- **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12 and Q16 (a file Submit cannot use, PROPOSAL). Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy). Since 15 Oct the prototype answers three of them for demo, pending the BA: one file, 10 MB, and import over a file with the same name. Still to ask: duplicates by name or by content, and what happens to replaced templates that were edited or Published.
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.
@@ -179,6 +203,6 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 ## Working in this repo
 
 - Routes, commands and design system rules: [../CLAUDE.md](../CLAUDE.md). Every state has its own hash route.
-  - Broadcast presets are under `#/broadcast/create/<preset>`. They include `dnd-rules` and `end`.
+  - Broadcast presets are under `#/broadcast/create/<preset>`. They include `dnd-rules` and `end`, and Submit's file read: `checking`, `confirm-invalid`, `file-blocked`, `check-fail`.
 - **Copy:** transcribed from the original build. Copy written here is listed in the decision log of [broadcast-gaps.md](broadcast-gaps.md).
 - **Components:** webds first, then CMS ([cms-components.md](cms-components.md)), then hand-built. A hand-built control is a webds gap and is recorded as one.
