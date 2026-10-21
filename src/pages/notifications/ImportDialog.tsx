@@ -242,7 +242,8 @@ export function ImportDialog({
       )}
       {uploading && (
         /* Uploading covers the whole page (requester, 15 Oct 2026; was the dialog only,
-           Korn 2026-10-05): CMS's SubmitOverlay — Scrim Strong and an on-inverse spinner. The Import dialog is hidden meanwhile, so this is the one scrim. */
+           Korn 2026-10-05): CMS's SubmitOverlay — Scrim Strong and an on-inverse spinner. The Import dialog is hidden meanwhile, so this is the one scrim.
+           Spinner only, no text (requester, 21 Oct 2026; was "Importing templates…" under it): the copy stays as its label for screen readers. */
         <Scrim
           appearance="strong"
           role="status"
@@ -250,9 +251,6 @@ export function ImportDialog({
           className="fixed inset-0 z-[200] flex-col items-center justify-center gap-[var(--space-3)] px-0"
         >
           <SpinnerLoader size="l" appearance="on-inverse" label={IMPORT_COPY.uploading} />
-          <p className="mt-[var(--space-2)] type-heading-xxs-emphasized text-[var(--color-text-primary-inverse-default)]">
-            {IMPORT_COPY.uploading}
-          </p>
         </Scrim>
       )}
       <FilePreviewDialog
