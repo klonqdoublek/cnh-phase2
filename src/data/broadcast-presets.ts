@@ -16,14 +16,18 @@ export const FORM_PRESETS = [
   'dnd-rules',
   'end',
   'large-file',
+  'checking',
   'confirm',
+  'confirm-invalid',
+  'file-blocked',
+  'check-fail',
   'submitting',
   'fail-dialog',
   'leave',
 ] as const
 export type FormPreset = (typeof FORM_PRESETS)[number]
 
-export const LIST_PRESETS = ['submitted', 'draft-saved'] as const
+export const LIST_PRESETS = ['submitted', 'draft-saved', 'cancelled'] as const
 export type ListPreset = (typeof LIST_PRESETS)[number]
 
 export const formPreset = (s?: string) =>
@@ -34,6 +38,7 @@ export const listPreset = (s?: string) =>
 export const LIST_TOAST: Record<ListPreset, ListToast> = {
   submitted: { name: 'October Customer Campaign', draft: false },
   'draft-saved': { name: 'October Customer Campaign', draft: true },
+  cancelled: { name: 'November statement notice', draft: false, cancelled: true },
 }
 
 /* ── the Create form's seeds — `formSeed` in the original build ─────────── */
@@ -120,6 +125,13 @@ export const LARGE_CSV = [
   '',
 ].join('\n')
 
+/** Every CIS ID missing: the full read on Submit finds no valid recipient. */
+export const NO_VALID_CSV = `CIS_ID,CUSTOMER_NAME,ACCOUNT_NO,AMOUNT,PROMOTION_CODE
+,Somchai Yimdee,1234567890,1250.00,OCT24
+,Araya Chaisri,9876543210,860.50,OCT24
+,Nattapong Wongsa,4567891230,2100.00,OCT24
+`
+
 export const MESSAGE = `Dear {{CUSTOMER_NAME}},
 Your payment of THB {{AMOUNT}} was successful.
 Reference: {{ACCOUNT_NO}}.`
@@ -141,8 +153,9 @@ export type FormSeed = {
   /** Broadcast End: days from today, and HH:mm. */
   end?: { inDays: number; time: string }
   dnd?: Dnd
-  /** A dialog open on arrival. */
-  open?: 'confirm' | 'submitting' | 'fail' | 'leave'
+  /** A dialog open on arrival. `checking` is Submit's full read of the file,
+   *  held; `blocked` is its result when the file cannot be used. */
+  open?: 'checking' | 'confirm' | 'blocked' | 'check-fail' | 'submitting' | 'fail' | 'leave'
   /** A button pressed on arrival, to show what it does on this state. */
   press?: 'submit' | 'draft'
 }
@@ -204,8 +217,23 @@ export function formSeed(preset: FormPreset): FormSeed {
       }
     case 'large-file':
       return { ...filled, file: { name: 'audience-cis-large.csv', text: LARGE_CSV } }
+    case 'checking':
+      return { ...filled, open: 'checking' }
     case 'confirm':
       return { ...filled, open: 'confirm' }
+    case 'confirm-invalid':
+      return {
+        ...filled,
+        file: { name: 'audience-direct.csv', text: DIRECT_CSV },
+        recipientType: 'direct',
+        column: 'MOBILE_NO',
+        channels: ['SMS'],
+        open: 'confirm',
+      }
+    case 'file-blocked':
+      return { ...filled, file: { name: 'audience-cis.csv', text: NO_VALID_CSV }, open: 'blocked' }
+    case 'check-fail':
+      return { ...filled, open: 'check-fail' }
     case 'submitting':
       return { ...filled, open: 'submitting' }
     case 'fail-dialog':

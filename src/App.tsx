@@ -118,7 +118,8 @@ export default function App() {
       : undefined
   const onBroadcast = hash.startsWith('#/broadcast')
   const preset = listPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
-  const viewId = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)$/)?.[1]
+  const viewMatch = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)(\/cancel)?$/)
+  const viewId = viewMatch?.[1]
   const viewing = openBroadcast ?? (viewId ? broadcasts.find((b) => b.id === viewId) : undefined)
 
   return (
@@ -152,7 +153,7 @@ export default function App() {
 
       {onBroadcast && viewing && (
         <BroadcastDrawer
-          key={viewing.id}
+          key={`${viewing.id}${viewMatch?.[2] ?? ''}`}
           broadcast={viewing}
           onClose={() => {
             setOpenBroadcast(null)
@@ -161,6 +162,13 @@ export default function App() {
           onEdit={() => {
             setOpenBroadcast(null)
             go(`/broadcast/edit/${viewing.id}`)
+          }}
+          confirmingCancel={!!viewMatch?.[2]}
+          onCancel={() => {
+            setBroadcasts((list) => list.map((x) => (x.id === viewing.id ? { ...x, status: 'Cancelled' } : x)))
+            setCreated({ name: viewing.name, draft: false, cancelled: true })
+            setOpenBroadcast(null)
+            go('/broadcast')
           }}
         />
       )}

@@ -10,6 +10,7 @@ const TONE: Record<(typeof STATUS_TONE)[Status], StatusTone> = {
   disabled: 'grey',
   accent: 'blue',
   positive: 'green',
+  negative: 'red',
 }
 
 export function BroadcastStatus({ status, size = 'm' }: { status: Status; size?: 'l' | 'm' }) {

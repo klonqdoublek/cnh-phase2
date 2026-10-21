@@ -3,7 +3,7 @@ import {
   BROADCAST_COPY,
   DEFAULT_DND,
   dndRule,
-  checkRecipients,
+  checkAudience,
   fieldsOf,
   firstSend,
   guessColumn,
@@ -16,6 +16,7 @@ import {
   type BroadcastStatus,
   type Dnd,
   type DndRule,
+  type RecipientCheck,
   type RecipientType,
 } from '@/data/broadcast'
 import { formSeed, type FormPreset, type FormSeed } from '@/data/broadcast-presets'
@@ -24,7 +25,9 @@ import type { SaveKind } from '../BroadcastWizard'
 
 /* The Create / Edit broadcast form's state and rules — `useBroadcastForm` in the
  * original build, ported as is. Waits are the original's: the file is "checked"
- * for 600 ms, a submit takes 900 ms. */
+ * for 600 ms, a submit takes 900 ms. Since 19 Oct 2026 (BA) a pick checks only
+ * type and size; Submit reads the whole file, for the same 600 ms, before the
+ * confirm dialog. */
 
 const CHECK_MS = 600
 const CREATE_MS = 900
@@ -146,10 +149,16 @@ export function useBroadcastForm({
 
   const audience = read && read.ok ? read.audience : null
   const kind = idKind(recipientType, channels)
-  const check = useMemo(
-    () => (audience && column && kind ? checkRecipients(audience, column, kind) : null),
-    [audience, column, kind],
+  /** The full read on Submit; a preset that opens on its result runs it on arrival. */
+  const [arrival] = useState(() =>
+    (seed.open === 'confirm' || seed.open === 'blocked') && audience && column && kind
+      ? checkAudience(audience, column, kind)
+      : null,
   )
+  const [check, setCheck] = useState<RecipientCheck | null>(arrival?.ok ? arrival.check : null)
+  const [readingFile, setReadingFile] = useState(seed.open === 'checking')
+  const [blocked, setBlocked] = useState<string | null>(arrival && !arrival.ok ? arrival.message : null)
+  const [checkFailed, setCheckFailed] = useState(seed.open === 'check-fail')
   const fields = useMemo(() => fieldsOf(audience, column), [audience, column])
   const checking = file !== null && read === null
   const dirty = !!(file || name || description || channels.length || Object.values(content).some(Boolean))
@@ -247,8 +256,7 @@ export function useBroadcastForm({
     else if (read && !read.ok) e.file = read.message
     if (recipientType === 'direct' && !channels.length) e.channels = BROADCAST_COPY.noDirectChannel
     else if (!channels.length) e.channels = BROADCAST_COPY.noChannel
-    if (audience && kind && !column) e.column = BROADCAST_COPY.noColumn
-    if (check && check.valid === 0) e.file = BROADCAST_COPY.noValidRows
+    if (audience?.headers.length && kind && !column) e.column = BROADCAST_COPY.noColumn
     for (const c of channels)
       for (const k of CHANNEL_FIELDS[c])
         if (!content[k].trim()) e[k] = BROADCAST_COPY.required
@@ -272,12 +280,34 @@ export function useBroadcastForm({
       root?.querySelector('[data-error="true"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
     )
 
+  /** Read the whole file: a file that cannot be used blocks the broadcast,
+   *  otherwise its result goes into the confirm dialog. */
+  const readFile = () => {
+    if (!audience || !kind) return
+    setCheck(null)
+    setReadingFile(true)
+    window.setTimeout(() => {
+      setReadingFile(false)
+      const result = checkAudience(audience, column, kind)
+      if (!result.ok) return setBlocked(result.message)
+      setCheck(result.check)
+      setConfirmOpen(true)
+    }, CHECK_MS)
+  }
+
+  /** Close on the blocked dialog: the reason stays on Step 2, scrolled to. */
+  const closeBlocked = () => {
+    if (blocked) setErrors((prev) => ({ ...prev, file: blocked }))
+    setBlocked(null)
+    scrollToError(document.body)
+  }
+
   const submit = (root: HTMLElement | null) => {
-    if (checking) return
+    if (checking || readingFile) return
     const e = validate()
     setErrors(e)
     if (Object.keys(e).length) return scrollToError(root)
-    setConfirmOpen(true)
+    readFile()
   }
 
   const record = (status: BroadcastStatus): Omit<Broadcast, 'id'> => ({
@@ -311,7 +341,7 @@ export function useBroadcastForm({
         setFailed(true)
         return
       }
-      onCreate(record(mode === 'now' && !waits ? 'Sending' : 'Scheduled'), 'submit')
+      onCreate(record(mode === 'now' && !waits ? 'Processing' : 'Queue'), 'submit')
     }, CREATE_MS)
   }
 
@@ -381,6 +411,12 @@ export function useBroadcastForm({
     setLeaveOpen,
     confirmOpen,
     setConfirmOpen,
+    readingFile,
+    readFile,
+    blocked,
+    closeBlocked,
+    checkFailed,
+    setCheckFailed,
     creating,
     failed,
     setFailed,
