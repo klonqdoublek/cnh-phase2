@@ -1,7 +1,9 @@
 import { Checkbox } from '@/bbl/checkbox'
 import { RadioButton } from '@/bbl/radio-button'
 import { FormField } from '@/patterns/form-field'
+import { useRef } from 'react'
 import { cn } from '@/lib/cn'
+import { FieldTint, hasField } from './highlight'
 
 /* The Create form's fields. Text, text area and select are webds `form-field`
  * (the CNH pattern); the rest are composed from webds parts where the library
@@ -28,6 +30,7 @@ export function Text({
   boxHeight,
   disabled,
   hint,
+  tint,
   className,
 }: {
   id: string
@@ -43,14 +46,26 @@ export function Text({
   disabled?: boolean
   /** Helper text under the box, where an error is not. */
   hint?: string
+  /** The file's columns: their `{{COLUMN}}` tokens are drawn as tinted chips
+   *  (./highlight.tsx). The box's own text goes transparent under the layer. */
+  tint?: Set<string>
   className?: string
 }) {
+  const root = useRef<HTMLDivElement>(null)
+  const tinted = !!tint && !disabled && hasField(value, tint)
   return (
     <div
+      ref={root}
       data-field={id}
       data-error={error ? 'true' : undefined}
       /* A disabled text area renders its value as a span; keep its line breaks. */
-      className={cn('min-w-0', multiline && 'whitespace-pre-line', className)}
+      className={cn(
+        'relative min-w-0',
+        multiline && 'whitespace-pre-line',
+        tinted &&
+          '[&_input]:text-transparent [&_input]:[caret-color:var(--color-text-primary-default)] [&_textarea]:text-transparent [&_textarea]:[caret-color:var(--color-text-primary-default)]',
+        className,
+      )}
     >
       <FormField
         spec={{ label, kind: multiline ? 'textarea' : 'text', required, max, boxHeight, hint, placeholder: placeholder ?? '' }}
@@ -59,6 +74,7 @@ export function Text({
         disabled={disabled}
         onChange={onChange}
       />
+      {tint && !disabled && <FieldTint root={root} value={value} columns={tint} />}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
@@ -659,6 +659,8 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   const shortcut = useFieldShortcut(f, concept.trigger, typed)
   /* Composed (21 Oct 2026), as Clay's "Type '/' to …" under each box. */
   const hint = typed && hasFields ? `Type ${triggerMark(concept.trigger)} to add a dynamic field` : undefined
+  const columns = f.fields.map((field) => field.column).join('\n')
+  const tint = useMemo(() => new Set(columns.split('\n')), [columns])
 
   /* Idea 2, 2.2 and the dialog head the area "Broadcast Message"; Idea 1.2
      "Select", as drawn; Idea 1 and the shortcut have no heading. */
@@ -716,7 +718,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
             {perCard && concept.picker === 'pills' && (
               <FieldPills f={f} disabled={!editable} onInsert={(t) => insert(t, c)} />
             )}
-            <ChannelFields f={f} channel={c} on={editable} hint={hint} />
+            <ChannelFields f={f} channel={c} on={editable} hint={hint} tint={typed && concept.look === 'tint' ? tint : undefined} />
           </>
         )
         if (direct)
@@ -848,7 +850,7 @@ function DirectChannelCard({
 }
 
 /** A channel's message boxes — the Template form's TH fields. */
-function ChannelFields({ f, channel, on, hint }: F & { channel: Channel; on: boolean; hint?: string }) {
+function ChannelFields({ f, channel, on, hint, tint }: F & { channel: Channel; on: boolean; hint?: string; tint?: Set<string> }) {
   const box = (id: keyof BroadcastContent, label: string, placeholder: string, extra?: { multiline?: boolean; boxHeight?: 77 }) => (
     <Text
       id={id}
@@ -861,6 +863,7 @@ function ChannelFields({ f, channel, on, hint }: F & { channel: Channel; on: boo
       placeholder={placeholder}
       onChange={f.setC(id)}
       hint={hint}
+      tint={tint}
       {...extra}
     />
   )

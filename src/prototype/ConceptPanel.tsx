@@ -14,6 +14,7 @@ import {
   useConcept,
   type Columns,
   type Layout,
+  type Look,
   type Mark,
   type Picker,
   type Placement,
@@ -57,6 +58,11 @@ const TRIGGERS: { value: Trigger; label: string }[] = [
   { value: 'slash', label: '/' },
   { value: 'at', label: '@' },
   { value: 'braces', label: '{{' },
+]
+
+const LOOKS: { value: Look; label: string }[] = [
+  { value: 'plain', label: 'Plain' },
+  { value: 'tint', label: 'Highlight' },
 ]
 
 const MARKS: { value: Mark; label: string }[] = [
@@ -205,7 +211,13 @@ export function ConceptPanel() {
               selectedIndex={DIRECTIONS.findIndex((d) => d.value === concept.picker)}
               onSelect={(i) => setConcept({ picker: DIRECTIONS[i].value })}
             />
-            <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-[var(--space-3)]">
+            {/* Placement wants the wider column; the shortcut's two options split it evenly. */}
+            <div
+              className={cn(
+                'grid gap-[var(--space-3)]',
+                concept.picker === 'shortcut' ? 'grid-cols-2' : 'grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
+              )}
+            >
               {concept.picker === 'shortcut' ? (
                 <Option label="Type to open">
                   <SegmentedTab
@@ -220,6 +232,15 @@ export function ConceptPanel() {
                     items={PLACEMENTS.map((p) => p.label)}
                     selectedIndex={PLACEMENTS.findIndex((p) => p.value === concept.placement)}
                     onSelect={(i) => setConcept({ placement: PLACEMENTS[i].value })}
+                  />
+                </Option>
+              )}
+              {concept.picker === 'shortcut' && (
+                <Option label="Field in text">
+                  <SegmentedTab
+                    items={LOOKS.map((l) => l.label)}
+                    selectedIndex={LOOKS.findIndex((l) => l.value === concept.look)}
+                    onSelect={(i) => setConcept({ look: LOOKS[i].value })}
                   />
                 </Option>
               )}

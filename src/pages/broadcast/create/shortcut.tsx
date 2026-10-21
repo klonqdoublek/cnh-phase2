@@ -28,7 +28,7 @@ const TRIGGERS: Record<Trigger, { mark: string; re: RegExp }> = {
 export const triggerMark = (t: Trigger) => TRIGGERS[t].mark
 
 /* The box styles that decide where a character lands. */
-const MIRRORED = [
+export const MIRRORED = [
   'box-sizing', 'width', 'height', 'overflow-x', 'overflow-y',
   'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width',
   'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
@@ -126,15 +126,20 @@ export function useFieldShortcut(f: BroadcastForm, trigger: Trigger, on: boolean
     })
   }
 
-  /* The menu is placed once per keystroke; a scroll or resize would leave it
-     behind, so either one shuts it. */
+  /* The menu is placed once per keystroke; a page scroll or resize would
+     leave it behind, so either one shuts it. The box's own scroll — a long
+     one-line message sliding left as it is typed — moves the caret instead,
+     so the menu follows it. */
+  const latest = useRef(sync)
+  latest.current = sync
   useEffect(() => {
     if (!open) return
     const shut = () => setOpen(null)
-    addEventListener('scroll', shut, true)
+    const scrolled = (e: Event) => (e.target === open.el ? latest.current(open.el) : shut())
+    addEventListener('scroll', scrolled, true)
     addEventListener('resize', shut)
     return () => {
-      removeEventListener('scroll', shut, true)
+      removeEventListener('scroll', scrolled, true)
       removeEventListener('resize', shut)
     }
   }, [open])
