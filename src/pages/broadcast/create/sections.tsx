@@ -6,6 +6,7 @@ import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { Divider } from '@/bbl/divider'
+import { FieldLabel } from '@/bbl/field'
 import { GhostButton } from '@/bbl/ghost-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
@@ -120,7 +121,7 @@ export function AudienceFile({ f }: F) {
       <RecipientType f={f} />
       <div className="flex items-start gap-[var(--space-6)]">
         <div className="flex w-[672px] min-w-0 shrink-0 flex-col gap-[var(--space-2)]">
-          <span className={LABEL}>Upload File*</span>
+          <FieldLabel required>Upload File</FieldLabel>
           {f.file ? (
             <FileResult f={f} />
           ) : (
@@ -415,7 +416,7 @@ function MiniTable({
 function RecipientType({ f }: F) {
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <span className={LABEL}>Select Recipient type*</span>
+      <FieldLabel required>Select Recipient type</FieldLabel>
       <div role="radiogroup" aria-label="Recipient type" className="flex gap-[var(--space-2)] py-[var(--space-3)]">
         <ModeOption
           on={f.recipientType === 'cis'}
