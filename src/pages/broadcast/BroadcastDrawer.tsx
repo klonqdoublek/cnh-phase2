@@ -81,17 +81,6 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
               ['Waiting to send', fmtNumber(waiting)],
             ] as [string, string][],
             note: STATUS_LINE[b.status](b),
-            /* Only once something was attempted — Processing, Published or Failed. */
-            action:
-              b.success + b.failed > 0 ? (
-                <OutlineButton
-                  className="h-[32px]"
-                  onClick={() => downloadText(deliveryReportName(b), deliveryReportCsv(b))}
-                >
-                  Download report
-                  <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
-                </OutlineButton>
-              ) : undefined,
           },
         ]),
     {
@@ -147,9 +136,11 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
  * status and facts, scrolling body, footer at 44). This file supplies what the
  * pattern leaves to its consumer: fixed to the right edge over the list with
  * no scrim (as the original), the 225ms slide-in, the `sidebar-collapse`
- * close, Escape, a click outside, and a focus trap. Only a Draft has
- * actions: Cancel broadcast (behind a confirm dialog) and Edit. Once
- * submitted, a broadcast cannot be cancelled (a system limit, 19 Oct 2026).
+ * close, Escape, a click outside, and a focus trap. A Draft's footer has
+ * Cancel broadcast (behind a confirm dialog) and Edit. Once submitted, a
+ * broadcast cannot be cancelled (a system limit, 19 Oct 2026); its footer has
+ * Download report once anything was attempted (Processing, Published or
+ * Failed), where the CNH template drawer keeps its Download.
  */
 export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmingCancel }: BroadcastDrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
@@ -203,6 +194,7 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmi
   }, [onClose])
 
   const draft = broadcast.status === 'Draft'
+  const attempted = broadcast.success + broadcast.failed > 0
   const sections = sectionsOf(broadcast)
 
   return (
@@ -249,6 +241,14 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmi
                 Edit
               </Button>
             </>
+          ) : attempted ? (
+            <OutlineButton
+              onClick={() => downloadText(deliveryReportName(broadcast), deliveryReportCsv(broadcast))}
+              className="h-[44px]"
+            >
+              Download report
+              <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
+            </OutlineButton>
           ) : undefined
         }
       >

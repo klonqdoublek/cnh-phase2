@@ -92,7 +92,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 - **List** (`#/broadcast`): Broadcast name, Channel, Broadcast start, Do Not Disturb, Status. Recipients and Result were removed on 14 Oct and live in the drawer.
 - **Detail drawer**, 720 wide:
   - Delivery result: Total, Success, Failed, Not sent (only when there is any) and Waiting to send, with a status note.
-  - **Download report** in the Delivery result head.
+  - **Download report** in the drawer footer, as the CNH template drawer's Download (21 Oct 2026).
   - Broadcast details: description, audience file, recipient type, start, end, Do Not Disturb.
   - One section per channel.
   - A Draft and a Cancelled broadcast have no Delivery result; Broadcast details carries the status note.

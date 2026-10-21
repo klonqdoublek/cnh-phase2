@@ -13,7 +13,7 @@ It lists what changed in response, the gaps that are still open as questions for
 | # | Ask | What changed | Branch |
 |---|---|---|---|
 | 1 | Remove the Recipients and Result columns from the list; the detail drawer shows them. | Both columns are gone. The drawer already shows Total recipients, Success, Failed and Waiting to send. The freed width goes to Broadcast name, Channel and Do Not Disturb. | `update/broadcast-list-columns` |
-| 2 | Add download behaviour to the drawer. | Delivery result has a **Download report** button. It appears once anything was attempted (Processing, Published or Failed) and saves `{id}-delivery-report.csv`. The CSV has one row per recipient: ID, Channel, Result, Reason. The rows are mock data built from the counts. | `add/broadcast-delivery-report` |
+| 2 | Add download behaviour to the drawer. | The drawer footer has a **Download report** button (moved from the Delivery result head, 21 Oct 2026). It appears once anything was attempted (Processing, Published or Failed) and saves `{id}-delivery-report.csv`. The CSV has one row per recipient: ID, Channel, Result, Reason. The rows are mock data built from the counts. | `add/broadcast-delivery-report` |
 | 3 | Times in 5-minute steps instead of 30. | Start date and time, and the quiet period from/to, step by 5 minutes. The quiet period field is now an hour column and a minute column, not a 48-row list. | `update/broadcast-time-step` (on PR #2) |
 | 4 | Let the user add Do Not Disturb periods: several days with the same hours, and more than one period, e.g. Mon–Fri 18:00–08:00 and Sat–Sun all day. | Do Not Disturb holds any number of quiet periods. Each has its own days and hours, or All day, and can be removed. **Add period** adds one. One Enabled toggle and one time zone cover all of them. The list shows one period per line, the drawer and the confirm dialog show all of them. The BA's example is on `#/broadcast/create/dnd-rules` and on BC-0006. | `update/broadcast-dnd-rules` |
 | Q2 | Broadcast End may go into the prototype (BA answer, 14 Oct). | Delivery Date has an optional **End date and time** beside Start, with Clear, for Schedule delivery only (requester, 15 Oct: Send as soon as possible has no end). It must be later than the start. When the end comes first, sending stops and the recipients left are counted as **Not sent**; the broadcast still ends **Published** (no Expired status). The drawer shows Broadcast end and a Not sent row; the report adds Not sent rows; the confirm dialog shows the end. Preset `#/broadcast/create/end`; fixture BC-0001 is the deck's scenario F. | `add/broadcast-end` |
@@ -92,7 +92,7 @@ The original build has none of this copy. Change it here if the BA rules otherwi
 
 | Where | Copy |
 |---|---|
-| Drawer, Delivery result | `Download report` |
+| Drawer footer | `Download report` |
 | Report file | `{id}-delivery-report.csv`. Columns: `{ID column}`, `Channel`, `Result`, `Reason`. Results: `Success`, `Failed`, `Waiting to send`. |
 | Report reasons | SMS: `Invalid mobile number`, `Number not reachable`. Email: `Mailbox not found`, `Message rejected`. Push: `No active device`. |
 | Do Not Disturb | `Add period`, `All day`. In the list, drawer and dialog: `Sat, Sun, All day`, and `+N more` after two lines. |
