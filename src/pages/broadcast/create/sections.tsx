@@ -200,10 +200,10 @@ function FileResult({ f }: F) {
 }
 
 /** The whole file in a box five rows tall at the column's width; the rest
- *  scrolls, both ways, under a header that stays put. The ID column is marked. */
+ *  scrolls, both ways, under a header that stays put. The selected ID column
+ *  is not marked (requirement update, 21 Oct 2026). */
 function Preview({ f }: F) {
   const a = f.audience!
-  const idIndex = a.headers.indexOf(f.column)
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
       <span className={LABEL}>{BROADCAST_COPY.previewTitle}</span>
@@ -211,7 +211,6 @@ function Preview({ f }: F) {
         columns={a.headers}
         widths={a.headers.map((_, i) => (i === a.headers.length - 1 ? 'minmax(max-content,1fr)' : 'max-content')).join(' ')}
         rows={a.rows.map((r) => a.headers.map((_, i) => r[i] ?? ''))}
-        highlight={idIndex}
         visibleRows={5}
       />
     </div>
@@ -311,7 +310,6 @@ export function MiniTable({
   columns,
   rows,
   widths,
-  highlight = -1,
   negativeLast,
   maxHeight,
   visibleRows,
@@ -319,7 +317,6 @@ export function MiniTable({
   columns: string[]
   rows: string[][]
   widths: string
-  highlight?: number
   negativeLast?: boolean
   maxHeight?: boolean
   /** Show this many rows under the header and scroll the rest, both ways. */
@@ -345,10 +342,6 @@ export function MiniTable({
           className={cn(
             cell,
             'sticky top-0 z-[1] bg-[var(--color-surface-secondary-default)] [&>span]:text-[var(--color-text-tertiary-default)]',
-            /* Highlight Subtle is 10% blue: lay it over the opaque header fill,
-               or the rows scrolling under the header show through. */
-            i === highlight &&
-              'bg-[image:linear-gradient(var(--color-surface-highlight-subtle-default),var(--color-surface-highlight-subtle-default))]',
           )}
         >
           {c}
@@ -360,7 +353,6 @@ export function MiniTable({
             key={`${ri}-${ci}`}
             className={cn(
               cell,
-              ci === highlight && 'bg-[var(--color-surface-highlight-subtle-default)]',
               negativeLast && ci === r.length - 1 && '[&>span]:text-[var(--color-text-negative-default)]',
             )}
           >
