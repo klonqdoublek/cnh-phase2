@@ -43,6 +43,9 @@ export function AppShell({ activeId, children }: { activeId: string; children: R
               name={USER.name}
               role={USER.role}
               onDismiss={() => setMenuOpen(false)}
+              /* The pattern leaves position to the consumer. The original build
+                 anchors the card to the sidebar at x53, bottom 52 (QA U27). */
+              className="absolute bottom-[52px] left-[53px] z-50"
               actions={[
                 {
                   label: 'Logout',
