@@ -34,6 +34,9 @@ export const BROADCAST_COPY = {
   fileBlockedTitle: 'The audience file cannot be used',
   invalidNote: 'Invalid recipients are skipped. Only valid recipients will receive the broadcast.',
   previewTitle: 'Preview (first 5 rows)',
+  /** Beside the preview title (Figma 89:4665). */
+  previewSize: (rows: number, columns: number) =>
+    `${rows.toLocaleString('en-US')} Rows • ${columns.toLocaleString('en-US')} Columns`,
   required: 'This field is required',
   noColumn: 'Select the column that identifies each recipient',
   noChannel: 'Please enable at least 1 notification channel',
@@ -178,8 +181,6 @@ export function checkAudience(audience: Audience, column: string, kind: IdKind):
 
 export const fieldsOf = (audience: Audience | null | undefined, idColumn: string) =>
   (audience?.headers ?? []).filter((h) => h && h !== idColumn).map((column) => ({ column, token: `{{${column}}}` }))
-
-export const MESSAGE_MAX = 1000
 
 export function smsInfo(text: string) {
   const unicode = /[^\x00-\x7F]/.test(text)
