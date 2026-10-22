@@ -125,27 +125,10 @@ export function AudienceFile({ f }: F) {
               {f.errors.file}
             </InlineMessage>
           )}
-          <div className="flex flex-wrap gap-[var(--space-6)] pt-[var(--space-2)]">
-            <SampleLink href="/samples/audience-cis.csv">Sample file · CIS</SampleLink>
-            <SampleLink href="/samples/audience-direct.csv">Sample file · Direct recipient</SampleLink>
-          </div>
         </div>
         <ColumnSelect f={f} />
       </div>
     </FormSectionCard>
-  )
-}
-
-function SampleLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <a
-      href={href}
-      download
-      className="inline-flex items-center gap-[var(--space-1)] type-label-m-emphasized text-[var(--color-text-link-default)] no-underline hover:text-[var(--color-text-link-hovered)] hover:underline"
-    >
-      <Icon slug="download" size={16} color="currentColor" />
-      {children}
-    </a>
   )
 }
 
