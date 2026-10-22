@@ -1059,7 +1059,7 @@
    "label": "Cancel broadcast",
    "style": "solid",
    "touch": {
-    "x": 1655,
+    "x": 1224,
     "y": 1020,
     "w": 165,
     "h": 44

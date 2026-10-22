@@ -248,7 +248,8 @@ export function BroadcastDrawer({
         actions={
           draft ? (
             <>
-              <OutlineButton appearance="negative" onClick={() => setCancelOpen(true)} className="h-[44px]">
+              {/* Negative action on the left, away from Edit, as CMS does (22 Oct 2026). */}
+              <OutlineButton appearance="negative" onClick={() => setCancelOpen(true)} className="mr-auto h-[44px]">
                 {BROADCAST_COPY.cancel}
               </OutlineButton>
               <Button onClick={onEdit} className="h-[44px]">
