@@ -21,7 +21,6 @@ export const IMPORT_PRESETS = [
   'no-file',
   'too-many',
   'too-large',
-  'invalid-format',
   'invalid-structure',
   'selected',
   'duplicate',
@@ -39,10 +38,10 @@ export const IMPORT_COPY = {
      a time", is gone: the CMS drop zone carries one hint line (12 Oct 2026). */
   dropTitle: 'Drag and drop a .jsonl file here · Max file size: 10 MB',
   browse: 'Browse file',
-  format: 'Invalid file format. Only .jsonl files can be imported',
   structure: 'Invalid template structure',
-  /* CMS's slot hint (ASSET_COPY.sizeHint). Since 20 Oct 2026 it is the empty zone's hint in
-     Text/Negative when a file over the limit was picked; the file is not taken. */
+  /* CMS's slot hint (ASSET_COPY.sizeHint). Since 22 Oct 2026 (requester) it reads in the
+     file's slot, CMS's upload-failed slot without Try again, when Import finds the file over
+     the limit. 20–22 Oct it was the empty zone's hint and the file was not taken. */
   size: 'Max file size: 10 MB',
   /* CMS's two-files message in the drop zone (ASSET_COPY.tooMany). */
   oneFile: '1 File Only',
@@ -138,10 +137,12 @@ export function fromExport(r: TemplateExport): Template {
 
 export type FileCheck =
   | { ok: true; templates: Template[] }
-  | { ok: false; problem: 'format' | 'size' | 'structure'; message: string }
+  | { ok: false; problem: 'size' | 'structure'; message: string }
 
-export function parseTemplates(name: string, body: string): FileCheck {
-  if (!name.toLowerCase().endsWith('.jsonl')) return { ok: false, problem: 'format', message: IMPORT_COPY.format }
+/** The upload control takes .jsonl only (requester, 22 Oct 2026): another type is never picked. */
+export const isJsonl = (name: string) => name.toLowerCase().endsWith('.jsonl')
+
+export function parseTemplates(body: string): FileCheck {
   const lines = body
     .split(/\r?\n/)
     .map((t, i) => ({ t: t.trim(), n: i + 1 }))
@@ -163,13 +164,9 @@ export function parseTemplates(name: string, body: string): FileCheck {
   return { ok: true, templates: (records as TemplateExport[]).map(fromExport) }
 }
 
-/** Format, then size (before the file is read), then structure. `size` stands in
- *  for `file.size` on the preset routes, which cannot carry a 10 MB file. */
-export async function checkFile(file: File, size = file.size): Promise<FileCheck> {
-  if (!file.name.toLowerCase().endsWith('.jsonl')) return { ok: false, problem: 'format', message: IMPORT_COPY.format }
-  if (size > MAX_IMPORT_BYTES) return { ok: false, problem: 'size', message: IMPORT_COPY.size }
-  return parseTemplates(file.name, await file.text())
-}
+/** Checked on Import, before the upload (requester, 22 Oct 2026; was: when the file was picked). */
+export const sizeProblem = (size: number): Extract<FileCheck, { ok: false }> | null =>
+  size > MAX_IMPORT_BYTES ? { ok: false, problem: 'size', message: IMPORT_COPY.size } : null
 
 /* ── preset files: what each `#/list/import/<preset>` route opens with ── */
 
@@ -207,7 +204,6 @@ const VALID_FILES: DemoFile[] = [
   },
 ]
 
-const BAD_FORMAT: DemoFile = { name: 'customers.csv', text: 'name,description\nPromotion offer,not a template' }
 const BAD_STRUCTURE: DemoFile = {
   name: 'broken-template.jsonl',
   text: toJsonl([{ ...demo('No channels', 'x', 'AIA', [], 'NANOTI') }]),
@@ -215,9 +211,9 @@ const BAD_STRUCTURE: DemoFile = {
 
 /** One file per import (15 Oct 2026); `duplicate` picks a file the history already holds. */
 export function presetFile(preset: ImportPreset): DemoFile | null {
-  /* `too-large` opens with no file: an over-10 MB file is not taken (20 Oct 2026). */
-  if (preset === 'initial' || preset === 'no-file' || preset === 'too-many' || preset === 'too-large') return null
-  if (preset === 'invalid-format') return BAD_FORMAT
+  if (preset === 'initial' || preset === 'no-file' || preset === 'too-many') return null
+  /* A stand-in size: the route cannot carry a file over 10 MB. */
+  if (preset === 'too-large') return { ...VALID_FILES[0], size: 14.2 * 1024 * 1024 }
   if (preset === 'invalid-structure') return BAD_STRUCTURE
   if (preset === 'duplicate') return VALID_FILES[2]
   return VALID_FILES[0]
@@ -229,6 +225,6 @@ export const IMPORT_HISTORY: Record<string, string[]> = { [VALID_FILES[2].name]:
 
 /** The templates the success route lands on the list: the one file `selected` picks. */
 export const presetTemplates = () => {
-  const check = parseTemplates(VALID_FILES[0].name, VALID_FILES[0].text)
+  const check = parseTemplates(VALID_FILES[0].text)
   return check.ok ? check.templates : []
 }
