@@ -32,6 +32,10 @@ export type BroadcastDrawerProps = {
   onCancel: () => void
   /** Open with the Cancel dialog already up (its preset route). */
   confirmingCancel?: boolean
+  /** Open with the Download report dialog already up (its preset route). */
+  confirmingDownload?: boolean
+  /** The next Download fails (`…/download/fail`). */
+  downloadFailNext?: boolean
 }
 
 /** HH:mm the current quiet period ends, or the first rule's end when now is
@@ -142,11 +146,19 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
  * Failed), where the CNH template drawer keeps its Download — behind the same
  * confirm as the list row's download.
  */
-export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmingCancel }: BroadcastDrawerProps) {
+export function BroadcastDrawer({
+  broadcast,
+  onClose,
+  onEdit,
+  onCancel,
+  confirmingCancel,
+  confirmingDownload,
+  downloadFailNext,
+}: BroadcastDrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(!!confirmingCancel && broadcast.status === 'Draft')
-  const [reporting, setReporting] = useState(false)
+  const [reporting, setReporting] = useState(!!confirmingDownload && hasDeliveryReport(broadcast))
   /* The dialog owns Escape and clicks while it is up. */
   const dialogUp = useRef(cancelOpen)
   dialogUp.current = cancelOpen || reporting
@@ -277,7 +289,11 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmi
           </ConfirmDialog>,
           document.body,
         )}
-      <ReportDownload broadcast={reporting ? broadcast : null} onDone={() => setReporting(false)} />
+      <ReportDownload
+        broadcast={reporting ? broadcast : null}
+        onDone={() => setReporting(false)}
+        failNext={downloadFailNext}
+      />
     </div>
   )
 }

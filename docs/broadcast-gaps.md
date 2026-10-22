@@ -95,6 +95,7 @@ The original build has none of this copy. Change it here if the BA rules otherwi
 | Drawer footer | `Download report` |
 | Download confirm (22 Oct) | Title `Download the delivery report?` · body `The report will be saved as a CSV file` · `Cancel` / `Download`. After Notification management's `Download the selected items?` / `Each selected item will be saved as a separate JSON file`. |
 | Download toast (22 Oct) | `Download Success` · `{id}-delivery-report.csv is saved` (Notification management's toast reads `Please try again` under Download Success, a slip not copied). |
+| Download failed (22 Oct) | Negative toast `Unable to download` · `Please try again`, Notification management's failure copy (Figma `1:14740`). |
 | List row download (22 Oct) | Screen-reader label `Download report for {name}`. |
 | Report file | `{id}-delivery-report.csv`. Columns: `{ID column}`, `Channel`, `Result`, `Reason`. Results: `Success`, `Failed`, `Waiting to send`. |
 | Report reasons | SMS: `Invalid mobile number`, `Number not reachable`. Email: `Mailbox not found`, `Message rejected`. Push: `No active device`. |
