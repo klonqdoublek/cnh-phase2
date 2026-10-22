@@ -211,7 +211,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 22 Oct 2026 | Broadcast gets Notification management's download behaviour (Figma `1:167606`), applied to the delivery report: a hover download per list row, and the drawer's Download report, both behind a confirm dialog and followed by a success toast. No multi-select: Broadcast has no requirement for bulk download (requester). Copy composed. Figma not updated yet. |
 | 22 Oct 2026 | Download report gets Notification management's failure case (Figma `1:14740`): "Be able to download?" No shows the *Unable to download* toast, no file saved (requester). Figma Broadcast "Download Behavior" `433:155024` draws both downloads, and the drawer's Download report sits in the footer there too. |
 | 21 Oct 2026 | The message content card gets a title, *Create broadcast message*, like the step's other cards (requester; composed, draft 2.2 has no title there). Figma not updated yet. |
-| 22 Oct 2026 | Do Not Disturb is off by default on a new broadcast. The card still shows one period, Mon – Fri 20:00–08:00, disabled until the switch is on. Edit and the presets keep the broadcast's own setting (requester). Figma not updated yet. |
+| 22 Oct 2026 | Do Not Disturb is off by default on a new broadcast. The card still shows one period, Mon – Fri 20:00–08:00, disabled until the switch is on. Edit and the presets keep the broadcast's own setting (requester). Figma updated the same day: Do Not Disturb is its own card in the Create broadcast local component, and the DND Behavior section opens on Off. |
 
 ## Open items
 
