@@ -14,7 +14,6 @@ import {
 import type { Template } from '@/data/templates'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
-import { FilePreviewDialog, PREVIEW_COPY } from '@/components/upload/FilePreviewDialog'
 
 /** `size` is `file.size`, except on a preset route that stands in for a large file. */
 type Picked = { key: number; file: File; size: number; check: FileCheck | null }
@@ -35,7 +34,8 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  *
  * One file per import (requester, 15 Oct 2026), the way a CMS asset slot
  * takes one: the 84-tall drop zone until a file is picked, then the file's
- * slot with a Preview in its place. A drag of two or more files turns the
+ * slot in its place, with no Preview: the users are not technical and will
+ * not open the file to read it (BA, 22 Oct 2026). A drag of two or more files turns the
  * zone Negative with CMS's "1 File Only" while it is over the zone, and the
  * drop is refused, so the files fly back (design critique, 20 Oct 2026; was:
  * the drop landed and took none). The file is checked the
@@ -52,11 +52,9 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * Since the design critique (20 Oct 2026) it is never a dialog over a dialog:
  * the upload spinner validates the file inside this dialog, and only then does
  * this dialog close and "Replace imported templates?" open, alone on the list.
- * Its Replace uploads again, its Cancel closes it and stays on the list.
- *
- * Preview hides this dialog while Document Preview is open — one scrim, not a
- * darker one on top — and Preview's Import imports from there (critique,
- * 20 Oct 2026).
+ * Its Replace uploads again. Its Cancel goes back to this dialog with the file
+ * still in its slot, for the user to remove (BA, 22 Oct 2026; was: closed it
+ * and stayed on the list).
  */
 export function ImportDialog({
   open,
@@ -80,7 +78,6 @@ export function ImportDialog({
   const [tooMany, setTooMany] = useState(false)
   /* The last file picked was over 10 MB and was not taken. */
   const [tooLarge, setTooLarge] = useState(false)
-  const [previewing, setPreviewing] = useState<File | null>(null)
   const nextKey = useRef(0)
   /* Whether the last upload was an import over: Try again repeats it without asking again. */
   const lastReplace = useRef(false)
@@ -114,7 +111,6 @@ export function ImportDialog({
     setMessage(null)
     setTooMany(false)
     setTooLarge(false)
-    setPreviewing(null)
   }
   const close = () => {
     if (uploading) return
@@ -145,6 +141,9 @@ export function ImportDialog({
     setPhase('idle')
   }
 
+  /* Cancel on "Replace imported templates?": back to the Import dialog, the file still picked. */
+  const backToFile = () => setPhase('idle')
+
   const upload = (replace: boolean) => {
     if (!picked?.check?.ok) return
     lastReplace.current = replace
@@ -169,7 +168,7 @@ export function ImportDialog({
   return (
     <>
       <ConfirmDialog
-        open={open && !previewing && phase !== 'replace'}
+        open={open && phase !== 'replace'}
         anatomy="sectioned"
         layer="fixed"
         width={444}
@@ -210,8 +209,6 @@ export function ImportDialog({
               errorPlacement={inSlot ? 'slot' : 'below'}
               retryLabel={IMPORT_COPY.retry}
               onRetry={failed ? () => upload(lastReplace.current) : undefined}
-              previewLabel={PREVIEW_COPY.preview}
-              onPreview={() => setPreviewing(picked.file)}
               onRemove={remove}
             />
           ) : (
@@ -243,23 +240,14 @@ export function ImportDialog({
           title={IMPORT_COPY.replaceTitle}
           cancelLabel="Cancel"
           confirmLabel={IMPORT_COPY.replaceConfirm}
-          onCancel={close}
+          onCancel={backToFile}
           onConfirm={() => upload(true)}
-          onDismiss={close}
+          onDismiss={backToFile}
           className="relative z-50"
         >
           <p className="type-body-m text-[var(--color-text-primary-default)]">{IMPORT_COPY.replaceBody(picked.file.name)}</p>
         </ConfirmDialog>
       )}
-      <FilePreviewDialog
-        file={previewing}
-        onClose={() => setPreviewing(null)}
-        confirmLabel="Import"
-        onConfirm={() => {
-          setPreviewing(null)
-          submit()
-        }}
-      />
     </>
   )
 }
