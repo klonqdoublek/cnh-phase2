@@ -144,7 +144,8 @@ export function useBroadcastForm({
     d.setDate(d.getDate() + seed.end.inDays)
     return `${ymd(d)}T${seed.end.time}`
   })
-  const [dnd, setDnd] = useState<Dnd>(seed.dnd ?? DEFAULT_DND)
+  // New broadcasts start with Do Not Disturb off; its default period waits, disabled, under the switch (requester, 22 Oct 2026).
+  const [dnd, setDnd] = useState<Dnd>(seed.dnd ?? { ...DEFAULT_DND, enabled: false })
   const [leaveOpen, setLeaveOpen] = useState(seed.open === 'leave')
   const [confirmOpen, setConfirmOpen] = useState(seed.open === 'confirm')
   const [creating, setCreating] = useState(seed.open === 'submitting')
