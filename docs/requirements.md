@@ -90,9 +90,11 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 ### Screens
 
 - **List** (`#/broadcast`): Broadcast name, Channel, Broadcast start, Do Not Disturb, Status. Recipients and Result were removed on 14 Oct and live in the drawer.
+  - Hovering a row that has a report shows a download mark beside its status, as Notification management's row download (22 Oct 2026). One row, one file; no checkboxes or bulk download.
 - **Detail drawer**, 720 wide:
   - Delivery result: Total, Success, Failed, Not sent (only when there is any) and Waiting to send, with a status note.
   - **Download report** in the drawer footer, as the CNH template drawer's Download (21 Oct 2026).
+  - Both downloads ask first (*Download the delivery report?*: Cancel / **Download**), then save the CSV and show a *Download Success* toast, as Notification management does (22 Oct 2026).
   - Broadcast details: description, audience file, recipient type, start, end, Do Not Disturb.
   - One section per channel.
   - A Draft and a Cancelled broadcast have no Delivery result; Broadcast details carries the status note.
@@ -202,6 +204,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 20 Oct 2026 | Start date and time comes before End date and time, Start on the left (requester). This departs from draft 2.2, which draws End first. |
 | 21 Oct 2026 | Do Not Disturb leaves the Select Delivery Date card for its own card in the same step; still three steps. Its header is the switch, the title and the note only; "Select DND" is gone (requester, Figma 409:75574). |
 | 21 Oct 2026 | Requirement update: the system does not pick the recipient column; the user picks it from an empty select. The system cannot count the file's rows or columns, so no count is shown: not beside the preview, not in the confirm dialog, not in the over-1,000 message. The invalid-rows table stays, without a count. The preview does not highlight the selected column. |
+| 22 Oct 2026 | Broadcast gets Notification management's download behaviour (Figma `1:167606`), applied to the delivery report: a hover download per list row, and the drawer's Download report, both behind a confirm dialog and followed by a success toast. No multi-select: Broadcast has no requirement for bulk download (requester). Copy composed. Figma not updated yet. |
 | 21 Oct 2026 | The message content card gets a title, *Create broadcast message*, like the step's other cards (requester; composed, draft 2.2 has no title there). Figma not updated yet. |
 
 ## Open items

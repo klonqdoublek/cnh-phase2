@@ -58,6 +58,13 @@ export const BROADCAST_COPY = {
   cancelKeep: 'Keep draft',
   cancelledTitle: 'Broadcast cancelled',
   cancelledBody: (name: string) => `${name} is cancelled`,
+  /* Download report from a list row or the drawer (22 Oct 2026), through
+     Notification management's confirm and toast. Composed after its copy. */
+  reportTitle: 'Download the delivery report?',
+  reportBody: 'The report will be saved as a CSV file',
+  reportConfirm: 'Download',
+  reportDoneTitle: 'Download Success',
+  reportDoneBody: (file: string) => `${file} is saved`,
 }
 
 export const MAX_FILE_BYTES = 10485760
@@ -594,6 +601,9 @@ const recipientId = (column: string, n: number) => {
 const csvCell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value)
 
 export const deliveryReportName = (b: Broadcast) => `${b.id}-delivery-report.csv`
+
+/** A report exists once anything was attempted (Processing, Published or Failed). */
+export const hasDeliveryReport = (b: Broadcast) => b.success + b.failed > 0
 
 export function deliveryReportCsv(b: Broadcast): string {
   const waiting = waitingOf(b)

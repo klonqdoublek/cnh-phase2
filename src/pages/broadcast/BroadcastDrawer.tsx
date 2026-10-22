@@ -8,21 +8,20 @@ import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { DetailDrawer } from '@/patterns/detail-drawer'
 import {
   BROADCAST_COPY,
-  deliveryReportCsv,
-  deliveryReportName,
   firstSend,
   fmtDateTime,
   fmtDnd,
   fmtNumber,
+  hasDeliveryReport,
   quietUntil,
   waitingOf,
   type Broadcast,
   type BroadcastStatus as Status,
 } from '@/data/broadcast'
 import { cn } from '@/lib/cn'
-import { downloadText } from '@/lib/download'
 import { BroadcastStatus } from './list/BroadcastStatus'
 import { DrawerSection, Meta, type DrawerSectionSpec } from './list/drawer-parts'
+import { ReportDownload } from './list/ReportDownload'
 
 export type BroadcastDrawerProps = {
   broadcast: Broadcast
@@ -140,15 +139,17 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
  * Cancel broadcast (behind a confirm dialog) and Edit. Once submitted, a
  * broadcast cannot be cancelled (a system limit, 19 Oct 2026); its footer has
  * Download report once anything was attempted (Processing, Published or
- * Failed), where the CNH template drawer keeps its Download.
+ * Failed), where the CNH template drawer keeps its Download — behind the same
+ * confirm as the list row's download.
  */
 export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmingCancel }: BroadcastDrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(!!confirmingCancel && broadcast.status === 'Draft')
+  const [reporting, setReporting] = useState(false)
   /* The dialog owns Escape and clicks while it is up. */
   const dialogUp = useRef(cancelOpen)
-  dialogUp.current = cancelOpen
+  dialogUp.current = cancelOpen || reporting
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setShown(true))
@@ -181,6 +182,7 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmi
     }
     const onPointer = (event: MouseEvent) => {
       if (dialogUp.current) return
+      if ((event.target as Element).closest?.('[data-report-download]')) return
       if (!panel.current?.contains(event.target as Node)) onClose()
     }
     const timer = setTimeout(() => document.addEventListener('mousedown', onPointer), 0)
@@ -194,7 +196,7 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmi
   }, [onClose])
 
   const draft = broadcast.status === 'Draft'
-  const attempted = broadcast.success + broadcast.failed > 0
+  const attempted = hasDeliveryReport(broadcast)
   const sections = sectionsOf(broadcast)
 
   return (
@@ -242,10 +244,7 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmi
               </Button>
             </>
           ) : attempted ? (
-            <OutlineButton
-              onClick={() => downloadText(deliveryReportName(broadcast), deliveryReportCsv(broadcast))}
-              className="h-[44px]"
-            >
+            <OutlineButton onClick={() => setReporting(true)} className="h-[44px]">
               Download report
               <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
             </OutlineButton>
@@ -278,6 +277,7 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit, onCancel, confirmi
           </ConfirmDialog>,
           document.body,
         )}
+      <ReportDownload broadcast={reporting ? broadcast : null} onDone={() => setReporting(false)} />
     </div>
   )
 }
