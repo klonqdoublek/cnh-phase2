@@ -98,36 +98,35 @@ export function BasicInfo({ f }: F) {
 
 /* ── Step 2 ─────────────────────────────────────────────────────────────── */
 
-/** Recipient type, then the file beside its ID column. The upload is the
- *  CMS prototype's zone and file slot (components/upload) — webds ships no
- *  upload control (gap). */
+/** Recipient type, the upload (its preview under the file) and the ID
+ *  column, one under the other at full width (requester, 22 Oct 2026: top to
+ *  bottom). The upload is the CMS prototype's zone and file slot
+ *  (components/upload) — webds ships no upload control (gap). */
 export function AudienceFile({ f }: F) {
   return (
     <FormSectionCard title="Upload Audience file">
       <RecipientType f={f} />
-      <div className="flex items-start gap-[var(--space-6)]">
-        <div data-error={f.errors.file ? 'true' : undefined} className="flex w-[672px] min-w-0 shrink-0 flex-col gap-[var(--space-2)]">
-          <FieldLabel required>Upload File</FieldLabel>
-          {f.file ? (
-            <FileResult f={f} />
-          ) : (
-            <UploadZone
-              buttonLabel={BROADCAST_COPY.browse}
-              hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
-              accept=".csv,.xlsx,text/csv"
-              error={!!f.errors.file}
-              onFiles={f.pick}
-              className="min-h-[164px]"
-            />
-          )}
-          {f.errors.file && (
-            <InlineMessage appearance="negative" size="s">
-              {f.errors.file}
-            </InlineMessage>
-          )}
-        </div>
-        <ColumnSelect f={f} />
+      <div data-error={f.errors.file ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
+        <FieldLabel required>Upload File</FieldLabel>
+        {f.file ? (
+          <FileResult f={f} />
+        ) : (
+          <UploadZone
+            buttonLabel={BROADCAST_COPY.browse}
+            hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
+            accept=".csv,.xlsx,text/csv"
+            error={!!f.errors.file}
+            onFiles={f.pick}
+            className="min-h-[164px]"
+          />
+        )}
+        {f.errors.file && (
+          <InlineMessage appearance="negative" size="s">
+            {f.errors.file}
+          </InlineMessage>
+        )}
       </div>
+      <ColumnSelect f={f} />
     </FormSectionCard>
   )
 }
