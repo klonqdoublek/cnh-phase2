@@ -177,6 +177,13 @@
    "section": "Broadcast"
   },
   {
+   "id": "bc-channel-typing",
+   "kind": "screen",
+   "label": "A channel on and typed in — the marks stay until Submit",
+   "route": "#/broadcast/create/channel-typing",
+   "section": "Broadcast"
+  },
+  {
    "id": "bc-checking",
    "kind": "screen",
    "label": "Checking file… — the whole file is read",
@@ -735,6 +742,23 @@
   },
   {
    "from": "bc-errors",
+   "to": "bc-valid",
+   "label": "Submit",
+   "style": "back",
+   "touch": {
+    "x": 1423,
+    "y": 1020,
+    "w": 177,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-errors",
+   "to": "bc-channel-typing",
+   "label": "Switch a channel on"
+  },
+  {
+   "from": "bc-channel-typing",
    "to": "bc-valid",
    "label": "Submit",
    "style": "back",

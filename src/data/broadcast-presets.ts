@@ -2,7 +2,7 @@
  * (`#/broadcast/create/<preset>`, `#/broadcast/<list preset>`), and the seeds
  * each Create preset fills the form with. */
 
-import { BA_DND, DEFAULT_DND, type BroadcastContent, type Dnd, type ListToast, type RecipientType } from './broadcast'
+import { BA_DND, BROADCAST_COPY, DEFAULT_DND, type BroadcastContent, type Dnd, type ListToast, type RecipientType } from './broadcast'
 import type { Channel } from './templates'
 
 export const FORM_PRESETS = [
@@ -10,6 +10,10 @@ export const FORM_PRESETS = [
   'cis',
   'direct',
   'errors',
+  'step1-filled',
+  'no-channel',
+  'channel-typing',
+  'channel-errors',
   'draft-no-name',
   'filled',
   'quiet',
@@ -168,6 +172,8 @@ export type FormSeed = {
   open?: 'checking' | 'confirm' | 'blocked' | 'check-fail' | 'submitting' | 'fail' | 'leave'
   /** A button pressed on arrival, to show what it does on this state. */
   press?: 'submit' | 'draft'
+  /** Errors an earlier Submit left on the form, held while the user edits. */
+  errors?: Record<string, string>
 }
 
 export const filled: FormSeed = {
@@ -179,6 +185,17 @@ export const filled: FormSeed = {
   name: 'October Customer Campaign',
   description: 'Send payment confirmation and special offer to selected customers in October.',
   content: { smsMessage: MESSAGE, emailSubject: SUBJECT, emailBody: MESSAGE, pushTitle: SUBJECT, pushBody: MESSAGE },
+}
+
+/* Error behavior, CNH Phase 1's five steps (Figma JjvzdUwg5LlKHDQvo2fny0
+ * 123:95723) on Broadcast: Step 1 filled → Submit marks the file and the
+ * channels → a channel switched on and typed in, the marks stay → Submit
+ * again leaves only what is still missing. */
+const step1: FormSeed = { name: filled.name, description: filled.description }
+const emailTyped: FormSeed = {
+  ...step1,
+  channels: ['Email'],
+  content: { smsMessage: '', emailSubject: SUBJECT, emailBody: '', pushTitle: '', pushBody: '' },
 }
 
 /** Days until the next Monday–Thursday, so a 21:00 start lands in the quiet period. */
@@ -209,6 +226,14 @@ export function formSeed(preset: FormPreset): FormSeed {
       }
     case 'errors':
       return { press: 'submit' }
+    case 'step1-filled':
+      return step1
+    case 'no-channel':
+      return { ...step1, press: 'submit' }
+    case 'channel-typing':
+      return { ...emailTyped, errors: { file: BROADCAST_COPY.noFile, channels: BROADCAST_COPY.noChannel } }
+    case 'channel-errors':
+      return { ...emailTyped, press: 'submit' }
     case 'draft-no-name':
       return { press: 'draft' }
     case 'filled':

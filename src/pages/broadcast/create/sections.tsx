@@ -81,7 +81,7 @@ export function BasicInfo({ f }: F) {
         max={100}
         error={f.errors.name}
         placeholder="e.g. October Customer Campaign"
-        onChange={f.edit('name', f.setName)}
+        onChange={f.setName}
       />
       <Text
         id="description"
@@ -90,7 +90,7 @@ export function BasicInfo({ f }: F) {
         max={250}
         error={f.errors.description}
         placeholder="What this broadcast is for"
-        onChange={f.edit('description', f.setDescription)}
+        onChange={f.setDescription}
       />
     </FormSectionCard>
   )
@@ -400,10 +400,7 @@ function ColumnSelect({ f }: F) {
       error={f.errors.column}
       hint={hint}
       placeholder="Select column"
-      onChange={(v) => {
-        f.setColumn(v)
-        f.clear('column', 'file')
-      }}
+      onChange={f.setColumn}
     />
   )
 }
@@ -577,7 +574,6 @@ export function Delivery({ f }: F) {
             onChange={(v) => {
               f.setStartDate(v.slice(0, 10))
               f.setStartTime(v.slice(11, 16))
-              f.clear('startDate', 'startTime', 'end')
             }}
           />
           {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
@@ -592,10 +588,7 @@ export function Delivery({ f }: F) {
             minuteStep={5}
             error={!!f.errors.end}
             message={f.errors.end}
-            onChange={(v) => {
-              f.setEnd(v)
-              f.clear('end')
-            }}
+            onChange={f.setEnd}
           />
         </div>
       )}
