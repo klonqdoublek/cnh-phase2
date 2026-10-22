@@ -103,7 +103,12 @@ export function useBroadcastForm({
   initial?: Broadcast
 }) {
   const [seed] = useState<FormSeed>(() => (initial ? fromDraft(initial) : preset ? formSeed(preset) : {}))
-  const [errors, setErrors] = useState<FormErrors>({})
+  /* Errors are the last Submit's (or Save draft's) and stay until the next
+   * one, while the user types or switches a channel on: CNH Phase 1 "Error
+   * behavior" (Figma JjvzdUwg5LlKHDQvo2fny0 123:95723, requester 22 Oct 2026).
+   * Only a field that goes away (a channel switched off, a quiet period
+   * removed, Send as soon as possible) drops its error. */
+  const [errors, setErrors] = useState<FormErrors>(() => (seed.errors as FormErrors) ?? {})
   const [name, setName] = useState(seed.name ?? '')
   const [description, setDescription] = useState(seed.description ?? '')
   const [file, setFile] = useState<File | null>(() =>
@@ -169,14 +174,7 @@ export function useBroadcastForm({
       for (const k of keys) delete next[k]
       return next
     })
-  /** A setter that also clears its own error. */
-  const edit =
-    <T,>(key: ErrorKey, set: (v: T) => void) =>
-    (v: T) => {
-      set(v)
-      clear(key)
-    }
-  const setC = (key: keyof BroadcastContent) => edit<string>(key, (v) => setContent((c) => ({ ...c, [key]: v })))
+  const setC = (key: keyof BroadcastContent) => (v: string) => setContent((c) => ({ ...c, [key]: v }))
 
   const pick = (list: FileList | null | undefined) => {
     const f = list?.[0]
@@ -186,7 +184,6 @@ export function useBroadcastForm({
     setFileText('')
     setColumn('')
     f.text().then(setFileText, () => setFileText(''))
-    clear('file', 'column')
     readAudienceFile(f).then((result) => window.setTimeout(() => setRead(result), CHECK_MS))
   }
   const clearFile = () => {
@@ -201,16 +198,17 @@ export function useBroadcastForm({
     const next = type === 'direct' ? channels.filter((c) => DIRECT_CHANNELS.includes(c)).slice(0, 1) : channels
     setChannels(next)
     setColumn('')
-    clear('channels', 'column', 'file')
+    /* The channel message names the recipient type ("Select Email or SMS"). */
+    clear('channels')
   }
   const toggleChannel = (channel: Channel, on: boolean) => {
     setChannels((prev) => (on ? CHANNELS.filter((c) => c === channel || prev.includes(c)) : prev.filter((c) => c !== channel)))
-    clear('channels', ...(on ? [] : CHANNEL_FIELDS[channel]))
+    if (!on) clear(...CHANNEL_FIELDS[channel])
   }
   const chooseDirect = (channel: Channel) => {
     setChannels([channel])
     if (idKind('direct', [channel]) !== kind) setColumn('')
-    clear('channels', 'column', 'file', ...CHANNEL_FIELDS[channel === 'SMS' ? 'Email' : 'SMS'])
+    clear(...CHANNEL_FIELDS[channel === 'SMS' ? 'Email' : 'SMS'])
   }
   /** A channel card's switch. Direct recipient sends by Email or SMS, never
    *  both, so switching one on there switches the other off. */
@@ -232,7 +230,6 @@ export function useBroadcastForm({
   const setDndTimeZone = (timeZone: string) => setDnd((d) => ({ ...d, timeZone }))
   const setDndRule = (id: string, part: Partial<DndRule>) => {
     setDnd((d) => ({ ...d, rules: d.rules.map((r) => (r.id === id ? { ...r, ...part } : r)) }))
-    clear(`dndDays:${id}`, `dndTime:${id}`)
   }
   const addDndRule = () => setDnd((d) => ({ ...d, rules: [...d.rules, dndRule()] }))
   const removeDndRule = (id: string) => {
@@ -357,7 +354,6 @@ export function useBroadcastForm({
     editing: !!initial,
     errors,
     clear,
-    edit,
     setC,
     name,
     setName,

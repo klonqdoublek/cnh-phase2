@@ -101,6 +101,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
   - A Draft and a Cancelled broadcast have no Delivery result; Broadcast details carries the status note.
   - **Cancel broadcast** and **Edit** on a Draft only. Cancel asks first (*Cancel this broadcast?*: **Keep draft** / **Cancel broadcast**), then the list shows a *Broadcast cancelled* toast and the row turns Cancelled.
 - **Create and Edit broadcast:** one page with six steps, a sticky footer with **Save draft** and **Submit**, then a confirm dialog.
+- **Error behavior** (CNH Phase 1, [Figma 123:95723](https://www.figma.com/design/JjvzdUwg5LlKHDQvo2fny0/-CNH--UI-CNH-Template-Management?node-id=123-95723); requester, 22 Oct 2026): errors appear on **Submit** (or Save draft) and stay until the next one. Typing, picking a file or a column, or switching a channel on does not clear a mark; Submit checks again and leaves only what is still missing. A field that goes away drops its error: a channel switched off, a quiet period removed, Send as soon as possible. Switching the recipient type clears the channel message, whose words depend on it. Before, each error cleared as soon as its field changed. Presets, Phase 1's steps 2–5: `step1-filled` → `no-channel` → `channel-typing` → `channel-errors`.
 
 ### Create: the three steps
 
@@ -175,6 +176,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 
 | Date | Ruling |
 |---|---|
+| 22 Oct 2026 | Broadcast Create/Edit errors stay until the next Submit, as CNH Phase 1's Error behavior (Figma 123:95723); before, each error cleared as soon as its field changed. Requester's call. Figma: section "error behavior" (435:166652) on the Broadcast file. |
 | 22 Oct 2026 | Import: the file slot has no Preview; the users are not technical and will not read the file (BA, asked about the use case). So Cancel on **Replace imported templates?** goes back to the Import dialog with the file still in its slot, and the user removes it; before, Cancel closed both and stayed on the list. Figma not updated yet. |
 | 21 Oct 2026 | Import uploading: the spinner sits inside the Import dialog again, covering title, body and actions (Korn's 5 Oct build), not a Scrim Strong over the whole page; a full-page overlay over a dialog read oddly. Still no text. Requester's call. Figma not updated yet. |
 | 21 Oct 2026 | Full-page spinner overlays carry no text: Import's upload (was *Importing templates…*) and Broadcast Submit's file read (was *Checking file…*). The copy stays as the spinner's screen-reader label. Requester's call. Figma not updated yet. |
