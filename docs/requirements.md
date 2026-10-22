@@ -128,7 +128,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 3. **Delivery Date.** Two cards in one step: "Select Delivery Date" ([Figma 89:4665](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=89-4665), 15 Oct 2026), then Do Not Disturb ([Figma 409:75574](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--WIP_Broadcast-Message?node-id=409-75574), 21 Oct 2026):
    - **Send as soon as possible**, or **Schedule delivery** with Start date and time\* (5-minute steps, later than now).
    - Optional **End date and time**, later than the start, with Clear, **for Schedule delivery only**. Send as soon as possible has no end (requester, 15 Oct, following the draft; the BA's Q2 answer on 14 Oct did not say which modes). Start sits on the left and End on the right (requester, 20 Oct; draft 2.2 draws End first).
-   - **Do Not Disturb (DND)** card: the switch before the title, "Prevent sending messages during quiet hours." under it (no "Select DND" heading), then any number of quiet periods, one row each: days, hours (5-minute steps) or **All day**, and a trash when there are two or more. **Add period** under the periods. The one time zone, Asia/Bangkok (GMT+7), shows as text.
+   - **Do Not Disturb (DND)** card: the switch before the title, "Prevent sending messages during quiet hours." under it (no "Select DND" heading). The switch is off on a new broadcast, and the periods below it are disabled until it is on. Then any number of quiet periods, one row each: days, hours (5-minute steps) or **All day**, and a trash when there are two or more. **Add period** under the periods. The one time zone, Asia/Bangkok (GMT+7), shows as text.
 
 ### Delivery rules
 
@@ -210,6 +210,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 22 Oct 2026 | Broadcast gets Notification management's download behaviour (Figma `1:167606`), applied to the delivery report: a hover download per list row, and the drawer's Download report, both behind a confirm dialog and followed by a success toast. No multi-select: Broadcast has no requirement for bulk download (requester). Copy composed. Figma not updated yet. |
 | 22 Oct 2026 | Download report gets Notification management's failure case (Figma `1:14740`): "Be able to download?" No shows the *Unable to download* toast, no file saved (requester). Figma Broadcast "Download Behavior" `433:155024` draws both downloads, and the drawer's Download report sits in the footer there too. |
 | 21 Oct 2026 | The message content card gets a title, *Create broadcast message*, like the step's other cards (requester; composed, draft 2.2 has no title there). Figma not updated yet. |
+| 22 Oct 2026 | Do Not Disturb is off by default on a new broadcast. The card still shows one period, Mon – Fri 20:00–08:00, disabled until the switch is on. Edit and the presets keep the broadcast's own setting (requester). Figma not updated yet. |
 
 ## Open items
 
