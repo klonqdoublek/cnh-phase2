@@ -1,7 +1,7 @@
 {
  "source": {
   "kind": "code",
-  "path": "cnh-tm-devtarget-v2/src/pages/ImportDialog.tsx · src/data/import-spec.ts · src/pages/BroadcastWizard.tsx · src/pages/broadcast/useBroadcastForm.ts · src/data/broadcast-presets.ts",
+  "path": "src/pages/notifications/ImportDialog.tsx · src/data/import-spec.ts (Import, 22 Oct 2026) · cnh-tm-devtarget-v2 · src/pages/BroadcastWizard.tsx · src/pages/broadcast/useBroadcastForm.ts · src/data/broadcast-presets.ts",
   "extractedAt": "2026-10-06"
  },
  "screen": {
@@ -24,6 +24,32 @@
    "section": "Import"
   },
   {
+   "id": "more-than-one",
+   "kind": "decision",
+   "label": "More than one file?",
+   "section": "Import"
+  },
+  {
+   "id": "too-many",
+   "kind": "screen",
+   "label": "More than one file dragged over — drop refused",
+   "route": "#/list/import/too-many",
+   "section": "Import"
+  },
+  {
+   "id": "selected",
+   "kind": "screen",
+   "label": "File selected",
+   "route": "#/list/import/selected",
+   "section": "Import"
+  },
+  {
+   "id": "one-file",
+   "kind": "decision",
+   "label": "Import 1 File?",
+   "section": "Import"
+  },
+  {
    "id": "no-file",
    "kind": "screen",
    "label": "Import pressed with no file",
@@ -31,28 +57,23 @@
    "section": "Import"
   },
   {
-   "id": "over-50",
+   "id": "size",
    "kind": "decision",
-   "label": "More than 50 files?",
+   "label": "10 MB or less?",
    "section": "Import"
   },
   {
-   "id": "cap",
-   "kind": "tag",
-   "label": "Keep the first 50 · say how many were left out",
-   "section": "Import"
-  },
-  {
-   "id": "parses",
-   "kind": "decision",
-   "label": "Every file a .jsonl that parses?",
-   "section": "Import"
-  },
-  {
-   "id": "invalid-format",
+   "id": "too-large",
    "kind": "screen",
-   "label": "Invalid file format — Import stays blocked until it is removed",
-   "route": "#/list/import/invalid-format",
+   "label": "File over 10 MB — in its slot, no Try again",
+   "route": "#/list/import/too-large",
+   "section": "Import"
+  },
+  {
+   "id": "uploading",
+   "kind": "screen",
+   "label": "Uploading — spinner inside the Import dialog",
+   "route": "#/list/import/uploading",
    "section": "Import"
   },
   {
@@ -69,29 +90,28 @@
    "section": "Import"
   },
   {
-   "id": "selected",
-   "kind": "screen",
-   "label": "Files selected — all valid",
-   "route": "#/list/import/selected",
+   "id": "imported-before",
+   "kind": "decision",
+   "label": "File name imported before?",
    "section": "Import"
   },
   {
-   "id": "uploading",
+   "id": "duplicate",
    "kind": "screen",
-   "label": "Uploading",
-   "route": "#/list/import/uploading",
+   "label": "Replace imported templates?",
+   "route": "#/list/import/duplicate",
    "section": "Import"
   },
   {
    "id": "uploaded",
    "kind": "decision",
-   "label": "Upload succeeded?",
+   "label": "Able to import templates?",
    "section": "Import"
   },
   {
    "id": "failure",
    "kind": "screen",
-   "label": "Import failure",
+   "label": "Import failure — in the file slot, Try again",
    "route": "#/list/import/failure",
    "section": "Import"
   },
@@ -359,32 +379,32 @@
    "label": "Import",
    "style": "solid",
    "touch": {
-    "x": 1603,
+    "x": 1615,
     "y": 19,
-    "w": 86,
+    "w": 84,
     "h": 44
    }
   },
   {
    "from": "initial",
-   "to": "over-50",
-   "label": "Pick or drop files",
+   "to": "more-than-one",
+   "label": "Browse file or drop a file",
    "style": "solid",
    "touch": {
-    "x": 896,
-    "y": 558,
-    "w": 127,
-    "h": 36
+    "x": 754,
+    "y": 488,
+    "w": 412,
+    "h": 84
    }
   },
   {
    "from": "initial",
-   "to": "no-file",
-   "label": "Import with no file",
-   "style": "dashed",
+   "to": "one-file",
+   "label": "Import",
+   "style": "solid",
    "touch": {
-    "x": 1262,
-    "y": 643,
+    "x": 1084,
+    "y": 596,
     "w": 82,
     "h": 44
    }
@@ -395,51 +415,123 @@
    "label": "Cancel",
    "style": "back",
    "touch": {
-    "x": 1168,
-    "y": 643,
+    "x": 990,
+    "y": 596,
     "w": 86,
     "h": 44
    }
   },
   {
-   "from": "no-file",
-   "to": "over-50",
-   "label": "Pick or drop files",
-   "style": "solid",
+   "from": "more-than-one",
+   "to": "too-many",
+   "label": "Yes",
+   "style": "dashed"
+  },
+  {
+   "from": "more-than-one",
+   "to": "selected",
+   "label": "No",
+   "style": "solid"
+  },
+  {
+   "from": "too-many",
+   "to": "more-than-one",
+   "label": "Browse file or drop one file",
+   "style": "back",
    "touch": {
-    "x": 896,
-    "y": 540,
-    "w": 127,
-    "h": 36
+    "x": 754,
+    "y": 488,
+    "w": 412,
+    "h": 84
    }
   },
   {
-   "from": "over-50",
-   "to": "cap",
+   "from": "selected",
+   "to": "one-file",
+   "label": "Import",
+   "style": "solid",
+   "touch": {
+    "x": 1084,
+    "y": 596,
+    "w": 82,
+    "h": 44
+   }
+  },
+  {
+   "from": "selected",
+   "to": "initial",
+   "label": "Remove",
+   "style": "back",
+   "touch": {
+    "x": 1137,
+    "y": 503,
+    "w": 16,
+    "h": 16
+   }
+  },
+  {
+   "from": "selected",
+   "to": "list",
+   "label": "Cancel",
+   "style": "back",
+   "touch": {
+    "x": 990,
+    "y": 596,
+    "w": 86,
+    "h": 44
+   }
+  },
+  {
+   "from": "one-file",
+   "to": "no-file",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "one-file",
+   "to": "size",
    "label": "Yes",
-   "style": "dashed"
-  },
-  {
-   "from": "over-50",
-   "to": "parses",
-   "label": "No",
    "style": "solid"
   },
   {
-   "from": "cap",
-   "to": "parses",
-   "style": "solid"
+   "from": "no-file",
+   "to": "more-than-one",
+   "label": "Browse file or drop a file",
+   "style": "back",
+   "touch": {
+    "x": 754,
+    "y": 472,
+    "w": 412,
+    "h": 84
+   }
   },
   {
-   "from": "parses",
-   "to": "invalid-format",
+   "from": "size",
+   "to": "too-large",
    "label": "No",
    "style": "dashed"
   },
   {
-   "from": "parses",
+   "from": "size",
+   "to": "uploading",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "too-large",
+   "to": "initial",
+   "label": "Remove",
+   "style": "back",
+   "touch": {
+    "x": 1137,
+    "y": 503,
+    "w": 16,
+    "h": 16
+   }
+  },
+  {
+   "from": "uploading",
    "to": "fields",
-   "label": "Yes",
    "style": "solid"
   },
   {
@@ -450,50 +542,57 @@
   },
   {
    "from": "fields",
-   "to": "selected",
+   "to": "imported-before",
    "label": "Yes",
    "style": "solid"
   },
   {
-   "from": "invalid-format",
-   "to": "selected",
-   "label": "Remove N files with errors",
-   "style": "solid",
-   "touch": {
-    "x": 1123,
-    "y": 459,
-    "w": 221,
-    "h": 32
-   }
-  },
-  {
    "from": "invalid-structure",
-   "to": "selected",
-   "label": "Remove N files with errors",
-   "style": "solid",
+   "to": "initial",
+   "label": "Remove",
+   "style": "back",
    "touch": {
-    "x": 1123,
-    "y": 459,
-    "w": 221,
-    "h": 32
+    "x": 1137,
+    "y": 493,
+    "w": 16,
+    "h": 16
    }
   },
   {
-   "from": "selected",
+   "from": "imported-before",
+   "to": "duplicate",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "imported-before",
+   "to": "uploaded",
+   "label": "No",
+   "style": "solid"
+  },
+  {
+   "from": "duplicate",
    "to": "uploading",
-   "label": "Import",
-   "style": "solid",
+   "label": "Replace",
+   "style": "back",
    "touch": {
-    "x": 1262,
-    "y": 672,
-    "w": 82,
+    "x": 1074,
+    "y": 587,
+    "w": 92,
     "h": 44
    }
   },
   {
-   "from": "uploading",
-   "to": "uploaded",
-   "style": "solid"
+   "from": "duplicate",
+   "to": "selected",
+   "label": "Cancel",
+   "style": "back",
+   "touch": {
+    "x": 980,
+    "y": 587,
+    "w": 86,
+    "h": 44
+   }
   },
   {
    "from": "uploaded",
@@ -510,13 +609,25 @@
   {
    "from": "failure",
    "to": "uploading",
-   "label": "Import again",
+   "label": "Try again",
    "style": "back",
    "touch": {
-    "x": 1262,
-    "y": 710,
-    "w": 82,
-    "h": 44
+    "x": 1085,
+    "y": 535,
+    "w": 68,
+    "h": 24
+   }
+  },
+  {
+   "from": "failure",
+   "to": "initial",
+   "label": "Remove",
+   "style": "back",
+   "touch": {
+    "x": 1137,
+    "y": 503,
+    "w": 16,
+    "h": 16
    }
   },
   {
@@ -1063,5 +1174,5 @@
    }
   }
  ],
- "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself) · Cancel a draft 2026-10-19, same method on a static build (#/broadcast/view/BC-0007[/cancel]) · Audience file read on Submit 2026-10-19, same method on a static build (#/broadcast/create/confirm-invalid, file-blocked, check-fail) · Download report 2026-10-22, same method on a static build (#/broadcast, #/broadcast/download)"
+ "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself) · Cancel a draft 2026-10-19, same method on a static build (#/broadcast/view/BC-0007[/cancel]) · Audience file read on Submit 2026-10-19, same method on a static build (#/broadcast/create/confirm-invalid, file-blocked, check-fail) · Download report 2026-10-22, same method on a static build (#/broadcast, #/broadcast/download) · Import redrawn 22 Oct 2026 (checks on Import), same method on a static build (#/list/import/<state>)"
 }

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
+import { InlineMessage } from '@/bbl/inline-message'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import {
   IMPORT_COPY,
   IMPORT_FAIL_SENTINEL,
-  MAX_IMPORT_BYTES,
   UPLOAD_MS,
-  checkFile,
+  isJsonl,
+  parseTemplates,
   presetFile,
+  sizeProblem,
   type FileCheck,
   type ImportPreset,
 } from '@/data/import-spec'
@@ -15,8 +17,10 @@ import type { Template } from '@/data/templates'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 
-/** `size` is `file.size`, except on a preset route that stands in for a large file. */
-type Picked = { key: number; file: File; size: number; check: FileCheck | null }
+type Problem = Extract<FileCheck, { ok: false }>
+/** `size` is `file.size`, except on a preset route that stands in for a large file.
+ *  `problem` is what Import found wrong with the file; nothing is checked on pick. */
+type Picked = { key: number; file: File; size: number; problem: Problem | null }
 /** `replace`: the upload found the file name imported before and asks "Replace imported templates?". */
 type Phase = 'idle' | 'uploading' | 'failed' | 'replace'
 
@@ -24,6 +28,7 @@ type Phase = 'idle' | 'uploading' | 'failed' | 'replace'
 const sizeLabel = (bytes: number) =>
   bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
 const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toUpperCase() : 'File')
+const problemOf = (check: FileCheck) => (check.ok ? null : check)
 
 /**
  * Import templates — a dialog on the list (Korn, 2026-10-05). Shell is webds
@@ -38,14 +43,17 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * not open the file to read it (BA, 22 Oct 2026). A drag of two or more files turns the
  * zone Negative with CMS's "1 File Only" while it is over the zone, and the
  * drop is refused, so the files fly back (design critique, 20 Oct 2026; was:
- * the drop landed and took none). The file is checked the
- * moment it is picked — format, then size (10 MB, CMS's limit), then
- * structure — and a file in error blocks Import until it is removed. Files
- * with a wrong extension are still taken and flagged — the original build's
- * Invalid file format state. A .jsonl file over 10 MB is not taken at all:
- * the zone stays empty, turns Negative and reads "Max file size: 10 MB" in
- * Text/Negative, as CMS's too-many zone does — no file name (review comment,
- * 20 Oct 2026; was the file's slot in error).
+ * the drop landed and took none). The control takes .jsonl only: the chooser
+ * filters by it and a dropped file of another type is not taken, so there is
+ * no Invalid file format state (requester, 22 Oct 2026).
+ *
+ * Picking a file only puts it in the slot. The checks run on Import
+ * (requester, 22 Oct 2026; was: the moment the file was picked): a file, then
+ * 10 MB (CMS's limit) before the upload, then — under the upload spinner —
+ * the template structure, the file name imported before, and the upload
+ * itself. A file over 10 MB reads "Max file size: 10 MB" in its slot, CMS's
+ * upload-failed slot without Try again; a broken structure reads under the
+ * slot. Either blocks Import until the file is removed.
  *
  * A file whose name was imported before asks first (requester, 15 Oct 2026):
  * "Replace imported templates?", and Replace swaps that earlier import's templates.
@@ -76,8 +84,6 @@ export function ImportDialog({
   const [message, setMessage] = useState<string | null>(null)
   /* Only the `too-many` route sets this: it draws the refused drag, which a live drop never leaves behind. */
   const [tooMany, setTooMany] = useState(false)
-  /* The last file picked was over 10 MB and was not taken. */
-  const [tooLarge, setTooLarge] = useState(false)
   const nextKey = useRef(0)
   /* Whether the last upload was an import over: Try again repeats it without asking again. */
   const lastReplace = useRef(false)
@@ -87,30 +93,25 @@ export function ImportDialog({
     if (!open || !preset) return
     const demo = presetFile(preset)
     if (demo) {
-      const file = new File([demo.text], demo.name, { type: demo.name.endsWith('.jsonl') ? 'application/jsonl' : 'text/csv' })
+      const file = new File([demo.text], demo.name, { type: 'application/jsonl' })
       const size = demo.size ?? file.size
-      const key = nextKey.current++
-      setPicked({ key, file, size, check: null })
-      checkFile(file, size).then((check) => setPicked((p) => (p?.key === key ? { ...p, check } : p)))
+      const problem =
+        preset === 'too-large' ? sizeProblem(size) : preset === 'invalid-structure' ? problemOf(parseTemplates(demo.text)) : null
+      setPicked({ key: nextKey.current++, file, size, problem })
     } else setPicked(null)
     setPhase(preset === 'uploading' ? 'uploading' : preset === 'failure' ? 'failed' : preset === 'duplicate' ? 'replace' : 'idle')
     setMessage(preset === 'no-file' ? IMPORT_COPY.noFile : null)
     setTooMany(preset === 'too-many')
-    setTooLarge(preset === 'too-large')
   }, [open, preset])
 
-  const bad = !!picked?.check && !picked.check.ok
   const failed = phase === 'failed'
-  /* CMS's upload-failed slot (design request, 20 Oct 2026): the upload failing reads inside the slot, with Try again. */
-  const inSlot = failed
-  const templateCount = picked?.check?.ok ? picked.check.templates.length : 0
+  const problem = picked?.problem ?? null
 
   const reset = () => {
     setPicked(null)
     setPhase('idle')
     setMessage(null)
     setTooMany(false)
-    setTooLarge(false)
   }
   const close = () => {
     if (uploading) return
@@ -122,17 +123,13 @@ export function ImportDialog({
     if (!list?.length) return
     /* The zone refuses a drop of two or more (maxFiles); the chooser takes one. */
     if (list.length > 1) return
+    const file = list[0]
+    /* The chooser offers .jsonl only; a dropped file of another type is not taken. */
+    if (!isJsonl(file.name)) return
     setMessage(null)
     setPhase('idle')
     setTooMany(false)
-    const file = list[0]
-    /* Format first: a wrong extension is taken and flagged. A .jsonl over the limit is not taken. */
-    const tooBig = file.name.toLowerCase().endsWith('.jsonl') && file.size > MAX_IMPORT_BYTES
-    setTooLarge(tooBig)
-    if (tooBig) return
-    const key = nextKey.current++
-    setPicked({ key, file, size: file.size, check: null })
-    checkFile(file).then((check) => setPicked((p) => (p?.key === key ? { ...p, check } : p)))
+    setPicked({ key: nextKey.current++, file, size: file.size, problem: null })
   }
 
   const remove = () => {
@@ -144,24 +141,34 @@ export function ImportDialog({
   /* Cancel on "Replace imported templates?": back to the Import dialog, the file still picked. */
   const backToFile = () => setPhase('idle')
 
+  /* Structure, then the file name imported before, then the upload — all under the spinner. */
   const upload = (replace: boolean) => {
-    if (!picked?.check?.ok) return
+    if (!picked) return
     lastReplace.current = replace
     setMessage(null)
     setPhase('uploading')
-    const { file, check } = picked
+    const { key, file } = picked
     const fails = file.name.toLowerCase().includes(IMPORT_FAIL_SENTINEL)
+    const read = file.text().then(parseTemplates)
     window.setTimeout(() => {
-      if (!replace && importedNames.includes(file.name)) return setPhase('replace')
-      if (fails) return setPhase('failed')
-      reset()
-      onImported(check.templates, file.name, replace)
+      void read.then((check) => {
+        if (!check.ok) {
+          setPicked((p) => (p?.key === key ? { ...p, problem: check } : p))
+          return setPhase('idle')
+        }
+        if (!replace && importedNames.includes(file.name)) return setPhase('replace')
+        if (fails) return setPhase('failed')
+        reset()
+        onImported(check.templates, file.name, replace)
+      })
     }, UPLOAD_MS)
   }
 
   const submit = () => {
     if (!picked) return setMessage(IMPORT_COPY.noFile)
-    if (!picked.check || !picked.check.ok) return setMessage(IMPORT_COPY.hasErrors)
+    if (picked.problem) return setMessage(IMPORT_COPY.hasErrors)
+    const tooBig = sizeProblem(picked.size)
+    if (tooBig) return setPicked({ ...picked, problem: tooBig })
     upload(false)
   }
 
@@ -195,18 +202,14 @@ export function ImportDialog({
           )}
 
           {picked ? (
+            /* CMS's upload-failed slot (design request, 20 Oct 2026) for an upload that failed, with
+               Try again, and for a file over 10 MB, without it (requester, 22 Oct 2026). */
             <UploadedFile
               name={picked.file.name}
-              meta={`${typeLabel(picked.file.name)} • ${sizeLabel(picked.size)}${
-                !picked.check
-                  ? ' • Checking…'
-                  : picked.check.ok
-                    ? ` • ${templateCount} ${templateCount === 1 ? 'template' : 'templates'}`
-                    : ''
-              }`}
-              error={bad || failed}
-              errorMessage={failed ? IMPORT_COPY.failTitle : picked.check && !picked.check.ok ? picked.check.message : undefined}
-              errorPlacement={inSlot ? 'slot' : 'below'}
+              meta={`${typeLabel(picked.file.name)} • ${sizeLabel(picked.size)}`}
+              error={!!problem || failed}
+              errorMessage={failed ? IMPORT_COPY.failTitle : problem?.message}
+              errorPlacement={failed || problem?.problem === 'size' ? 'slot' : 'below'}
               retryLabel={IMPORT_COPY.retry}
               onRetry={failed ? () => upload(lastReplace.current) : undefined}
               onRemove={remove}
@@ -219,14 +222,18 @@ export function ImportDialog({
               accept=".jsonl"
               maxFiles={1}
               tooManyHint={IMPORT_COPY.oneFile}
-              error={tooMany || tooLarge || message === IMPORT_COPY.noFile}
-              errorHint={tooMany ? IMPORT_COPY.oneFile : tooLarge ? IMPORT_COPY.size : undefined}
+              error={tooMany || message === IMPORT_COPY.noFile}
+              errorHint={tooMany ? IMPORT_COPY.oneFile : undefined}
               onFiles={add}
             />
           )}
 
-          {/* CMS's required message under the matrix: Body XS, Text/Negative. */}
-          {message && <span className="pl-[var(--space-4)] type-body-xs text-[var(--color-text-negative-default)]">{message}</span>}
+          {/* webds Inline Message under the matrix, inset to the zone's text as CMS's required message is. */}
+          {message && (
+            <InlineMessage appearance="negative" size="xs" className="pl-[var(--space-4)]">
+              {message}
+            </InlineMessage>
+          )}
         </div>
       </ConfirmDialog>
 

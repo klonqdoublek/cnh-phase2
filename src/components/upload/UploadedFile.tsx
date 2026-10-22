@@ -1,6 +1,7 @@
 import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
+import { InlineMessage } from '@/bbl/inline-message'
 import { OutlineButton } from '@/bbl/outline-button'
 import { cn } from '@/lib/cn'
 
@@ -13,7 +14,8 @@ import { cn } from '@/lib/cn'
  * optional status before the Preview.
  *
  * In error the border turns Negative and `errorMessage` sits under the slot
- * in Body XS, Text/Negative, as CMS draws its oversize hint. Without an
+ * as a webds Inline Message (Negative, XS: Body XS, Text/Negative), where CMS
+ * draws its oversize hint (requester, 22 Oct 2026; was a plain span). Without an
  * `errorMessage` the meta itself reads in Text/Negative (the Audience file's
  * older form).
  *
@@ -109,7 +111,9 @@ export function UploadedFile({
         )}
       </div>
       {error && errorMessage != null && !inSlot && (
-        <span className="type-body-xs text-[var(--color-text-negative-default)]">{errorMessage}</span>
+        <InlineMessage appearance="negative" size="xs">
+          {errorMessage}
+        </InlineMessage>
       )}
     </div>
   )
