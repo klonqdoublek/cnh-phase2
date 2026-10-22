@@ -316,6 +316,33 @@
    "label": "Broadcast cancelled",
    "route": "#/broadcast/cancelled",
    "section": "Broadcast"
+  },
+  {
+   "id": "bc-report-confirm",
+   "kind": "screen",
+   "label": "Download the delivery report?",
+   "route": "#/broadcast/download",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-report-ok",
+   "kind": "decision",
+   "label": "Be able to download?",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-report-done",
+   "kind": "screen",
+   "label": "Download Success",
+   "route": "#/broadcast/download-success",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-report-fail",
+   "kind": "screen",
+   "label": "Unable to download",
+   "route": "#/broadcast/download-failed",
+   "section": "Broadcast"
   }
  ],
  "edges": [
@@ -928,6 +955,66 @@
    }
   },
   {
+   "from": "bc-list",
+   "to": "bc-report-confirm",
+   "label": "Download (row hover)",
+   "style": "solid",
+   "touch": {
+    "x": 1831,
+    "y": 659,
+    "w": 24,
+    "h": 16
+   }
+  },
+  {
+   "from": "bc-report-confirm",
+   "to": "bc-report-ok",
+   "label": "Download",
+   "style": "solid",
+   "touch": {
+    "x": 1137,
+    "y": 565,
+    "w": 107,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-report-confirm",
+   "to": "bc-list",
+   "label": "Cancel",
+   "style": "back",
+   "touch": {
+    "x": 1043,
+    "y": 565,
+    "w": 86,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-report-ok",
+   "to": "bc-report-done",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-report-ok",
+   "to": "bc-report-fail",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "bc-report-fail",
+   "to": "bc-report-confirm",
+   "label": "Download again",
+   "style": "back",
+   "touch": {
+    "x": 1831,
+    "y": 659,
+    "w": 24,
+    "h": 16
+   }
+  },
+  {
    "from": "bc-edit",
    "to": "bc-valid",
    "label": "Submit",
@@ -952,5 +1039,5 @@
    }
   }
  ],
- "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself) · Cancel a draft 2026-10-19, same method on a static build (#/broadcast/view/BC-0007[/cancel]) · Audience file read on Submit 2026-10-19, same method on a static build (#/broadcast/create/confirm-invalid, file-blocked, check-fail)"
+ "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself) · Cancel a draft 2026-10-19, same method on a static build (#/broadcast/view/BC-0007[/cancel]) · Audience file read on Submit 2026-10-19, same method on a static build (#/broadcast/create/confirm-invalid, file-blocked, check-fail) · Download report 2026-10-22, same method on a static build (#/broadcast, #/broadcast/download)"
 }

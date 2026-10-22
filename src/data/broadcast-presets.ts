@@ -30,6 +30,16 @@ export type FormPreset = (typeof FORM_PRESETS)[number]
 export const LIST_PRESETS = ['submitted', 'draft-saved', 'cancelled'] as const
 export type ListPreset = (typeof LIST_PRESETS)[number]
 
+/* Download report's results held open on the list (22 Oct 2026). The confirm
+ * itself is `#/broadcast/download`, or `#/broadcast/view/<id>/download` over
+ * the drawer; `/fail` after either fails its Download. All on App maintenance. */
+export const REPORT_PRESETS = ['download-success', 'download-failed'] as const
+export type ReportPreset = (typeof REPORT_PRESETS)[number]
+export const REPORT_DEMO_ID = 'BC-0003'
+
+export const reportPreset = (s?: string) =>
+  (REPORT_PRESETS as readonly string[]).includes(s ?? '') ? (s as ReportPreset) : undefined
+
 export const formPreset = (s?: string) =>
   (FORM_PRESETS as readonly string[]).includes(s ?? '') ? (s as FormPreset) : undefined
 export const listPreset = (s?: string) =>

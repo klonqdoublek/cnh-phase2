@@ -21,7 +21,7 @@ import { BroadcastStatus } from './list/BroadcastStatus'
 import { ListFooter } from './list/ListFooter'
 import { ListTable, type ListColumn } from './list/ListTable'
 import { ListToast } from './list/ListToast'
-import { ReportDownload } from './list/ReportDownload'
+import { ReportDownload, type ReportResult } from './list/ReportDownload'
 
 export type BroadcastListProps = {
   broadcasts: Broadcast[]
@@ -32,6 +32,12 @@ export type BroadcastListProps = {
   /** On a preset route the toast is held open instead of timing out. */
   holdToast: boolean
   onCreatedClose: () => void
+  /** Open with Download report's dialog up for this broadcast (preset route). */
+  reportOpen?: Broadcast
+  /** The next Download fails (`…/download/fail`). */
+  reportFailNext?: boolean
+  /** Open on a Download result, held (preset route). */
+  reportHeld?: ReportResult
 }
 
 const PAGE_SIZE = 50
@@ -103,12 +109,22 @@ const columnsOf = (onDownload: (b: Broadcast) => void): ListColumn<Broadcast>[] 
  * body) at the list's own geometry: the band at px 16 and the table flush to
  * the body's edges, 24 under the band, as the original list draws it.
  */
-export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast, onCreatedClose }: BroadcastListProps) {
+export function BroadcastList({
+  broadcasts,
+  onCreate,
+  onOpen,
+  created,
+  holdToast,
+  onCreatedClose,
+  reportOpen,
+  reportFailNext,
+  reportHeld,
+}: BroadcastListProps) {
   const [requestedPage, setPage] = useState(0)
   const [query, setQuery] = useState('')
   const [channels, setChannels] = useState<string[]>([...CHANNELS])
   const [statuses, setStatuses] = useState<string[]>([...BROADCAST_STATUSES])
-  const [reportFor, setReportFor] = useState<Broadcast | null>(null)
+  const [reportFor, setReportFor] = useState<Broadcast | null>(reportOpen ?? null)
   const columns = useMemo(() => columnsOf(setReportFor), [])
 
   /* Notification management's rules: search matches name or description, and
@@ -255,7 +271,12 @@ export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast
         hold={holdToast}
         onClose={onCreatedClose}
       />
-      <ReportDownload broadcast={reportFor} onDone={() => setReportFor(null)} />
+      <ReportDownload
+        broadcast={reportFor}
+        onDone={() => setReportFor(null)}
+        failNext={reportFailNext}
+        held={reportHeld}
+      />
     </div>
   )
 }

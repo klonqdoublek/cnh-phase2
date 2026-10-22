@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { BROADCASTS, type Broadcast, type ListToast } from '@/data/broadcast'
-import { LIST_TOAST, formPreset, listPreset } from '@/data/broadcast-presets'
+import { BROADCASTS, deliveryReportName, type Broadcast, type ListToast } from '@/data/broadcast'
+import { LIST_TOAST, REPORT_DEMO_ID, formPreset, listPreset, reportPreset } from '@/data/broadcast-presets'
 import { IMPORT_HISTORY, IMPORT_PRESETS, type ImportPreset } from '@/data/import-spec'
 import { TEMPLATES, type Template, type TemplateStatus } from '@/data/templates'
 import { fromValues, stampImported, toValues, togglesOf, type FormValues, type Toggles } from '@/data/template-form'
@@ -124,20 +124,35 @@ export default function App() {
       : undefined
   const onBroadcast = hash.startsWith('#/broadcast')
   const preset = listPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
-  const viewMatch = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)(\/cancel)?$/)
+  const viewMatch = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)(\/cancel|\/download(?:\/fail)?)?$/)
   const viewId = viewMatch?.[1]
   const viewing = openBroadcast ?? (viewId ? broadcasts.find((b) => b.id === viewId) : undefined)
+  /* Download report's presets, on App maintenance: the confirm (`/fail`: its
+     Download fails) and each result held open. */
+  const reportDemo = broadcasts.find((b) => b.id === REPORT_DEMO_ID)
+  const reportConfirm = hash.match(/^#\/broadcast\/download(\/fail)?$/)
+  const reportResult = reportPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
 
   return (
     <AppShell activeId={onBroadcast ? 'broadcast' : 'template-management'}>
       {onBroadcast ? (
         <BroadcastList
+          key={reportConfirm || reportResult ? hash : 'list'}
           broadcasts={hash === '#/broadcast/empty' ? [] : broadcasts}
           onCreate={() => go('/broadcast/create')}
           onOpen={setOpenBroadcast}
           created={preset ? LIST_TOAST[preset] : created}
           holdToast={!!preset}
           onCreatedClose={() => setCreated(null)}
+          reportOpen={reportConfirm ? reportDemo : undefined}
+          reportFailNext={!!reportConfirm?.[1]}
+          reportHeld={
+            reportResult === 'download-failed'
+              ? { ok: false }
+              : reportResult && reportDemo
+                ? { ok: true, file: deliveryReportName(reportDemo) }
+                : undefined
+          }
         />
       ) : (
         <Dashboard
@@ -175,7 +190,9 @@ export default function App() {
             setOpenBroadcast(null)
             go(`/broadcast/edit/${viewing.id}`)
           }}
-          confirmingCancel={!!viewMatch?.[2]}
+          confirmingCancel={viewMatch?.[2] === '/cancel'}
+          confirmingDownload={!!viewMatch?.[2]?.startsWith('/download')}
+          downloadFailNext={viewMatch?.[2] === '/download/fail'}
           onCancel={() => {
             setBroadcasts((list) => list.map((x) => (x.id === viewing.id ? { ...x, status: 'Cancelled' } : x)))
             setCreated({ name: viewing.name, draft: false, cancelled: true })
