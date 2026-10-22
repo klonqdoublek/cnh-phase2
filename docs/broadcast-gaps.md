@@ -83,7 +83,7 @@ Already aligned:
 **Recommended clean-ups, not done** (outside the BA's asks):
 
 - The Delivery "Outlook" strip in `create/sections.tsx` is hand-drawn. webds `Alert appearance="brand"` already draws the same box in the drawer.
-- `SampleLink` is a plain `<a>`; use a Ghost Button link. `BROADCAST_COPY.sample` ("Download sample file") is defined but never used.
+- `BROADCAST_COPY.sample` ("Download sample file") is defined but never used. The sample-file links were removed (requester, 22 Oct 2026).
 - The list counter uses a hyphen (`1-6 of 6`). CMS uses an en-dash (`1–6 of 6`, CMS PRD §8.1).
 
 ## Decision log: copy composed, not transcribed
