@@ -9,6 +9,7 @@ import {
   BROADCAST_STATUSES,
   fmtDateTime,
   fmtDndRule,
+  hasDeliveryReport,
   type Broadcast,
   type Dnd,
   type ListToast as ListToastValue,
@@ -20,6 +21,7 @@ import { BroadcastStatus } from './list/BroadcastStatus'
 import { ListFooter } from './list/ListFooter'
 import { ListTable, type ListColumn } from './list/ListTable'
 import { ListToast } from './list/ListToast'
+import { ReportDownload } from './list/ReportDownload'
 
 export type BroadcastListProps = {
   broadcasts: Broadcast[]
@@ -50,7 +52,33 @@ function DndCell({ dnd }: { dnd: Dnd }) {
   )
 }
 
-const COLUMNS: ListColumn<Broadcast>[] = [
+/** The status, and on the row's hover its Download report — one broadcast, one
+ *  file. The mark sits at one position on every row, 20 clear of the widest
+ *  badge (Processing, 74.3 at size M), as Notification management places its
+ *  download. */
+function StatusCell({ broadcast, onDownload }: { broadcast: Broadcast; onDownload: (b: Broadcast) => void }) {
+  return (
+    <div className="relative flex w-full items-center">
+      <BroadcastStatus status={broadcast.status} />
+      {hasDeliveryReport(broadcast) && (
+        <button
+          type="button"
+          aria-label={`Download report for ${broadcast.name}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onDownload(broadcast)
+          }}
+          onKeyDown={(e) => e.stopPropagation()}
+          className="invisible absolute top-1/2 left-[95px] inline-flex h-[16px] w-[24px] -translate-y-1/2 cursor-pointer items-center group-focus-within:visible group-hover:visible"
+        >
+          <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+const columnsOf = (onDownload: (b: Broadcast) => void): ListColumn<Broadcast>[] => [
   { key: 'name', label: 'Broadcast name', width: 500, cell: (b) => b.name },
   { key: 'channel', label: 'Channel', width: 360, wrap: true, cell: (b) => b.channels.join(', ') },
   { key: 'start', label: 'Broadcast start', width: 220, cell: (b) => fmtDateTime(new Date(b.start)) },
@@ -66,7 +94,7 @@ const COLUMNS: ListColumn<Broadcast>[] = [
     label: 'Status',
     width: 200,
     slot: true,
-    cell: (b) => <BroadcastStatus status={b.status} />,
+    cell: (b) => <StatusCell broadcast={b} onDownload={onDownload} />,
   },
 ]
 
@@ -80,6 +108,8 @@ export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast
   const [query, setQuery] = useState('')
   const [channels, setChannels] = useState<string[]>([...CHANNELS])
   const [statuses, setStatuses] = useState<string[]>([...BROADCAST_STATUSES])
+  const [reportFor, setReportFor] = useState<Broadcast | null>(null)
+  const columns = useMemo(() => columnsOf(setReportFor), [])
 
   /* Notification management's rules: search matches name or description, and
      a filter with nothing — or everything — ticked filters nothing. */
@@ -184,7 +214,7 @@ export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast
             ) : (
               <ListTable
                 label={BROADCAST_COPY.listTitle}
-                columns={COLUMNS}
+                columns={columns}
                 rows={rows}
                 rowKey={(b) => b.id}
                 onOpen={onOpen}
@@ -225,6 +255,7 @@ export function BroadcastList({ broadcasts, onCreate, onOpen, created, holdToast
         hold={holdToast}
         onClose={onCreatedClose}
       />
+      <ReportDownload broadcast={reportFor} onDone={() => setReportFor(null)} />
     </div>
   )
 }

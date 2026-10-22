@@ -67,7 +67,7 @@ export function ListTable<Row>({
             }}
             onMouseEnter={() => setHovered(key)}
             onMouseLeave={() => setHovered(null)}
-            className="flex w-full cursor-pointer"
+            className="group flex w-full cursor-pointer"
           >
             {columns.map((column) => (
               <div key={column.key} style={{ flex: `${column.width} 0 ${column.width}px` }}>
