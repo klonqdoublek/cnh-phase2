@@ -144,7 +144,8 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
  * broadcast cannot be cancelled (a system limit, 19 Oct 2026); its footer has
  * Download report once anything was attempted (Processing, Published or
  * Failed), where the CNH template drawer keeps its Download — behind the same
- * confirm as the list row's download.
+ * confirm as the list row's download. Queue and Cancelled keep an empty
+ * footer, so every drawer ends on the same rule (Figma `Footer · Empty`).
  */
 export function BroadcastDrawer({
   broadcast,
@@ -261,7 +262,9 @@ export function BroadcastDrawer({
               Download report
               <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
             </OutlineButton>
-          ) : undefined
+          ) : (
+            <></>
+          )
         }
       >
         {sections.map((section, i) => (
