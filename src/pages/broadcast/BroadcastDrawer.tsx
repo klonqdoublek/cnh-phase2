@@ -32,6 +32,8 @@ export type BroadcastDrawerProps = {
   onCancel: () => void
   /** Open with the Cancel dialog already up (its preset route). */
   confirmingCancel?: boolean
+  /** Open with the Unable to cancel dialog already up (its preset route). */
+  cancelFailed?: boolean
   /** Open with the Download report dialog already up (its preset route). */
   confirmingDownload?: boolean
   /** The next Download fails (`…/download/fail`). */
@@ -153,16 +155,19 @@ export function BroadcastDrawer({
   onEdit,
   onCancel,
   confirmingCancel,
+  cancelFailed: openFailed,
   confirmingDownload,
   downloadFailNext,
 }: BroadcastDrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(!!confirmingCancel && broadcast.status === 'Draft')
+  /* The status could not be updated: the broadcast stays a Draft. */
+  const [cancelFailed, setCancelFailed] = useState(!!openFailed && broadcast.status === 'Draft')
   const [reporting, setReporting] = useState(!!confirmingDownload && hasDeliveryReport(broadcast))
   /* The dialog owns Escape and clicks while it is up. */
-  const dialogUp = useRef(cancelOpen)
-  dialogUp.current = cancelOpen || reporting
+  const dialogUp = useRef(cancelOpen || cancelFailed)
+  dialogUp.current = cancelOpen || cancelFailed || reporting
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setShown(true))
@@ -290,6 +295,28 @@ export function BroadcastDrawer({
             className="z-50"
           >
             {BROADCAST_COPY.cancelBody(broadcast.name)}
+          </ConfirmDialog>,
+          document.body,
+        )}
+      {cancelFailed &&
+        createPortal(
+          <ConfirmDialog
+            anatomy="sectioned"
+            contentType="label-xl"
+            layer="fixed"
+            width={600}
+            title={BROADCAST_COPY.cancelFailTitle}
+            cancelLabel="Close"
+            confirmLabel="Try again"
+            onCancel={() => setCancelFailed(false)}
+            onConfirm={() => {
+              setCancelFailed(false)
+              onCancel()
+            }}
+            onDismiss={() => setCancelFailed(false)}
+            className="z-50"
+          >
+            Please try again
           </ConfirmDialog>,
           document.body,
         )}

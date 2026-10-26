@@ -124,7 +124,7 @@ export default function App() {
       : undefined
   const onBroadcast = hash.startsWith('#/broadcast')
   const preset = listPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
-  const viewMatch = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)(\/cancel|\/download(?:\/fail)?)?$/)
+  const viewMatch = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)(\/cancel(?:-fail)?|\/download(?:\/fail)?)?$/)
   const viewId = viewMatch?.[1]
   const viewing = openBroadcast ?? (viewId ? broadcasts.find((b) => b.id === viewId) : undefined)
   /* Download report's presets, on App maintenance: the confirm (`/fail`: its
@@ -191,6 +191,7 @@ export default function App() {
             go(`/broadcast/edit/${viewing.id}`)
           }}
           confirmingCancel={viewMatch?.[2] === '/cancel'}
+          cancelFailed={viewMatch?.[2] === '/cancel-fail'}
           confirmingDownload={!!viewMatch?.[2]?.startsWith('/download')}
           downloadFailNext={viewMatch?.[2] === '/download/fail'}
           onCancel={() => {

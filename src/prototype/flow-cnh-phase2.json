@@ -338,6 +338,19 @@
    "section": "Broadcast"
   },
   {
+   "id": "bc-cancel-ok",
+   "kind": "decision",
+   "label": "Able to update status?",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-cancel-fail",
+   "kind": "screen",
+   "label": "Unable to cancel the broadcast",
+   "route": "#/broadcast/view/BC-0007/cancel-fail",
+   "section": "Broadcast"
+  },
+  {
    "id": "bc-cancelled",
    "kind": "screen",
    "label": "Broadcast cancelled",
@@ -1067,13 +1080,49 @@
   },
   {
    "from": "bc-cancel-confirm",
-   "to": "bc-cancelled",
+   "to": "bc-cancel-ok",
    "label": "Cancel broadcast",
    "style": "solid",
    "touch": {
     "x": 962,
     "y": 565,
     "w": 165,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-ok",
+   "to": "bc-cancelled",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-cancel-ok",
+   "to": "bc-cancel-fail",
+   "label": "No",
+   "style": "solid"
+  },
+  {
+   "from": "bc-cancel-fail",
+   "to": "bc-cancel-ok",
+   "label": "Try again",
+   "style": "solid",
+   "touch": {
+    "x": 1144,
+    "y": 565,
+    "w": 100,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-fail",
+   "to": "bc-view",
+   "label": "Close",
+   "style": "back",
+   "touch": {
+    "x": 1061,
+    "y": 565,
+    "w": 75,
     "h": 44
    }
   },
