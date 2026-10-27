@@ -4,9 +4,9 @@ import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
-import { Divider } from '@/bbl/divider'
+import { CardSurface } from '@/bbl/building-block-card-surface'
 import { FieldLabel } from '@/bbl/field'
-import { GhostButton } from '@/bbl/ghost-button'
+import { OutlineButton } from '@/bbl/outline-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
@@ -688,8 +688,8 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
 
 /** Do Not Disturb, its own card under the Delivery Date card in the same
  *  step (requester, 21 Oct 2026; Figma 409:75574): the switch before the
- *  title and its note, the quiet periods divided by a rule, Add period, and
- *  the one time zone there is, shown as text. The switch is drawn in the
+ *  title and its note, each quiet period on its own card, Add more period,
+ *  and the one time zone there is, shown as text. The switch is drawn in the
  *  title rather than through the card's `toggle`, which names the switch only
  *  from a string title. */
 export function DndCard({ f }: F) {
@@ -707,18 +707,19 @@ export function DndCard({ f }: F) {
       }
     >
       {/* Any number of quiet periods (BA, 2026-10-14): each its own days and
-          hours, divided by a rule; a day may sit in more than one. */}
+          hours, on its own bordered card (requester, 22 Oct 2026; Figma
+          436:243478); a day may sit in more than one. Card Surface draws no
+          stroke at rest, so the border is the Figma override. */}
       {dnd.rules.map((rule, i) => (
-        <div key={rule.id} className="flex flex-col gap-[var(--space-6)]">
-          {i > 0 && <Divider />}
+        <CardSurface key={rule.id} className="h-auto items-start border border-[var(--color-border-primary-default)]">
           <DndRuleRow f={f} rule={rule} index={i} />
-        </div>
+        </CardSurface>
       ))}
       <span className="flex">
-        <GhostButton appearance="highlight" padding="none" disabled={!dnd.enabled} onClick={f.addDndRule}>
+        <OutlineButton disabled={!dnd.enabled} onClick={f.addDndRule}>
+          Add more period
           <Icon slug="plus" size={16} color="currentColor" />
-          Add period
-        </GhostButton>
+        </OutlineButton>
       </span>
       {/* One time zone only, so no select (Figma 89:4665). */}
       <span className="flex flex-col gap-[var(--space-1)]">
