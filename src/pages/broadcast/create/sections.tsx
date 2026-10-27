@@ -12,6 +12,7 @@ import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
 import { PillChip } from '@/bbl/pill-chip'
+import { RadioButton } from '@/bbl/radio-button'
 import { ScrollBar } from '@/bbl/scroll-bar'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
@@ -442,9 +443,10 @@ function ChannelAlert({ f }: F) {
  *  2026; was three across). Each card is
  *  switched on its own title row (webds `form-section-card`): off keeps what
  *  was typed and disables it. Direct recipient offers Email and SMS, one at a
- *  time. */
+ *  time, picked by a radio (`DirectChannelCard`). */
 export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   const invalid = !!f.errors.channels
+  const direct = f.recipientType === 'direct'
   return (
     <FormSectionCard title="Create broadcast message">
       <FieldChips f={f} focus={focus} />
@@ -460,6 +462,13 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
       >
         {f.offered.map((c) => {
           const on = f.channels.includes(c)
+          if (direct)
+            return (
+              <DirectChannelCard key={c} channel={c} selected={on} invalid={invalid} onSelect={() => f.setChannel(c, true)}>
+                {/* Both cards' fields stay live, as drawn (Figma 325:62582). */}
+                <ChannelFields f={f} channel={c} on />
+              </DirectChannelCard>
+            )
           return (
             <FormSectionCard
               key={c}
@@ -475,6 +484,47 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
         })}
       </div>
     </FormSectionCard>
+  )
+}
+
+/** Direct recipient's channel card (Figma 325:62582, 20 Oct 2026; ported from
+ *  `add/dynamic-field-concepts` e64e5e8): one picked at a time by the radio in
+ *  its title row. The picked card is Card Surface `State=Selected`
+ *  (Border/Highlight); both cards' fields stay live, as drawn. The rule "pick
+ *  a channel" strokes both cards negative, as `form-section-card` does. */
+function DirectChannelCard({
+  channel,
+  selected,
+  invalid,
+  onSelect,
+  children,
+}: {
+  channel: Channel
+  selected: boolean
+  invalid: boolean
+  onSelect: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <CardSurface
+      tabIndex={-1}
+      state={selected ? 'selected' : 'default'}
+      data-invalid={invalid ? 'true' : undefined}
+      className={cn(
+        'flex h-auto min-w-0 flex-col items-stretch gap-[var(--space-8)] p-[var(--space-6)] hover:bg-[var(--color-surface-primary-default)] active:bg-[var(--color-surface-primary-default)]',
+        /* Same 1px on both, so picking one does not move its content; the
+           Selected stroke is drawn inside it. */
+        'border',
+        selected ? 'border-transparent' : 'border-[var(--color-border-primary-default)]',
+        invalid && 'webds-pattern-form-section-card--s1',
+      )}
+    >
+      <label className="flex cursor-pointer items-center gap-[var(--space-3)]">
+        <RadioButton selected={selected} aria-label={channel} onClick={onSelect} />
+        <span className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">{channel}</span>
+      </label>
+      <div className="flex flex-col gap-[var(--space-4)]">{children}</div>
+    </CardSurface>
   )
 }
 
