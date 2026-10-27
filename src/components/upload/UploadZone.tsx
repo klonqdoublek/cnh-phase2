@@ -14,10 +14,11 @@ import { cn } from '@/lib/cn'
  *   error       Negative border and fill, negative Ghost Button; an
  *               `errorHint` replaces the hint in Text/Negative, as CMS's
  *               "1 File Only" does
- *   refused     with `maxFiles`, a drag carrying more files than that shows
- *               the error look and `tooManyHint` while it is over the zone,
- *               and the drop is refused (dropEffect none): the files fly back
- *               and nothing is taken (design critique, 20 Oct 2026)
+ *   refused     with `maxFiles`, a drag carrying more files than that is
+ *               refused (dropEffect none): the files fly back and nothing is
+ *               taken (design critique, 20 Oct 2026). The zone keeps its empty
+ *               look, no error and no drag highlight (requester, 27 Oct 2026;
+ *               was the error look with CMS's "1 File Only")
  *
  * The whole zone opens the file chooser, not only its button (CMS v4.48);
  * the Ghost Button stays as the focusable control and its click bubbles up.
@@ -28,7 +29,6 @@ export function UploadZone({
   accept,
   multiple = false,
   maxFiles,
-  tooManyHint,
   error = false,
   errorHint,
   onFiles,
@@ -41,8 +41,6 @@ export function UploadZone({
   multiple?: boolean
   /** A drag carrying more files than this is refused before the drop. */
   maxFiles?: number
-  /** Shown in Text/Negative while a refused drag is over the zone. */
-  tooManyHint?: React.ReactNode
   error?: boolean
   /** Shown in place of the hint, in Text/Negative, while `error`. */
   errorHint?: React.ReactNode
@@ -53,10 +51,9 @@ export function UploadZone({
   const [over, setOver] = useState(false)
   const [refused, setRefused] = useState(false)
   const tooMany = (data: DataTransfer) => maxFiles != null && data.items.length > maxFiles
-  const errorLook = error || refused
-  const shownErrorHint = refused ? tooManyHint : errorHint
-  const showErrorHint = errorLook && shownErrorHint != null
-  const hints = showErrorHint ? [shownErrorHint] : Array.isArray(hint) ? hint : hint != null ? [hint] : []
+  const errorLook = error
+  const showErrorHint = errorLook && errorHint != null
+  const hints = showErrorHint ? [errorHint] : Array.isArray(hint) ? hint : hint != null ? [hint] : []
 
   return (
     <div
@@ -88,8 +85,8 @@ export function UploadZone({
         'flex min-h-[84px] cursor-pointer flex-col items-center justify-center gap-[var(--space-1)] rounded-2 border border-dashed p-[var(--space-3)] text-center',
         errorLook
           ? 'border-[var(--color-border-negative-default)] bg-[var(--color-surface-negative-default)]'
-          : over
-            ? 'border-[var(--color-border-highlight-default)] bg-[var(--color-surface-highlight-subtle-default)]'
+          : over && !refused
+            ?'border-[var(--color-border-highlight-default)] bg-[var(--color-surface-highlight-subtle-default)]'
             : 'border-[var(--color-border-highlight-default)] hover:bg-[var(--color-surface-highlight-subtle-default)]',
         className,
       )}
