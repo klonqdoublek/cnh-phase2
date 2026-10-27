@@ -258,7 +258,9 @@ export const BA_DND: Dnd = {
   ],
   timeZone: 'Asia/Bangkok',
 }
-export const TIME_ZONES = [{ value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)' }]
+/** `offset` follows the quiet period's time label (design critique, 27 Oct
+ *  2026), in place of a Time zone row under the periods. */
+export const TIME_ZONES = [{ value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)', offset: 'GMT+7' }]
 
 const minutes = (hhmm: string) => {
   const [h, m] = hhmm.split(':').map(Number)

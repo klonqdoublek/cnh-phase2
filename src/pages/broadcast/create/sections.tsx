@@ -638,7 +638,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
       <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
         <div className="flex items-end gap-[var(--space-4)]">
           <TimeInput
-            label="Quiet period from"
+            label={`Quiet period from (${TIME_ZONES.find((z) => z.value === f.dnd.timeZone)?.offset ?? f.dnd.timeZone})`}
             value={rule.allDay ? '' : rule.from}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { from: v })}
@@ -691,8 +691,9 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
 
 /** Do Not Disturb, its own card under the Delivery Date card in the same
  *  step (requester, 21 Oct 2026; Figma 409:75574): the switch before the
- *  title and its note, each quiet period on its own card, Add more period,
- *  and the one time zone there is, shown as text. The switch is drawn in the
+ *  title and its note, each quiet period on its own card, Add more period.
+ *  The one time zone there is follows the time label (design critique, 27 Oct
+ *  2026; was a Time zone row under the periods). The switch is drawn in the
  *  title rather than through the card's `toggle`, which names the switch only
  *  from a string title. */
 export function DndCard({ f }: F) {
@@ -723,13 +724,6 @@ export function DndCard({ f }: F) {
           Add more period
           <Icon slug="plus" size={16} color="currentColor" />
         </OutlineButton>
-      </span>
-      {/* One time zone only, so no select (Figma 89:4665). */}
-      <span className="flex flex-col gap-[var(--space-1)]">
-        <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Time zone</span>
-        <span className="type-body-m text-[var(--color-text-primary-default)]">
-          {TIME_ZONES.find((z) => z.value === dnd.timeZone)?.label ?? dnd.timeZone}
-        </span>
       </span>
     </FormSectionCard>
   )
