@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { Button } from '@/bbl/button'
 import { Icon } from '@/bbl/icon'
 import { OutlineButton } from '@/bbl/outline-button'
+import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConsolePage } from '@/patterns/console-page'
 import { BROADCAST_COPY, type Broadcast } from '@/data/broadcast'
 import type { FormPreset } from '@/data/broadcast-presets'
@@ -15,6 +16,8 @@ export type BroadcastWizardProps = {
   /** Edit: the Draft reopened, saved back under its own id. */
   initial?: Broadcast
   failNext?: boolean
+  /** `…/loading`: the page while the form (or the draft) loads. */
+  loading?: boolean
   preset?: FormPreset
   onBack: () => void
   onCreate: (broadcast: Omit<Broadcast, 'id'>, kind: SaveKind) => void
@@ -30,7 +33,7 @@ export type BroadcastWizardProps = {
  * Do Not Disturb is its own card under Delivery Date, in the same step
  * (requester, 21 Oct 2026; Figma 409:75574).
  */
-export function BroadcastWizard({ onBack, onCreate, failNext, preset, initial }: BroadcastWizardProps) {
+export function BroadcastWizard({ onBack, onCreate, failNext, loading, preset, initial }: BroadcastWizardProps) {
   const f = useBroadcastForm({ onCreate, failNext, preset, initial })
   const body = useRef<HTMLDivElement>(null)
   const focus: FocusRef = useRef(null)
@@ -53,30 +56,39 @@ export function BroadcastWizard({ onBack, onCreate, failNext, preset, initial }:
         title={f.editing ? BROADCAST_COPY.edit : BROADCAST_COPY.create}
         actions={
           <>
-            <OutlineButton className="w-[177px]" onClick={() => f.saveDraft(body.current)}>
+            <OutlineButton className="w-[177px]" disabled={loading} onClick={() => f.saveDraft(body.current)}>
               Save draft
             </OutlineButton>
-            <Button className="w-[177px]" onClick={() => f.submit(body.current)}>
+            <Button className="w-[177px]" disabled={loading} onClick={() => f.submit(body.current)}>
               Submit
             </Button>
           </>
         }
       >
-        <Section title="Step 1: Basic information">
-          <BasicInfo f={f} />
-        </Section>
-        <Section title="Step 2: Validate Audience file">
-          <div className="flex flex-col gap-[var(--space-8)]">
-            <AudienceFile f={f} />
-            <MessageContent f={f} focus={focus} />
+        {loading ? (
+          /* Create notification's loading body (#/create/loading). */
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <SpinnerLoader size="l" appearance="brand" />
           </div>
-        </Section>
-        <Section title="Step 3: Delivery Date">
-          <div className="flex flex-col gap-[var(--space-8)]">
-            <Delivery f={f} />
-            <DndCard f={f} />
-          </div>
-        </Section>
+        ) : (
+          <>
+            <Section title="Step 1: Basic information">
+              <BasicInfo f={f} />
+            </Section>
+            <Section title="Step 2: Validate Audience file">
+              <div className="flex flex-col gap-[var(--space-8)]">
+                <AudienceFile f={f} />
+                <MessageContent f={f} focus={focus} />
+              </div>
+            </Section>
+            <Section title="Step 3: Delivery Date">
+              <div className="flex flex-col gap-[var(--space-8)]">
+                <Delivery f={f} />
+                <DndCard f={f} />
+              </div>
+            </Section>
+          </>
+        )}
       </ConsolePage>
       <Dialogs f={f} onBack={onBack} />
     </div>

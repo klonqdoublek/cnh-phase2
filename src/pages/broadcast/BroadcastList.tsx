@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/bbl/button'
 import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
+import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConsolePage } from '@/patterns/console-page'
 import { EmptyState } from '@/patterns/empty-state'
 import {
@@ -38,6 +39,9 @@ export type BroadcastListProps = {
   reportFailNext?: boolean
   /** Open on a Download result, held (preset route). */
   reportHeld?: ReportResult
+  /** `#/broadcast/loading` · `#/broadcast/error`: the list still fetching, or failed to. */
+  state?: 'ready' | 'loading' | 'error'
+  onRetry?: () => void
 }
 
 const PAGE_SIZE = 50
@@ -119,6 +123,8 @@ export function BroadcastList({
   reportOpen,
   reportFailNext,
   reportHeld,
+  state = 'ready',
+  onRetry,
 }: BroadcastListProps) {
   const [requestedPage, setPage] = useState(0)
   const [query, setQuery] = useState('')
@@ -201,7 +207,7 @@ export function BroadcastList({
         columnWidth="fill"
         className="[&>[data-part=Body]]:bg-[var(--color-surface-primary-default)] [&>[data-part=Body]>div]:gap-0 [&>[data-part=Body]>div]:px-0 [&>[data-part=Body]>div]:pt-0 [&>[data-part=Body]>div]:pb-0 [&>[data-part=Header]]:px-[var(--space-4)]"
       >
-        {broadcasts.length === 0 ? (
+        {state === 'ready' && broadcasts.length === 0 ? (
           /* The original's card: Surface/Primary/Hovered at radius 8, the
              copy starting 124 down (pad 24 + 100), not centred. */
           <EmptyState
@@ -217,7 +223,25 @@ export function BroadcastList({
           /* One block, so the column's gap stays out from under the band. */
           <div className="flex flex-col">
             {filters}
-            {rows.length === 0 ? (
+            {state === 'loading' ? (
+              /* Notification management's loading card (Figma 308:1003, State · Loading). */
+              <EmptyState variant="idle" icon={<SpinnerLoader size="l" />} className="h-[732px] justify-center" />
+            ) : state === 'error' ? (
+              /* Its error card (State · Error): Try again 32 under the line. */
+              <EmptyState
+                variant="idle"
+                icon={<img src="/illustrations/error.svg" alt="" width={124} height={124} />}
+                action={
+                  <Button onClick={onRetry} className="mt-[var(--space-2)]">
+                    Try again
+                  </Button>
+                }
+                bodyMaxWidth="none"
+                className="h-[732px] justify-start gap-[var(--space-6)] pt-[100px] [&>div>span:last-child]:text-[var(--color-text-secondary-default)]"
+              >
+                {BROADCAST_COPY.loadFail}
+              </EmptyState>
+            ) : rows.length === 0 ? (
               /* The empty card's shape (24 + 813), less the filter band (105). */
               <EmptyState
                 variant="idle"
@@ -240,7 +264,7 @@ export function BroadcastList({
         )}
       </ConsolePage>
 
-      {rows.length > 0 && (
+      {state === 'ready' && rows.length > 0 && (
         <ListFooter
           page={page}
           pageSize={PAGE_SIZE}

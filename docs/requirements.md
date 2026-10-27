@@ -91,6 +91,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 
 - **List** (`#/broadcast`): Broadcast name, Channel, Broadcast start, Do Not Disturb, Status. Recipients and Result were removed on 14 Oct and live in the drawer.
   - Hovering a row that has a report shows a download mark beside its status, as Notification management's row download (22 Oct 2026). One row, one file; no checkboxes or bulk download.
+  - Loading and load-fail states, as Notification management draws them (20 Oct 2026): a spinner card, or *Unable to get information* with **Try again**, under the filter row (`#/broadcast/loading`, `#/broadcast/error`).
 - **Detail drawer**, 720 wide:
   - Delivery result: Total, Success, Failed, Not sent (only when there is any) and Waiting to send, with a status note.
   - **Download report** in the drawer footer, as the CNH template drawer's Download (21 Oct 2026).
@@ -101,6 +102,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
   - A Draft and a Cancelled broadcast have no Delivery result; Broadcast details carries the status note.
   - **Cancel broadcast** and **Edit** on a Draft only. Cancel sits on the footer's left edge, Edit on the right (22 Oct 2026, consistent with CMS negative actions). Cancel asks first (*Cancel this broadcast?*: **Keep draft** / **Cancel broadcast**), then the list shows a *Broadcast cancelled* toast and the row turns Cancelled. If the status cannot be updated, *Unable to cancel the broadcast* (**Close** / **Try again**, as Submit's fail dialog) and the broadcast stays a Draft.
 - **Create and Edit broadcast:** one page with six steps, a sticky footer with **Save draft** and **Submit**, then a confirm dialog.
+  - While the page (or the draft) loads: a spinner in the body, the footer buttons disabled, as Create notification (`#/broadcast/create/loading`, `#/broadcast/edit/<id>/loading`). Edit fails on Submit like Create (`#/broadcast/edit/<id>/fail`).
 - **Error behavior** (CNH Phase 1, [Figma 123:95723](https://www.figma.com/design/JjvzdUwg5LlKHDQvo2fny0/-CNH--UI-CNH-Template-Management?node-id=123-95723); requester, 22 Oct 2026): errors appear on **Submit** (or Save draft) and stay until the next one. Typing, picking a file or a column, or switching a channel on does not clear a mark; Submit checks again and leaves only what is still missing. A field that goes away drops its error: a channel switched off, a quiet period removed, Send as soon as possible. Switching the recipient type clears the channel message, whose words depend on it. Before, each error cleared as soon as its field changed. Presets, Phase 1's steps 2–5: `step1-filled` → `no-channel` → `channel-typing` → `channel-errors`.
 
 ### Create: the three steps
