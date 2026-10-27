@@ -12,16 +12,19 @@ export function FilterSelect({
   options,
   value,
   onChange,
+  optionLabel = (o) => o,
 }: {
   label: string
   options: readonly string[]
   value: string[]
   onChange: (value: string[]) => void
+  /** What an option reads, when it differs from its value. */
+  optionLabel?: (option: string) => string
 }) {
   return (
     <MultiSelectDropdown
       label={label}
-      options={options.map((o) => ({ value: o, label: o }))}
+      options={options.map((o) => ({ value: o, label: optionLabel(o) }))}
       value={value}
       onChange={onChange}
       allLabel="All"

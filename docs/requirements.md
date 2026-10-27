@@ -152,7 +152,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
   | QUEUE | Submitted; the system has accepted it. | Disabled (grey) |
   | PROCESSING | The system has started sending. | Accent (blue) |
   | PUBLISHED | Finished. | Positive (green) |
-  | FAILED | A system error stopped it, in Queue or Processing. | Negative (red) |
+  | FAILED | A system error stopped it, in Queue or Processing. The badge and the Status filter read **System failed** (design critique, 27 Oct 2026; PROPOSAL, pending BA confirmation). | Negative (red) |
   | CANCELLED | A saved draft was cancelled because it is no longer needed. | Disabled (grey) |
 
   - The old Scheduled is Queue, Sending is Processing, Completed is Published.
@@ -215,6 +215,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 22 Oct 2026 | Do Not Disturb is off by default on a new broadcast. The card still shows one period, Mon – Fri 20:00–08:00, disabled until the switch is on. Edit and the presets keep the broadcast's own setting (requester). Figma updated the same day: Do Not Disturb is its own card in the Create broadcast local component, and the DND Behavior section opens on Off. |
 | 22 Oct 2026 | Each Do Not Disturb quiet period sits on its own bordered card (Card Surface), and the add button becomes the Outline button **Add more period +** (was the Ghost button *Add period*, rule between periods). Requester's own design, Figma `436:243478` (section *DND - TBC*). |
 | 20 Oct 2026 | PROPOSAL, pending BA (Q15): on Submit, a wrong recipient column (Direct, the other channel's contacts) is marked on the column select before the row checks. Drawn on Figma Submit Result (325:68618) and in the prototype before the BA confirms. |
+| 27 Oct 2026 | Design critique (design team only, not yet with the BA or dev): the FAILED status reads **System failed** on the list badge, the drawer badge and the Status filter (was *Failed*). The drawer's Delivery result also counts *Failed* recipients, so a Failed broadcast read like failed deliveries (UX writer). The value stays FAILED; the Delivery result row and the report's `Failed` result are unchanged. PROPOSAL, pending BA confirmation. Figma not updated yet. |
 
 ## Open items
 

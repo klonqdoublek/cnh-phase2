@@ -592,6 +592,19 @@ export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'acce
   Cancelled: 'disabled',
 }
 
+/** What the badge and the Status filter read. FAILED reads "System failed"
+ *  (design critique, 27 Oct 2026): the drawer's Delivery result also counts
+ *  "Failed" recipients, and the two read as the same thing. The value stays
+ *  FAILED. PROPOSAL, pending BA confirmation. */
+export const STATUS_LABEL: Record<BroadcastStatus, string> = {
+  Draft: 'Draft',
+  Queue: 'Queue',
+  Processing: 'Processing',
+  Published: 'Published',
+  Failed: 'System failed',
+  Cancelled: 'Cancelled',
+}
+
 /** Recipients not yet attempted: not sent, not failed, not cut off by the end. */
 export const waitingOf = (b: Broadcast) => Math.max(0, b.recipients - b.success - b.failed - (b.notSent ?? 0))
 
