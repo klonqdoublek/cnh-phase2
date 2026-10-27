@@ -152,14 +152,14 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
   | QUEUE | Submitted; the system has accepted it. | Disabled (grey) |
   | PROCESSING | The system has started sending. | Accent (blue) |
   | PUBLISHED | Finished. | Positive (green) |
-  | FAILED | A system error stopped it, in Queue or Processing. The badge and the Status filter read **System failed** (design critique, 27 Oct 2026; PROPOSAL, pending BA confirmation). | Negative (red) |
+  | FAILED | A system error stopped it, in Queue or Processing. The badge and the Status filter read **System error** (design critique, 27 Oct 2026; PROPOSAL, pending BA confirmation). | Negative (red) |
   | CANCELLED | A saved draft was cancelled because it is no longer needed. | Disabled (grey) |
 
   - The old Scheduled is Queue, Sending is Processing, Completed is Published.
   - The old Paused is Processing; the drawer still says it is inside the quiet period.
   - **Cancel is for a Draft only.** Once submitted (Queue and later) a broadcast cannot be cancelled; this is a system limit.
   - A Cancelled broadcast stays in the list, read only, with no actions.
-  - A Failed broadcast keeps its Delivery result. Recipients still waiting when it stopped are counted as **Not sent** (report reason `System error`), and Download report is offered once anything was attempted. There is no retry.
+  - A Failed broadcast keeps its Delivery result, with its note as a Negative (red) Alert (27 Oct 2026). Recipients still waiting when it stopped are counted as **Not sent** (report reason `System error`), and Download report is offered once anything was attempted. There is no retry.
 - **Edit:** a Draft reopens in Edit and saves under the same ID. Queue and later cannot be edited (P2-20). Cancelled cannot be edited.
 - **Delivery report:** a CSV, `{id}-delivery-report.csv`, with one row per recipient: ID, Channel, Result (Success, Failed, Not sent, Waiting to send) and Reason.
   - Offered once anything was attempted (Processing, Published, Failed).
@@ -215,7 +215,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 22 Oct 2026 | Do Not Disturb is off by default on a new broadcast. The card still shows one period, Mon – Fri 20:00–08:00, disabled until the switch is on. Edit and the presets keep the broadcast's own setting (requester). Figma updated the same day: Do Not Disturb is its own card in the Create broadcast local component, and the DND Behavior section opens on Off. |
 | 22 Oct 2026 | Each Do Not Disturb quiet period sits on its own bordered card (Card Surface), and the add button becomes the Outline button **Add more period +** (was the Ghost button *Add period*, rule between periods). Requester's own design, Figma `436:243478` (section *DND - TBC*). |
 | 20 Oct 2026 | PROPOSAL, pending BA (Q15): on Submit, a wrong recipient column (Direct, the other channel's contacts) is marked on the column select before the row checks. Drawn on Figma Submit Result (325:68618) and in the prototype before the BA confirms. |
-| 27 Oct 2026 | Design critique (design team only, not yet with the BA or dev): the FAILED status reads **System failed** on the list badge, the drawer badge and the Status filter (was *Failed*). The drawer's Delivery result also counts *Failed* recipients, so a Failed broadcast read like failed deliveries (UX writer). The value stays FAILED; the Delivery result row and the report's `Failed` result are unchanged. PROPOSAL, pending BA confirmation. Figma not updated yet. |
+| 27 Oct 2026 | Design critique (design team only, not yet with the BA or dev): the FAILED status reads **System error** on the list badge, the drawer badge and the Status filter (was *Failed*). The drawer's Delivery result also counts *Failed* recipients, so a Failed broadcast read like failed deliveries (UX writer). The value stays FAILED; the Delivery result row and the report's `Failed` result are unchanged. *System error* (requester, over the UX writer's *System failed*) matches the drawer note and the report reason. The drawer's status note on a System error broadcast is a Negative (red) Alert with the CloseCircle mark (was Brand, information), to match the red badge; every other status keeps Brand. PROPOSAL, pending BA confirmation. Figma not updated yet. |
 
 ## Open items
 

@@ -15,6 +15,9 @@ export type DrawerSectionSpec = {
   icon: string
   rows: [string, string][]
   note?: string
+  /** Negative for a System error broadcast (27 Oct 2026), so the note reads
+   *  with its red badge; Brand otherwise. */
+  noteTone?: 'brand' | 'negative'
 }
 
 export function DrawerSection({ section, first }: { section: DrawerSectionSpec; first: boolean }) {
@@ -40,8 +43,14 @@ export function DrawerSection({ section, first }: { section: DrawerSectionSpec; 
       ))}
       {section.note && (
         <Alert
-          appearance="brand"
-          icon={<Icon slug="information" size={24} color="var(--color-icon-highlight-default)" />}
+          appearance={section.noteTone ?? 'brand'}
+          icon={
+            section.noteTone === 'negative' ? (
+              <Icon slug="close-circle" size={24} color="var(--color-icon-negative-default)" />
+            ) : (
+              <Icon slug="information" size={24} color="var(--color-icon-highlight-default)" />
+            )
+          }
           description={section.note}
           className="mt-[var(--space-2)]"
         />

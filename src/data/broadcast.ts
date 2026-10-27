@@ -592,7 +592,7 @@ export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'acce
   Cancelled: 'disabled',
 }
 
-/** What the badge and the Status filter read. FAILED reads "System failed"
+/** What the badge and the Status filter read. FAILED reads "System error"
  *  (design critique, 27 Oct 2026): the drawer's Delivery result also counts
  *  "Failed" recipients, and the two read as the same thing. The value stays
  *  FAILED. PROPOSAL, pending BA confirmation. */
@@ -601,7 +601,7 @@ export const STATUS_LABEL: Record<BroadcastStatus, string> = {
   Queue: 'Queue',
   Processing: 'Processing',
   Published: 'Published',
-  Failed: 'System failed',
+  Failed: 'System error',
   Cancelled: 'Cancelled',
 }
 

@@ -86,6 +86,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
               ['Waiting to send', fmtNumber(waiting)],
             ] as [string, string][],
             note: STATUS_LINE[b.status](b),
+            noteTone: b.status === 'Failed' ? ('negative' as const) : ('brand' as const),
           },
         ]),
     {
