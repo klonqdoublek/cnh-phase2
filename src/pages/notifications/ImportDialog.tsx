@@ -24,9 +24,8 @@ type Picked = { key: number; file: File; size: number; problem: Problem | null }
 /** `replace`: the upload found the file name imported before and asks "Replace imported templates?". */
 type Phase = 'idle' | 'uploading' | 'failed' | 'replace'
 
-/* CMS's `fileSizeLabel` and its "type • size" meta (useAssetSlotUpload, UploadedAssetSlot). */
-const sizeLabel = (bytes: number) =>
-  bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
+/* The slot's meta is the file type only (requester, 27 Oct 2026: not sure the size can be read
+   reliably; was CMS's "type • size", useAssetSlotUpload `fileSizeLabel`). The size still feeds the 10 MB check. */
 const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toUpperCase() : 'File')
 const problemOf = (check: FileCheck) => (check.ok ? null : check)
 
@@ -206,7 +205,7 @@ export function ImportDialog({
                Try again, and for a file over 10 MB, without it (requester, 22 Oct 2026). */
             <UploadedFile
               name={picked.file.name}
-              meta={`${typeLabel(picked.file.name)} • ${sizeLabel(picked.size)}`}
+              meta={typeLabel(picked.file.name)}
               error={!!problem || failed}
               errorMessage={failed ? IMPORT_COPY.failTitle : problem?.message}
               errorPlacement={failed || problem?.problem === 'size' ? 'slot' : 'below'}
