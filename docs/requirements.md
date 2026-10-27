@@ -122,7 +122,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
        - No rows, more than 1,000 rows or no valid recipient blocks the broadcast: *The audience file cannot be used* with the reason and Close, and the reason stays on Step 2. **PROPOSAL, pending BA confirmation** (Q16).
        - If the read fails, the system-fail dialog *Unable to submit the broadcast* (Close / Try again) appears, and Try again reads the file again.
      - Save draft does not read the file.
-   - "Create broadcast message" (requester, 21 Oct; draft 2.2 has no title on this card): the file's columns as chips that insert `{{COLUMN}}` into the box the cursor was last in, over one card per channel, three across.
+   - "Create broadcast message" (requester, 21 Oct; draft 2.2 has no title on this card): the file's columns as chips that insert `{{COLUMN}}` into the box the cursor was last in, over one card per channel, stacked in one column like the Template form's channel cards (requester, 27 Oct 2026; was three across).
      - Each card is switched on and off in its own title row. The switches replace the channel checkboxes and Direct recipient's Email / SMS radio. Under Direct recipient, switching one on switches the other off. A card that is off keeps what was typed and disables it.
      - Fields are the Template form's TH fields: Push title (TH)\* (255) and Push message (TH)\* (2048); Email subject (TH)\* (255) and Email content (TH)\* (2048); SMS message (TH)\* (800).
      - No channel on: an Alert above the cards and a red stroke on each card.
@@ -218,6 +218,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 27 Oct 2026 | Design critique (design team only, not yet with the BA or dev): the FAILED status reads **System error** on the list badge, the drawer badge and the Status filter (was *Failed*). The drawer's Delivery result also counts *Failed* recipients, so a Failed broadcast read like failed deliveries (UX writer). The value stays FAILED; the Delivery result row and the report's `Failed` result are unchanged. *System error* (requester, over the UX writer's *System failed*) matches the drawer note and the report reason. The drawer's status note on a System error broadcast is a Negative (red) Alert with the CloseCircle mark (was Brand, information), to match the red badge; every other status keeps Brand. PROPOSAL, pending BA confirmation. Figma not updated yet. |
 | 27 Oct 2026 | Design critique: the Do Not Disturb time zone moves from its own *Time zone* row under the periods into the time label, **Quiet period from (GMT+7)**. To confirm with the BA whether the time zone can be picked (Q19); the design team expects not. Figma not updated yet. |
 | 27 Oct 2026 | Design critique: the uploaded audience file row drops *File validated* (green tick) beside the size. A file that fails the type or size check is never placed, so the label told the user nothing; the full read is still on Submit. Changed transcribed copy. Figma not updated yet. |
+| 27 Oct 2026 | The channel cards under *Create broadcast message* (Push notification, Email, SMS) stack in one column, as CNH's Template form stacks its channel cards; before, three across. Requester's call. Layout only. Figma not updated yet. |
 
 ## Open items
 
