@@ -36,6 +36,11 @@ export const BROADCAST_COPY = {
   previewTitle: 'Preview (first 5 rows)',
   required: 'This field is required',
   noColumn: 'Select the column that identifies each recipient',
+  /** PROPOSAL, composed (not in the original build), pending BA (Q15). */
+  wrongColumn: (column: string, holds: 'mobile' | 'email', wanted: 'mobile' | 'email') => {
+    const plural = { mobile: 'mobile numbers', email: 'email addresses' }
+    return `${column} contains ${plural[holds]}. Select the column that contains ${plural[wanted]}`
+  },
   noChannel: 'Please enable at least 1 notification channel',
   noDirectChannel: 'Select Email or SMS',
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
@@ -148,6 +153,19 @@ const DUPLICATE: Record<IdKind, string> = {
   cis: 'Duplicate CIS ID',
   mobile: 'Duplicate mobile number',
   email: 'Duplicate email address',
+}
+
+/** What a column holds: mobile numbers or email addresses when more than half of
+ * its filled values are, so a few bad rows do not hide it; null otherwise (a CIS
+ * ID has no fixed format yet). PROPOSAL, pending BA (Q15). */
+export function columnHolds(audience: Audience, column: string): 'mobile' | 'email' | null {
+  const index = audience.headers.indexOf(column)
+  const values = audience.rows.map((row) => (row[index] ?? '').trim()).filter(Boolean)
+  if (index < 0 || !values.length) return null
+  const most = (test: (v: string) => boolean) => values.filter(test).length > values.length / 2
+  if (most((v) => EMAIL.test(v.toLowerCase()))) return 'email'
+  if (most((v) => MOBILE.test(v.replace(/[\s-]/g, '')))) return 'mobile'
+  return null
 }
 
 export type RecipientRow = { line: number; id: string; errors: string[] }

@@ -9,6 +9,7 @@ export const FORM_PRESETS = [
   'file-error',
   'cis',
   'direct',
+  'wrong-column',
   'errors',
   'step1-filled',
   'no-channel',
@@ -223,6 +224,16 @@ export function formSeed(preset: FormPreset): FormSeed {
         file: { name: 'audience-direct.csv', text: DIRECT_CSV },
         recipientType: 'direct',
         channels: ['SMS'],
+      }
+    case 'wrong-column':
+      // PROPOSAL, pending BA (Q15): Direct SMS with the email column, Submit pressed.
+      return {
+        ...filled,
+        file: { name: 'audience-direct.csv', text: DIRECT_CSV },
+        recipientType: 'direct',
+        column: 'EMAIL',
+        channels: ['SMS'],
+        press: 'submit',
       }
     case 'errors':
       return { press: 'submit' }

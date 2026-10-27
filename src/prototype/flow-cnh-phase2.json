@@ -224,6 +224,19 @@
    "section": "Broadcast"
   },
   {
+   "id": "bc-column-ok",
+   "kind": "decision",
+   "label": "Recipient column matches the channel? (proposal)",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-wrong-column",
+   "kind": "screen",
+   "label": "Wrong recipient column (proposal)",
+   "route": "#/broadcast/create/wrong-column",
+   "section": "Broadcast"
+  },
+  {
    "id": "bc-usable",
    "kind": "decision",
    "label": "1–1,000 rows, at least 1 valid?",
@@ -764,9 +777,33 @@
   },
   {
    "from": "bc-check-ok",
+   "to": "bc-column-ok",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-column-ok",
    "to": "bc-usable",
    "label": "Yes",
    "style": "solid"
+  },
+  {
+   "from": "bc-column-ok",
+   "to": "bc-wrong-column",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "bc-wrong-column",
+   "to": "bc-valid",
+   "label": "Submit",
+   "style": "back",
+   "touch": {
+    "x": 1423,
+    "y": 1020,
+    "w": 177,
+    "h": 44
+   }
   },
   {
    "from": "bc-check-ok",
