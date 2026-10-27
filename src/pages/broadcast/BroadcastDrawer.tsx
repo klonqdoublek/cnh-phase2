@@ -1,31 +1,43 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/bbl/button'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { OutlineButton } from '@/bbl/outline-button'
+import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { DetailDrawer } from '@/patterns/detail-drawer'
 import {
-  deliveryReportCsv,
-  deliveryReportName,
+  BROADCAST_COPY,
   firstSend,
   fmtDateTime,
   fmtDnd,
   fmtNumber,
+  hasDeliveryReport,
   quietUntil,
   waitingOf,
   type Broadcast,
   type BroadcastStatus as Status,
 } from '@/data/broadcast'
 import { cn } from '@/lib/cn'
-import { downloadText } from '@/lib/download'
 import { BroadcastStatus } from './list/BroadcastStatus'
 import { DrawerSection, Meta, type DrawerSectionSpec } from './list/drawer-parts'
+import { ReportDownload } from './list/ReportDownload'
 
 export type BroadcastDrawerProps = {
   broadcast: Broadcast
   onClose: () => void
   /** Draft only. */
   onEdit: () => void
+  /** Draft only: the broadcast is cancelled once the dialog confirms it. */
+  onCancel: () => void
+  /** Open with the Cancel dialog already up (its preset route). */
+  confirmingCancel?: boolean
+  /** Open with the Unable to cancel dialog already up (its preset route). */
+  cancelFailed?: boolean
+  /** Open with the Download report dialog already up (its preset route). */
+  confirmingDownload?: boolean
+  /** The next Download fails (`…/download/fail`). */
+  downloadFailNext?: boolean
 }
 
 /** HH:mm the current quiet period ends, or the first rule's end when now is
@@ -39,21 +51,28 @@ function resumesAt(b: Broadcast) {
 
 const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
   Draft: () => 'Not submitted yet. Nothing is sent until the broadcast is submitted.',
-  Scheduled: (b) => `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
-  Sending: () => 'Messages are being sent.',
-  Paused: (b) => `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`,
-  Completed: (b) =>
+  Queue: (b) => `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
+  Processing: (b) =>
+    b.quiet ? `Inside the quiet period. Sending resumes at ${resumesAt(b)}.` : 'Messages are being sent.',
+  Published: (b) =>
     b.notSent && b.end
       ? `The broadcast ended at ${fmtDateTime(new Date(b.end))}. ${fmtNumber(b.notSent)} recipients were not sent.`
       : 'Every recipient was sent a message.',
+  /* Failed and Cancelled (19 Oct 2026): composed, the original build has
+     neither. */
+  Failed: (b) =>
+    `A system error stopped the broadcast.${b.notSent ? ` ${fmtNumber(b.notSent)} recipients were not sent.` : ''}`,
+  Cancelled: () => 'Cancelled before it was submitted. Nothing was sent.',
 }
 
 function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
   const draft = b.status === 'Draft'
+  /* Never submitted, so nothing was attempted. */
+  const unsent = draft || b.status === 'Cancelled'
   const waiting = waitingOf(b)
   const c = b.content
   return [
-    ...(draft
+    ...(unsent
       ? []
       : [
           {
@@ -67,17 +86,6 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
               ['Waiting to send', fmtNumber(waiting)],
             ] as [string, string][],
             note: STATUS_LINE[b.status](b),
-            /* Only once something was attempted — Sending, Paused, Completed. */
-            action:
-              b.success + b.failed > 0 ? (
-                <OutlineButton
-                  className="h-[32px]"
-                  onClick={() => downloadText(deliveryReportName(b), deliveryReportCsv(b))}
-                >
-                  Download report
-                  <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
-                </OutlineButton>
-              ) : undefined,
           },
         ]),
     {
@@ -96,7 +104,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
         ['Broadcast end', b.end ? fmtDateTime(new Date(b.end)) : ''],
         ['Do Not Disturb', fmtDnd(b.dnd)],
       ],
-      note: draft ? STATUS_LINE.Draft(b) : undefined,
+      note: unsent ? STATUS_LINE[b.status](b) : undefined,
     },
     ...(b.channels.includes('Push notification')
       ? [
@@ -133,12 +141,33 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
  * status and facts, scrolling body, footer at 44). This file supplies what the
  * pattern leaves to its consumer: fixed to the right edge over the list with
  * no scrim (as the original), the 225ms slide-in, the `sidebar-collapse`
- * close, Escape, a click outside, and a focus trap. Edit is a Draft's only
- * action.
+ * close, Escape, a click outside, and a focus trap. A Draft's footer has
+ * Cancel broadcast (behind a confirm dialog) and Edit. Once submitted, a
+ * broadcast cannot be cancelled (a system limit, 19 Oct 2026); its footer has
+ * Download report once anything was attempted (Processing, Published or
+ * Failed), where the CNH template drawer keeps its Download — behind the same
+ * confirm as the list row's download. Queue and Cancelled keep an empty
+ * footer, so every drawer ends on the same rule (Figma `Footer · Empty`).
  */
-export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerProps) {
+export function BroadcastDrawer({
+  broadcast,
+  onClose,
+  onEdit,
+  onCancel,
+  confirmingCancel,
+  cancelFailed: openFailed,
+  confirmingDownload,
+  downloadFailNext,
+}: BroadcastDrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(!!confirmingCancel && broadcast.status === 'Draft')
+  /* The status could not be updated: the broadcast stays a Draft. */
+  const [cancelFailed, setCancelFailed] = useState(!!openFailed && broadcast.status === 'Draft')
+  const [reporting, setReporting] = useState(!!confirmingDownload && hasDeliveryReport(broadcast))
+  /* The dialog owns Escape and clicks while it is up. */
+  const dialogUp = useRef(cancelOpen || cancelFailed)
+  dialogUp.current = cancelOpen || cancelFailed || reporting
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setShown(true))
@@ -149,6 +178,7 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerP
     const previous = document.activeElement as HTMLElement | null
     panel.current?.focus()
     const onKey = (event: KeyboardEvent) => {
+      if (dialogUp.current) return
       if (event.key === 'Escape') return onClose()
       if (event.key !== 'Tab' || !panel.current) return
       const focusable = [
@@ -169,6 +199,8 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerP
       }
     }
     const onPointer = (event: MouseEvent) => {
+      if (dialogUp.current) return
+      if ((event.target as Element).closest?.('[data-report-download]')) return
       if (!panel.current?.contains(event.target as Node)) onClose()
     }
     const timer = setTimeout(() => document.addEventListener('mousedown', onPointer), 0)
@@ -182,6 +214,7 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerP
   }, [onClose])
 
   const draft = broadcast.status === 'Draft'
+  const attempted = hasDeliveryReport(broadcast)
   const sections = sectionsOf(broadcast)
 
   return (
@@ -220,16 +253,78 @@ export function BroadcastDrawer({ broadcast, onClose, onEdit }: BroadcastDrawerP
         }
         actions={
           draft ? (
-            <Button onClick={onEdit} className="h-[44px]">
-              Edit
-            </Button>
-          ) : undefined
+            <>
+              {/* Negative action on the left, away from Edit, as CMS does (22 Oct 2026). */}
+              <OutlineButton appearance="negative" onClick={() => setCancelOpen(true)} className="mr-auto h-[44px]">
+                {BROADCAST_COPY.cancel}
+              </OutlineButton>
+              <Button onClick={onEdit} className="h-[44px]">
+                Edit
+              </Button>
+            </>
+          ) : attempted ? (
+            <OutlineButton onClick={() => setReporting(true)} className="h-[44px]">
+              Download report
+              <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
+            </OutlineButton>
+          ) : (
+            <></>
+          )
         }
       >
         {sections.map((section, i) => (
           <DrawerSection key={section.title} section={section} first={i === 0} />
         ))}
       </DetailDrawer>
+
+      {/* On the body: the panel's transform would pin a fixed dialog inside it. */}
+      {cancelOpen &&
+        createPortal(
+          <ConfirmDialog
+            anatomy="sectioned"
+            contentType="label-xl"
+            layer="fixed"
+            width={600}
+            destructive
+            title={BROADCAST_COPY.cancelTitle}
+            cancelLabel={BROADCAST_COPY.cancelKeep}
+            confirmLabel={BROADCAST_COPY.cancel}
+            onCancel={() => setCancelOpen(false)}
+            onConfirm={onCancel}
+            onDismiss={() => setCancelOpen(false)}
+            className="z-50"
+          >
+            {BROADCAST_COPY.cancelBody(broadcast.name)}
+          </ConfirmDialog>,
+          document.body,
+        )}
+      {cancelFailed &&
+        createPortal(
+          <ConfirmDialog
+            anatomy="sectioned"
+            contentType="label-xl"
+            layer="fixed"
+            width={600}
+            title={BROADCAST_COPY.cancelFailTitle}
+            cancelLabel="Close"
+            confirmLabel="Try again"
+            onCancel={() => setCancelFailed(false)}
+            onConfirm={() => {
+              setCancelFailed(false)
+              onCancel()
+            }}
+            onDismiss={() => setCancelFailed(false)}
+            className="z-50"
+          >
+            Please try again
+          </ConfirmDialog>,
+          document.body,
+        )}
+      <ReportDownload
+        broadcast={reporting ? broadcast : null}
+        onDone={() => setReporting(false)}
+        failNext={downloadFailNext}
+      />
     </div>
   )
 }

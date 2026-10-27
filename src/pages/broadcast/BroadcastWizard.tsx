@@ -6,7 +6,7 @@ import { ConsolePage } from '@/patterns/console-page'
 import { BROADCAST_COPY, type Broadcast } from '@/data/broadcast'
 import type { FormPreset } from '@/data/broadcast-presets'
 import { Dialogs } from './create/Dialogs'
-import { AudienceFile, BasicInfo, Delivery, MessageContent, Section, type FocusRef } from './create/sections'
+import { AudienceFile, BasicInfo, Delivery, DndCard, MessageContent, Section, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
 import { seedWithColumns, useConcept } from '@/prototype/dynamic-field'
 
@@ -28,7 +28,8 @@ export type BroadcastWizardProps = {
  * `FormStep`. Layout and step copy are draft 2.2 webds-matched (Figma
  * 85:19401, 15 Oct 2026): the channels moved from checkboxes onto their own
  * cards' switches, and the message content sits under the audience step.
- * Do Not Disturb sits inside Delivery Date (Figma 89:4665).
+ * Do Not Disturb is its own card under Delivery Date, in the same step
+ * (requester, 21 Oct 2026; Figma 409:75574).
  */
 export function BroadcastWizard(props: BroadcastWizardProps) {
   /* The Prototype control's file size reseeds the form, so it remounts. */
@@ -82,7 +83,10 @@ function Wizard({ onBack, onCreate, failNext, preset, initial }: BroadcastWizard
           </div>
         </Section>
         <Section title="Step 3: Delivery Date">
-          <Delivery f={f} />
+          <div className="flex flex-col gap-[var(--space-8)]">
+            <Delivery f={f} />
+            <DndCard f={f} />
+          </div>
         </Section>
       </ConsolePage>
       <Dialogs f={f} onBack={onBack} />

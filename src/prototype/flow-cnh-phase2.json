@@ -1,7 +1,7 @@
 {
  "source": {
   "kind": "code",
-  "path": "cnh-tm-devtarget-v2/src/pages/ImportDialog.tsx · src/data/import-spec.ts · src/pages/BroadcastWizard.tsx · src/pages/broadcast/useBroadcastForm.ts · src/data/broadcast-presets.ts",
+  "path": "src/pages/notifications/ImportDialog.tsx · src/data/import-spec.ts (Import, 22 Oct 2026) · cnh-tm-devtarget-v2 · src/pages/BroadcastWizard.tsx · src/pages/broadcast/useBroadcastForm.ts · src/data/broadcast-presets.ts",
   "extractedAt": "2026-10-06"
  },
  "screen": {
@@ -24,6 +24,32 @@
    "section": "Import"
   },
   {
+   "id": "more-than-one",
+   "kind": "decision",
+   "label": "More than one file?",
+   "section": "Import"
+  },
+  {
+   "id": "too-many",
+   "kind": "screen",
+   "label": "More than one file dragged over — drop refused",
+   "route": "#/list/import/too-many",
+   "section": "Import"
+  },
+  {
+   "id": "selected",
+   "kind": "screen",
+   "label": "File selected",
+   "route": "#/list/import/selected",
+   "section": "Import"
+  },
+  {
+   "id": "one-file",
+   "kind": "decision",
+   "label": "Import 1 File?",
+   "section": "Import"
+  },
+  {
    "id": "no-file",
    "kind": "screen",
    "label": "Import pressed with no file",
@@ -31,28 +57,23 @@
    "section": "Import"
   },
   {
-   "id": "over-50",
+   "id": "size",
    "kind": "decision",
-   "label": "More than 50 files?",
+   "label": "10 MB or less?",
    "section": "Import"
   },
   {
-   "id": "cap",
-   "kind": "tag",
-   "label": "Keep the first 50 · say how many were left out",
-   "section": "Import"
-  },
-  {
-   "id": "parses",
-   "kind": "decision",
-   "label": "Every file a .jsonl that parses?",
-   "section": "Import"
-  },
-  {
-   "id": "invalid-format",
+   "id": "too-large",
    "kind": "screen",
-   "label": "Invalid file format — Import stays blocked until it is removed",
-   "route": "#/list/import/invalid-format",
+   "label": "File over 10 MB — in its slot, no Try again",
+   "route": "#/list/import/too-large",
+   "section": "Import"
+  },
+  {
+   "id": "uploading",
+   "kind": "screen",
+   "label": "Uploading — spinner inside the Import dialog",
+   "route": "#/list/import/uploading",
    "section": "Import"
   },
   {
@@ -69,29 +90,28 @@
    "section": "Import"
   },
   {
-   "id": "selected",
-   "kind": "screen",
-   "label": "Files selected — all valid",
-   "route": "#/list/import/selected",
+   "id": "imported-before",
+   "kind": "decision",
+   "label": "File name imported before?",
    "section": "Import"
   },
   {
-   "id": "uploading",
+   "id": "duplicate",
    "kind": "screen",
-   "label": "Uploading",
-   "route": "#/list/import/uploading",
+   "label": "Replace imported templates?",
+   "route": "#/list/import/duplicate",
    "section": "Import"
   },
   {
    "id": "uploaded",
    "kind": "decision",
-   "label": "Upload succeeded?",
+   "label": "Able to import templates?",
    "section": "Import"
   },
   {
    "id": "failure",
    "kind": "screen",
-   "label": "Import failure",
+   "label": "Import failure — in the file slot, Try again",
    "route": "#/list/import/failure",
    "section": "Import"
   },
@@ -119,7 +139,7 @@
   {
    "id": "bc-readable",
    "kind": "decision",
-   "label": "File .csv / .xlsx, ≤ 10 MB, 1–1,000 rows?",
+   "label": "File .csv / .xlsx, ≤ 10 MB?",
    "section": "Broadcast"
   },
   {
@@ -177,10 +197,63 @@
    "section": "Broadcast"
   },
   {
+   "id": "bc-channel-typing",
+   "kind": "screen",
+   "label": "A channel on and typed in — the marks stay until Submit",
+   "route": "#/broadcast/create/channel-typing",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-checking",
+   "kind": "screen",
+   "label": "Checking file… — the whole file is read",
+   "route": "#/broadcast/create/checking",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-check-ok",
+   "kind": "decision",
+   "label": "Able to check the file?",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-check-fail",
+   "kind": "screen",
+   "label": "Unable to submit — file check failed",
+   "route": "#/broadcast/create/check-fail",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-usable",
+   "kind": "decision",
+   "label": "1–1,000 rows, at least 1 valid?",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-file-blocked",
+   "kind": "screen",
+   "label": "The audience file cannot be used",
+   "route": "#/broadcast/create/file-blocked",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-has-invalid",
+   "kind": "decision",
+   "label": "Any invalid rows?",
+   "section": "Broadcast"
+  },
+  {
    "id": "bc-confirm",
    "kind": "screen",
    "label": "Submit this broadcast?",
    "route": "#/broadcast/create/confirm",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-confirm-invalid",
+   "kind": "screen",
+   "label": "Submit this broadcast? — invalid rows skipped",
+   "route": "#/broadcast/create/confirm-invalid",
    "section": "Broadcast"
   },
   {
@@ -256,6 +329,60 @@
    "label": "Edit broadcast — the draft reopened",
    "route": "#/broadcast/edit/BC-0007",
    "section": "Broadcast"
+  },
+  {
+   "id": "bc-cancel-confirm",
+   "kind": "screen",
+   "label": "Cancel this broadcast?",
+   "route": "#/broadcast/view/BC-0007/cancel",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-cancel-ok",
+   "kind": "decision",
+   "label": "Able to update status?",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-cancel-fail",
+   "kind": "screen",
+   "label": "Unable to cancel the broadcast",
+   "route": "#/broadcast/view/BC-0007/cancel-fail",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-cancelled",
+   "kind": "screen",
+   "label": "Broadcast cancelled",
+   "route": "#/broadcast/cancelled",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-report-confirm",
+   "kind": "screen",
+   "label": "Download the delivery report?",
+   "route": "#/broadcast/download",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-report-ok",
+   "kind": "decision",
+   "label": "Be able to download?",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-report-done",
+   "kind": "screen",
+   "label": "Download Success",
+   "route": "#/broadcast/download-success",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-report-fail",
+   "kind": "screen",
+   "label": "Unable to download",
+   "route": "#/broadcast/download-failed",
+   "section": "Broadcast"
   }
  ],
  "edges": [
@@ -265,32 +392,32 @@
    "label": "Import",
    "style": "solid",
    "touch": {
-    "x": 1603,
+    "x": 1615,
     "y": 19,
-    "w": 86,
+    "w": 84,
     "h": 44
    }
   },
   {
    "from": "initial",
-   "to": "over-50",
-   "label": "Pick or drop files",
+   "to": "more-than-one",
+   "label": "Browse file or drop a file",
    "style": "solid",
    "touch": {
-    "x": 896,
-    "y": 558,
-    "w": 127,
-    "h": 36
+    "x": 754,
+    "y": 488,
+    "w": 412,
+    "h": 84
    }
   },
   {
    "from": "initial",
-   "to": "no-file",
-   "label": "Import with no file",
-   "style": "dashed",
+   "to": "one-file",
+   "label": "Import",
+   "style": "solid",
    "touch": {
-    "x": 1262,
-    "y": 643,
+    "x": 1084,
+    "y": 596,
     "w": 82,
     "h": 44
    }
@@ -301,51 +428,123 @@
    "label": "Cancel",
    "style": "back",
    "touch": {
-    "x": 1168,
-    "y": 643,
+    "x": 990,
+    "y": 596,
     "w": 86,
     "h": 44
    }
   },
   {
-   "from": "no-file",
-   "to": "over-50",
-   "label": "Pick or drop files",
-   "style": "solid",
+   "from": "more-than-one",
+   "to": "too-many",
+   "label": "Yes",
+   "style": "dashed"
+  },
+  {
+   "from": "more-than-one",
+   "to": "selected",
+   "label": "No",
+   "style": "solid"
+  },
+  {
+   "from": "too-many",
+   "to": "more-than-one",
+   "label": "Browse file or drop one file",
+   "style": "back",
    "touch": {
-    "x": 896,
-    "y": 540,
-    "w": 127,
-    "h": 36
+    "x": 754,
+    "y": 488,
+    "w": 412,
+    "h": 84
    }
   },
   {
-   "from": "over-50",
-   "to": "cap",
+   "from": "selected",
+   "to": "one-file",
+   "label": "Import",
+   "style": "solid",
+   "touch": {
+    "x": 1084,
+    "y": 596,
+    "w": 82,
+    "h": 44
+   }
+  },
+  {
+   "from": "selected",
+   "to": "initial",
+   "label": "Remove",
+   "style": "back",
+   "touch": {
+    "x": 1137,
+    "y": 503,
+    "w": 16,
+    "h": 16
+   }
+  },
+  {
+   "from": "selected",
+   "to": "list",
+   "label": "Cancel",
+   "style": "back",
+   "touch": {
+    "x": 990,
+    "y": 596,
+    "w": 86,
+    "h": 44
+   }
+  },
+  {
+   "from": "one-file",
+   "to": "no-file",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "one-file",
+   "to": "size",
    "label": "Yes",
-   "style": "dashed"
-  },
-  {
-   "from": "over-50",
-   "to": "parses",
-   "label": "No",
    "style": "solid"
   },
   {
-   "from": "cap",
-   "to": "parses",
-   "style": "solid"
+   "from": "no-file",
+   "to": "more-than-one",
+   "label": "Browse file or drop a file",
+   "style": "back",
+   "touch": {
+    "x": 754,
+    "y": 472,
+    "w": 412,
+    "h": 84
+   }
   },
   {
-   "from": "parses",
-   "to": "invalid-format",
+   "from": "size",
+   "to": "too-large",
    "label": "No",
    "style": "dashed"
   },
   {
-   "from": "parses",
+   "from": "size",
+   "to": "uploading",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "too-large",
+   "to": "initial",
+   "label": "Remove",
+   "style": "back",
+   "touch": {
+    "x": 1137,
+    "y": 503,
+    "w": 16,
+    "h": 16
+   }
+  },
+  {
+   "from": "uploading",
    "to": "fields",
-   "label": "Yes",
    "style": "solid"
   },
   {
@@ -356,50 +555,57 @@
   },
   {
    "from": "fields",
-   "to": "selected",
+   "to": "imported-before",
    "label": "Yes",
    "style": "solid"
   },
   {
-   "from": "invalid-format",
-   "to": "selected",
-   "label": "Remove N files with errors",
-   "style": "solid",
-   "touch": {
-    "x": 1123,
-    "y": 459,
-    "w": 221,
-    "h": 32
-   }
-  },
-  {
    "from": "invalid-structure",
-   "to": "selected",
-   "label": "Remove N files with errors",
-   "style": "solid",
+   "to": "initial",
+   "label": "Remove",
+   "style": "back",
    "touch": {
-    "x": 1123,
-    "y": 459,
-    "w": 221,
-    "h": 32
+    "x": 1137,
+    "y": 493,
+    "w": 16,
+    "h": 16
    }
   },
   {
-   "from": "selected",
+   "from": "imported-before",
+   "to": "duplicate",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "imported-before",
+   "to": "uploaded",
+   "label": "No",
+   "style": "solid"
+  },
+  {
+   "from": "duplicate",
    "to": "uploading",
-   "label": "Import",
-   "style": "solid",
+   "label": "Replace",
+   "style": "back",
    "touch": {
-    "x": 1262,
-    "y": 672,
-    "w": 82,
+    "x": 1074,
+    "y": 587,
+    "w": 92,
     "h": 44
    }
   },
   {
-   "from": "uploading",
-   "to": "uploaded",
-   "style": "solid"
+   "from": "duplicate",
+   "to": "selected",
+   "label": "Cancel",
+   "style": "back",
+   "touch": {
+    "x": 980,
+    "y": 587,
+    "w": 86,
+    "h": 44
+   }
   },
   {
    "from": "uploaded",
@@ -416,13 +622,25 @@
   {
    "from": "failure",
    "to": "uploading",
-   "label": "Import again",
+   "label": "Try again",
    "style": "back",
    "touch": {
-    "x": 1262,
-    "y": 710,
-    "w": 82,
-    "h": 44
+    "x": 1085,
+    "y": 535,
+    "w": 68,
+    "h": 24
+   }
+  },
+  {
+   "from": "failure",
+   "to": "initial",
+   "label": "Remove",
+   "style": "back",
+   "touch": {
+    "x": 1137,
+    "y": 503,
+    "w": 16,
+    "h": 16
    }
   },
   {
@@ -535,9 +753,110 @@
   },
   {
    "from": "bc-valid",
-   "to": "bc-confirm",
+   "to": "bc-checking",
    "label": "Yes",
    "style": "solid"
+  },
+  {
+   "from": "bc-checking",
+   "to": "bc-check-ok",
+   "style": "solid"
+  },
+  {
+   "from": "bc-check-ok",
+   "to": "bc-usable",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-check-ok",
+   "to": "bc-check-fail",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "bc-check-fail",
+   "to": "bc-checking",
+   "label": "Try again",
+   "style": "back",
+   "touch": {
+    "x": 1144,
+    "y": 565,
+    "w": 100,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-check-fail",
+   "to": "bc-filled",
+   "label": "Close",
+   "style": "back",
+   "touch": {
+    "x": 1061,
+    "y": 565,
+    "w": 75,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-usable",
+   "to": "bc-has-invalid",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-usable",
+   "to": "bc-file-blocked",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "bc-file-blocked",
+   "to": "bc-filled",
+   "label": "Close",
+   "style": "back",
+   "touch": {
+    "x": 1171,
+    "y": 565,
+    "w": 73,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-has-invalid",
+   "to": "bc-confirm",
+   "label": "No",
+   "style": "solid"
+  },
+  {
+   "from": "bc-has-invalid",
+   "to": "bc-confirm-invalid",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-confirm-invalid",
+   "to": "bc-submitting",
+   "label": "Submit",
+   "style": "solid",
+   "touch": {
+    "x": 1159,
+    "y": 719,
+    "w": 85,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-confirm-invalid",
+   "to": "bc-filled",
+   "label": "Cancel",
+   "style": "back",
+   "touch": {
+    "x": 1066,
+    "y": 719,
+    "w": 86,
+    "h": 44
+   }
   },
   {
    "from": "bc-valid",
@@ -547,6 +866,23 @@
   },
   {
    "from": "bc-errors",
+   "to": "bc-valid",
+   "label": "Submit",
+   "style": "back",
+   "touch": {
+    "x": 1423,
+    "y": 1020,
+    "w": 177,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-errors",
+   "to": "bc-channel-typing",
+   "label": "Switch a channel on"
+  },
+  {
+   "from": "bc-channel-typing",
    "to": "bc-valid",
    "label": "Submit",
    "style": "back",
@@ -713,7 +1049,7 @@
    "style": "solid",
    "touch": {
     "x": 320,
-    "y": 170,
+    "y": 379,
     "w": 1600,
     "h": 64
    }
@@ -724,10 +1060,142 @@
    "label": "Edit",
    "style": "solid",
    "touch": {
-    "x": 1832,
+    "x": 1836,
     "y": 1020,
-    "w": 64,
+    "w": 61,
     "h": 44
+   }
+  },
+  {
+   "from": "bc-view",
+   "to": "bc-cancel-confirm",
+   "label": "Cancel broadcast",
+   "style": "solid",
+   "touch": {
+    "x": 1224,
+    "y": 1020,
+    "w": 165,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-confirm",
+   "to": "bc-cancel-ok",
+   "label": "Cancel broadcast",
+   "style": "solid",
+   "touch": {
+    "x": 962,
+    "y": 565,
+    "w": 165,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-ok",
+   "to": "bc-cancelled",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-cancel-ok",
+   "to": "bc-cancel-fail",
+   "label": "No",
+   "style": "solid"
+  },
+  {
+   "from": "bc-cancel-fail",
+   "to": "bc-cancel-ok",
+   "label": "Try again",
+   "style": "solid",
+   "touch": {
+    "x": 1144,
+    "y": 565,
+    "w": 100,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-fail",
+   "to": "bc-view",
+   "label": "Close",
+   "style": "back",
+   "touch": {
+    "x": 1061,
+    "y": 565,
+    "w": 75,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-cancel-confirm",
+   "to": "bc-view",
+   "label": "Keep draft",
+   "style": "back",
+   "touch": {
+    "x": 1134,
+    "y": 565,
+    "w": 110,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-list",
+   "to": "bc-report-confirm",
+   "label": "Download (row hover)",
+   "style": "solid",
+   "touch": {
+    "x": 1831,
+    "y": 659,
+    "w": 24,
+    "h": 16
+   }
+  },
+  {
+   "from": "bc-report-confirm",
+   "to": "bc-report-ok",
+   "label": "Download",
+   "style": "solid",
+   "touch": {
+    "x": 1137,
+    "y": 565,
+    "w": 107,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-report-confirm",
+   "to": "bc-list",
+   "label": "Cancel",
+   "style": "back",
+   "touch": {
+    "x": 1043,
+    "y": 565,
+    "w": 86,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-report-ok",
+   "to": "bc-report-done",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-report-ok",
+   "to": "bc-report-fail",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "bc-report-fail",
+   "to": "bc-report-confirm",
+   "label": "Download again",
+   "style": "back",
+   "touch": {
+    "x": 1831,
+    "y": 659,
+    "w": 24,
+    "h": 16
    }
   },
   {
@@ -755,5 +1223,5 @@
    }
   }
  ],
- "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself)"
+ "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself) · Cancel a draft 2026-10-19, same method on a static build (#/broadcast/view/BC-0007[/cancel]) · Audience file read on Submit 2026-10-19, same method on a static build (#/broadcast/create/confirm-invalid, file-blocked, check-fail) · Download report 2026-10-22, same method on a static build (#/broadcast, #/broadcast/download) · Import redrawn 22 Oct 2026 (checks on Import), same method on a static build (#/list/import/<state>)"
 }

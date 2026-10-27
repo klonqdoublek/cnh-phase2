@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { BROADCASTS, type Broadcast, type ListToast } from '@/data/broadcast'
-import { LIST_TOAST, formPreset, listPreset } from '@/data/broadcast-presets'
-import { IMPORT_PRESETS, type ImportPreset } from '@/data/import-spec'
+import { BROADCASTS, deliveryReportName, type Broadcast, type ListToast } from '@/data/broadcast'
+import { LIST_TOAST, REPORT_DEMO_ID, formPreset, listPreset, reportPreset } from '@/data/broadcast-presets'
+import { IMPORT_HISTORY, IMPORT_PRESETS, type ImportPreset } from '@/data/import-spec'
 import { TEMPLATES, type Template, type TemplateStatus } from '@/data/templates'
 import { fromValues, stampImported, toValues, togglesOf, type FormValues, type Toggles } from '@/data/template-form'
 import { go, useHash } from '@/lib/hash'
@@ -16,12 +16,18 @@ import { BroadcastWizard, type SaveKind } from '@/pages/broadcast/BroadcastWizar
 
 /* Routes are the cnh-tm-phase2 build's, one per state, so the webds flow
  * archive (cnh-phase2) and its task flow still point at the right screen. */
+/** The next running number: past the highest id, so ids stay unique once an import over a file removes rows. */
+const nextRunning = (list: Template[]) =>
+  list.reduce((max, t) => Math.max(max, Number(t.id.replace(/\D/g, '')) || 0), list.length) + 1
+
 export default function App() {
   const hash = useHash()
   const [openTemplate, setOpenTemplate] = useState<Template | null>(null)
   const [downloadRequest, setDownloadRequest] = useState<Template | null>(null)
   const [notice, setNotice] = useState<ListNotice | null>(null)
   const [templates, setTemplates] = useState<Template[]>(TEMPLATES)
+  /** File name → ids of the templates its last import added (requester, 15 Oct 2026). */
+  const [importHistory, setImportHistory] = useState<Record<string, string[]>>(IMPORT_HISTORY)
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>(BROADCASTS)
   const [created, setCreated] = useState<ListToast | null>(null)
   const [openBroadcast, setOpenBroadcast] = useState<Broadcast | null>(null)
@@ -31,7 +37,7 @@ export default function App() {
     go('/list')
   }
   const saveTemplate = (status: TemplateStatus, n: ListNotice) => (values: FormValues, toggles: Toggles) => {
-    setTemplates((list) => [fromValues(values, toggles, status, list.length + 1), ...list])
+    setTemplates((list) => [fromValues(values, toggles, status, nextRunning(list)), ...list])
     backToList(n)
   }
 
@@ -118,19 +124,35 @@ export default function App() {
       : undefined
   const onBroadcast = hash.startsWith('#/broadcast')
   const preset = listPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
-  const viewId = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)$/)?.[1]
+  const viewMatch = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)(\/cancel(?:-fail)?|\/download(?:\/fail)?)?$/)
+  const viewId = viewMatch?.[1]
   const viewing = openBroadcast ?? (viewId ? broadcasts.find((b) => b.id === viewId) : undefined)
+  /* Download report's presets, on App maintenance: the confirm (`/fail`: its
+     Download fails) and each result held open. */
+  const reportDemo = broadcasts.find((b) => b.id === REPORT_DEMO_ID)
+  const reportConfirm = hash.match(/^#\/broadcast\/download(\/fail)?$/)
+  const reportResult = reportPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
 
   return (
     <AppShell activeId={onBroadcast ? 'broadcast' : 'template-management'}>
       {onBroadcast ? (
         <BroadcastList
+          key={reportConfirm || reportResult ? hash : 'list'}
           broadcasts={hash === '#/broadcast/empty' ? [] : broadcasts}
           onCreate={() => go('/broadcast/create')}
           onOpen={setOpenBroadcast}
           created={preset ? LIST_TOAST[preset] : created}
           holdToast={!!preset}
           onCreatedClose={() => setCreated(null)}
+          reportOpen={reportConfirm ? reportDemo : undefined}
+          reportFailNext={!!reportConfirm?.[1]}
+          reportHeld={
+            reportResult === 'download-failed'
+              ? { ok: false }
+              : reportResult && reportDemo
+                ? { ok: true, file: deliveryReportName(reportDemo) }
+                : undefined
+          }
         />
       ) : (
         <Dashboard
@@ -144,15 +166,21 @@ export default function App() {
           downloadRequest={downloadRequest}
           onDownloadRequestHandled={() => setDownloadRequest(null)}
           importPreset={importPreset}
-          onImport={(imported) =>
-            setTemplates((list) => [...imported.map((t, i) => stampImported(t, list.length + 1 + i)), ...list])
-          }
+          importedNames={Object.keys(importHistory)}
+          onImport={(imported, fileName, replace) => {
+            /* Importing over a file replaces the templates its earlier import added. */
+            const gone = new Set(replace && fileName ? importHistory[fileName] : [])
+            const base = nextRunning(templates)
+            const stamped = imported.map((t, i) => stampImported(t, base + i))
+            setTemplates((list) => [...stamped, ...list.filter((t) => !gone.has(t.id))])
+            if (fileName) setImportHistory((h) => ({ ...h, [fileName]: stamped.map((t) => t.id) }))
+          }}
         />
       )}
 
       {onBroadcast && viewing && (
         <BroadcastDrawer
-          key={viewing.id}
+          key={`${viewing.id}${viewMatch?.[2] ?? ''}`}
           broadcast={viewing}
           onClose={() => {
             setOpenBroadcast(null)
@@ -161,6 +189,16 @@ export default function App() {
           onEdit={() => {
             setOpenBroadcast(null)
             go(`/broadcast/edit/${viewing.id}`)
+          }}
+          confirmingCancel={viewMatch?.[2] === '/cancel'}
+          cancelFailed={viewMatch?.[2] === '/cancel-fail'}
+          confirmingDownload={!!viewMatch?.[2]?.startsWith('/download')}
+          downloadFailNext={viewMatch?.[2] === '/download/fail'}
+          onCancel={() => {
+            setBroadcasts((list) => list.map((x) => (x.id === viewing.id ? { ...x, status: 'Cancelled' } : x)))
+            setCreated({ name: viewing.name, draft: false, cancelled: true })
+            setOpenBroadcast(null)
+            go('/broadcast')
           }}
         />
       )}

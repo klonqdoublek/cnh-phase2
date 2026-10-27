@@ -2,7 +2,7 @@
  * (`#/broadcast/create/<preset>`, `#/broadcast/<list preset>`), and the seeds
  * each Create preset fills the form with. */
 
-import { BA_DND, DEFAULT_DND, type BroadcastContent, type Dnd, type ListToast, type RecipientType } from './broadcast'
+import { BA_DND, BROADCAST_COPY, DEFAULT_DND, type BroadcastContent, type Dnd, type ListToast, type RecipientType } from './broadcast'
 import type { Channel } from './templates'
 
 export const FORM_PRESETS = [
@@ -10,21 +10,39 @@ export const FORM_PRESETS = [
   'cis',
   'direct',
   'errors',
+  'step1-filled',
+  'no-channel',
+  'channel-typing',
+  'channel-errors',
   'draft-no-name',
   'filled',
   'quiet',
   'dnd-rules',
   'end',
   'large-file',
+  'checking',
   'confirm',
+  'confirm-invalid',
+  'file-blocked',
+  'check-fail',
   'submitting',
   'fail-dialog',
   'leave',
 ] as const
 export type FormPreset = (typeof FORM_PRESETS)[number]
 
-export const LIST_PRESETS = ['submitted', 'draft-saved'] as const
+export const LIST_PRESETS = ['submitted', 'draft-saved', 'cancelled'] as const
 export type ListPreset = (typeof LIST_PRESETS)[number]
+
+/* Download report's results held open on the list (22 Oct 2026). The confirm
+ * itself is `#/broadcast/download`, or `#/broadcast/view/<id>/download` over
+ * the drawer; `/fail` after either fails its Download. All on App maintenance. */
+export const REPORT_PRESETS = ['download-success', 'download-failed'] as const
+export type ReportPreset = (typeof REPORT_PRESETS)[number]
+export const REPORT_DEMO_ID = 'BC-0003'
+
+export const reportPreset = (s?: string) =>
+  (REPORT_PRESETS as readonly string[]).includes(s ?? '') ? (s as ReportPreset) : undefined
 
 export const formPreset = (s?: string) =>
   (FORM_PRESETS as readonly string[]).includes(s ?? '') ? (s as FormPreset) : undefined
@@ -34,6 +52,7 @@ export const listPreset = (s?: string) =>
 export const LIST_TOAST: Record<ListPreset, ListToast> = {
   submitted: { name: 'October Customer Campaign', draft: false },
   'draft-saved': { name: 'October Customer Campaign', draft: true },
+  cancelled: { name: 'November statement notice', draft: false, cancelled: true },
 }
 
 /* ── the Create form's seeds — `formSeed` in the original build ─────────── */
@@ -120,6 +139,13 @@ export const LARGE_CSV = [
   '',
 ].join('\n')
 
+/** Every CIS ID missing: the full read on Submit finds no valid recipient. */
+export const NO_VALID_CSV = `CIS_ID,CUSTOMER_NAME,ACCOUNT_NO,AMOUNT,PROMOTION_CODE
+,Somchai Yimdee,1234567890,1250.00,OCT24
+,Araya Chaisri,9876543210,860.50,OCT24
+,Nattapong Wongsa,4567891230,2100.00,OCT24
+`
+
 export const MESSAGE = `Dear {{CUSTOMER_NAME}},
 Your payment of THB {{AMOUNT}} was successful.
 Reference: {{ACCOUNT_NO}}.`
@@ -141,10 +167,13 @@ export type FormSeed = {
   /** Broadcast End: days from today, and HH:mm. */
   end?: { inDays: number; time: string }
   dnd?: Dnd
-  /** A dialog open on arrival. */
-  open?: 'confirm' | 'submitting' | 'fail' | 'leave'
+  /** A dialog open on arrival. `checking` is Submit's full read of the file,
+   *  held; `blocked` is its result when the file cannot be used. */
+  open?: 'checking' | 'confirm' | 'blocked' | 'check-fail' | 'submitting' | 'fail' | 'leave'
   /** A button pressed on arrival, to show what it does on this state. */
   press?: 'submit' | 'draft'
+  /** Errors an earlier Submit left on the form, held while the user edits. */
+  errors?: Record<string, string>
 }
 
 export const filled: FormSeed = {
@@ -156,6 +185,17 @@ export const filled: FormSeed = {
   name: 'October Customer Campaign',
   description: 'Send payment confirmation and special offer to selected customers in October.',
   content: { smsMessage: MESSAGE, emailSubject: SUBJECT, emailBody: MESSAGE, pushTitle: SUBJECT, pushBody: MESSAGE },
+}
+
+/* Error behavior, CNH Phase 1's five steps (Figma JjvzdUwg5LlKHDQvo2fny0
+ * 123:95723) on Broadcast: Step 1 filled → Submit marks the file and the
+ * channels → a channel switched on and typed in, the marks stay → Submit
+ * again leaves only what is still missing. */
+const step1: FormSeed = { name: filled.name, description: filled.description }
+const emailTyped: FormSeed = {
+  ...step1,
+  channels: ['Email'],
+  content: { smsMessage: '', emailSubject: SUBJECT, emailBody: '', pushTitle: '', pushBody: '' },
 }
 
 /** Days until the next Monday–Thursday, so a 21:00 start lands in the quiet period. */
@@ -177,16 +217,23 @@ export function formSeed(preset: FormPreset): FormSeed {
     case 'file-error':
       return { file: { name: 'recipients.txt', text: 'CIS_ID\n100001\n' } }
     case 'cis':
-      return { file: filled.file, recipientType: 'cis', column: 'CIS_ID' }
+      return { file: filled.file, recipientType: 'cis' }
     case 'direct':
       return {
         file: { name: 'audience-direct.csv', text: DIRECT_CSV },
         recipientType: 'direct',
-        column: 'MOBILE_NO',
         channels: ['SMS'],
       }
     case 'errors':
       return { press: 'submit' }
+    case 'step1-filled':
+      return step1
+    case 'no-channel':
+      return { ...step1, press: 'submit' }
+    case 'channel-typing':
+      return { ...emailTyped, errors: { file: BROADCAST_COPY.noFile, channels: BROADCAST_COPY.noChannel } }
+    case 'channel-errors':
+      return { ...emailTyped, press: 'submit' }
     case 'draft-no-name':
       return { press: 'draft' }
     case 'filled':
@@ -204,8 +251,23 @@ export function formSeed(preset: FormPreset): FormSeed {
       }
     case 'large-file':
       return { ...filled, file: { name: 'audience-cis-large.csv', text: LARGE_CSV } }
+    case 'checking':
+      return { ...filled, open: 'checking' }
     case 'confirm':
       return { ...filled, open: 'confirm' }
+    case 'confirm-invalid':
+      return {
+        ...filled,
+        file: { name: 'audience-direct.csv', text: DIRECT_CSV },
+        recipientType: 'direct',
+        column: 'MOBILE_NO',
+        channels: ['SMS'],
+        open: 'confirm',
+      }
+    case 'file-blocked':
+      return { ...filled, file: { name: 'audience-cis.csv', text: NO_VALID_CSV }, open: 'blocked' }
+    case 'check-fail':
+      return { ...filled, open: 'check-fail' }
     case 'submitting':
       return { ...filled, open: 'submitting' }
     case 'fail-dialog':

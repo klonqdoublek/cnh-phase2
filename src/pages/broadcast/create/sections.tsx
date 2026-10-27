@@ -42,12 +42,11 @@ type F = { f: BroadcastForm }
 /** The message box the cursor was last in, so a field chip knows where to insert. */
 export type FocusRef = React.MutableRefObject<{ key: string; el: HTMLInputElement | HTMLTextAreaElement } | null>
 
-const n = (v: number) => v.toLocaleString('en-US')
 const sizeLabel = (bytes: number) =>
   bytes < 1048576 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
 /** One "Step N" — webds `FormStep`, its note under the heading. The step's
- *  card is the caller's: a titled `FormSectionCard` or a plain `StepSurface`. */
+ *  card is the caller's: a titled `FormSectionCard`. */
 export function Section({
   title,
   note,
@@ -78,18 +77,6 @@ export function Section({
   )
 }
 
-/** A step's card with no title of its own (Delivery). */
-function StepSurface({ children }: { children: React.ReactNode }) {
-  return (
-    <CardSurface
-      tabIndex={-1}
-      className="flex h-auto w-full flex-col items-stretch gap-[var(--space-6)] p-[var(--space-6)] hover:bg-[var(--color-surface-primary-default)] active:bg-[var(--color-surface-primary-default)]"
-    >
-      {children}
-    </CardSurface>
-  )
-}
-
 /* ── Step 1 ─────────────────────────────────────────────────────────────── */
 
 export function BasicInfo({ f }: F) {
@@ -103,7 +90,7 @@ export function BasicInfo({ f }: F) {
         max={100}
         error={f.errors.name}
         placeholder="e.g. October Customer Campaign"
-        onChange={f.edit('name', f.setName)}
+        onChange={f.setName}
       />
       <Text
         id="description"
@@ -112,7 +99,7 @@ export function BasicInfo({ f }: F) {
         max={250}
         error={f.errors.description}
         placeholder="What this broadcast is for"
-        onChange={f.edit('description', f.setDescription)}
+        onChange={f.setDescription}
       />
     </FormSectionCard>
   )
@@ -128,7 +115,7 @@ export function AudienceFile({ f }: F) {
     <FormSectionCard title="Upload Audience file">
       <RecipientType f={f} />
       <div className="flex items-start gap-[var(--space-6)]">
-        <div className="flex w-[672px] min-w-0 shrink-0 flex-col gap-[var(--space-2)]">
+        <div data-error={f.errors.file ? 'true' : undefined} className="flex w-[672px] min-w-0 shrink-0 flex-col gap-[var(--space-2)]">
           <FieldLabel required>Upload File</FieldLabel>
           {f.file ? (
             <FileResult f={f} />
@@ -171,10 +158,11 @@ function SampleLink({ href, children }: { href: string; children: React.ReactNod
   )
 }
 
+/** The file row and its preview. A pick checks type and size only (BA,
+ *  19 Oct 2026), so nothing here counts rows; the full read is on Submit. */
 function FileResult({ f }: F) {
   const file = f.file!
   const bad = !!f.read && !f.read.ok
-  const invalidRows = f.check ? f.check.rows.filter((r) => r.errors.length) : []
   return (
     <div className="flex flex-col gap-[var(--space-3)]">
       <UploadedFile
@@ -183,7 +171,7 @@ function FileResult({ f }: F) {
         meta={
           f.read
             ? f.read.ok
-              ? `${sizeLabel(file.size)} · ${n(f.read.audience.rows.length)} rows`
+              ? sizeLabel(file.size)
               : f.read.message
             : BROADCAST_COPY.checking
         }
@@ -203,57 +191,22 @@ function FileResult({ f }: F) {
         </div>
       )}
       {f.audience && <Preview f={f} />}
-      {f.check && (
-        <>
-          <p className="type-label-m-emphasized text-[var(--color-text-primary-default)]">
-            {BROADCAST_COPY.rowsSummary(f.check.rows.length, f.check.valid)}
-            {f.check.invalid > 0 && (
-              <span className="text-[var(--color-text-negative-default)]">
-                {' · '}
-                {BROADCAST_COPY.invalidCount(f.check.invalid)}
-              </span>
-            )}
-            <span className="text-[var(--color-text-secondary-default)]">
-              {' · by '}
-              {f.column}
-            </span>
-          </p>
-          {f.check.invalid > 0 && (
-            <>
-              <p className={NOTE}>{BROADCAST_COPY.invalidNote}</p>
-              <MiniTable
-                columns={['Row', f.column, 'Problem']}
-                widths="80px 200px 1fr"
-                rows={invalidRows.map((r) => [String(r.line), r.id || '–', r.errors.join(' · ')])}
-                negativeLast
-                maxHeight
-              />
-            </>
-          )}
-        </>
-      )}
     </div>
   )
 }
 
 /** The whole file in a box five rows tall at the column's width; the rest
- *  scrolls, both ways, under a header that stays put. The ID column is marked. */
+ *  scrolls, both ways, under a header that stays put. The selected ID column
+ *  is not marked (requirement update, 21 Oct 2026). */
 function Preview({ f }: F) {
   const a = f.audience!
-  const idIndex = a.headers.indexOf(f.column)
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <span className="flex items-baseline gap-[var(--space-4)]">
-        <span className={LABEL}>{BROADCAST_COPY.previewTitle}</span>
-        <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">
-          {BROADCAST_COPY.previewSize(a.rows.length, a.headers.length)}
-        </span>
-      </span>
+      <span className={LABEL}>{BROADCAST_COPY.previewTitle}</span>
       <MiniTable
         columns={a.headers}
         widths={a.headers.map((_, i) => (i === a.headers.length - 1 ? 'minmax(max-content,1fr)' : 'max-content')).join(' ')}
         rows={a.rows.map((r) => a.headers.map((_, i) => r[i] ?? ''))}
-        highlight={idIndex}
         visibleRows={5}
       />
     </div>
@@ -349,11 +302,10 @@ function ScrollBox({ maxHeight, children }: { maxHeight: string; children: React
 /** webds Table Header / Data Cells at a compact row height in a bordered grid.
  *  The cells' own 64 row is the data grid's; a validation list inside a card
  *  reads at 36 — the original's own reason for not using its Table. */
-function MiniTable({
+export function MiniTable({
   columns,
   rows,
   widths,
-  highlight = -1,
   negativeLast,
   maxHeight,
   visibleRows,
@@ -361,7 +313,6 @@ function MiniTable({
   columns: string[]
   rows: string[][]
   widths: string
-  highlight?: number
   negativeLast?: boolean
   maxHeight?: boolean
   /** Show this many rows under the header and scroll the rest, both ways. */
@@ -387,10 +338,6 @@ function MiniTable({
           className={cn(
             cell,
             'sticky top-0 z-[1] bg-[var(--color-surface-secondary-default)] [&>span]:text-[var(--color-text-tertiary-default)]',
-            /* Highlight Subtle is 10% blue: lay it over the opaque header fill,
-               or the rows scrolling under the header show through. */
-            i === highlight &&
-              'bg-[image:linear-gradient(var(--color-surface-highlight-subtle-default),var(--color-surface-highlight-subtle-default))]',
           )}
         >
           {c}
@@ -402,7 +349,6 @@ function MiniTable({
             key={`${ri}-${ci}`}
             className={cn(
               cell,
-              ci === highlight && 'bg-[var(--color-surface-highlight-subtle-default)]',
               negativeLast && ci === r.length - 1 && '[&>span]:text-[var(--color-text-negative-default)]',
             )}
           >
@@ -463,10 +409,7 @@ function ColumnSelect({ f }: F) {
       error={f.errors.column}
       hint={hint}
       placeholder="Select column"
-      onChange={(v) => {
-        f.setColumn(v)
-        f.clear('column', 'file')
-      }}
+      onChange={f.setColumn}
     />
   )
 }
@@ -665,10 +608,9 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   const mark = triggerMark(concept.trigger)
   const tint = useMemo<Tint>(() => ({ columns: new Set(columns.split('\n')), erase: concept.erase, mark }), [columns, concept.erase, mark])
 
-  /* Idea 2, 2.2 and the dialog head the area "Broadcast Message"; Idea 1.2
-     "Select", as drawn; Idea 1 and the shortcut have no heading. */
+  /* Every idea titles the card "Create broadcast message" (requester, 21 Oct
+     2026), over the drafts' "Broadcast Message", "Select" or no title. */
   const menu = concept.picker === 'button' || concept.picker === 'dialog'
-  const heading = menu ? 'Broadcast Message' : concept.picker === 'pills' && concept.layout === 'stacked' ? 'Select' : null
   const sharedButton = shared && menu && (
     <FieldMenuButton
       f={f}
@@ -782,19 +724,12 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
     </>
   )
 
-  if (!heading)
-    return (
-      <StepSurface>
-        {top}
-        {cards}
-      </StepSurface>
-    )
   return (
     <FormSectionCard
       className="[&_.webds-pattern-form-section-card-3]:flex-1"
       title={
         <span className="flex min-h-[44px] items-center justify-between gap-[var(--space-4)]">
-          {heading}
+          Create broadcast message
           {sharedButton}
         </span>
       }
@@ -909,28 +844,11 @@ export function Delivery({ f }: F) {
           onSelect={() => f.setMode('schedule')}
         />
       </div>
-      {/* Schedule delivery only: End on the left, Start on the right (draft
-          2.2; kept by the requester, 15 Oct 2026). Send as soon as possible
-          has no end (requester, 15 Oct 2026). */}
+      {/* Schedule delivery only: Start on the left, End on the right
+          (requester, 20 Oct 2026; draft 2.2 drew End first). Send as soon
+          as possible has no end (requester, 15 Oct 2026). */}
       {f.mode === 'schedule' && (
         <div className="grid grid-cols-2 items-start gap-[var(--space-6)]">
-          {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
-              Expiry date. Sending stops here; whoever is left is Not sent. */}
-          <DateTimeInput
-            label="End date and time"
-            optional
-            clearable
-            className="w-full"
-            value={f.end}
-            min={f.startDate || ymd(new Date())}
-            minuteStep={5}
-            error={!!f.errors.end}
-            message={f.errors.end}
-            onChange={(v) => {
-              f.setEnd(v)
-              f.clear('end')
-            }}
-          />
           {/* One field, as CMS's Effective date: webds' Date Time Picker. The
               form still keeps the date and the time apart. */}
           <DateTimeInput
@@ -945,13 +863,25 @@ export function Delivery({ f }: F) {
             onChange={(v) => {
               f.setStartDate(v.slice(0, 10))
               f.setStartTime(v.slice(11, 16))
-              f.clear('startDate', 'startTime', 'end')
             }}
+          />
+          {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
+              Expiry date. Sending stops here; whoever is left is Not sent. */}
+          <DateTimeInput
+            label="End date and time"
+            optional
+            clearable
+            className="w-full"
+            value={f.end}
+            min={f.startDate || ymd(new Date())}
+            minuteStep={5}
+            error={!!f.errors.end}
+            message={f.errors.end}
+            onChange={f.setEnd}
           />
         </div>
       )}
       <Outlook f={f} />
-      <DndBlock f={f} />
     </FormSectionCard>
   )
 }
@@ -975,7 +905,7 @@ function Outlook({ f }: F) {
   )
 }
 
-/* ── DND (inside Delivery Date) ────────────────────────────────────────────────────────── */
+/* ── DND (its own card under Delivery Date) ──────────────────────────────── */
 
 /** One quiet period on one row: its days, its hours or All day, and — when
  *  there is more than one — a trash to remove it (draft 2.2, Figma 89:4665). */
@@ -1063,21 +993,26 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   )
 }
 
-/** Do Not Disturb, inside the Delivery Date card (Figma 89:4665): the
- *  switch and title, the quiet periods divided by a rule, Add period, and the
- *  one time zone there is, shown as text. */
-function DndBlock({ f }: F) {
+/** Do Not Disturb, its own card under the Delivery Date card in the same
+ *  step (requester, 21 Oct 2026; Figma 409:75574): the switch before the
+ *  title and its note, the quiet periods divided by a rule, Add period, and
+ *  the one time zone there is, shown as text. The switch is drawn in the
+ *  title rather than through the card's `toggle`, which names the switch only
+ *  from a string title. */
+export function DndCard({ f }: F) {
   const dnd = f.dnd
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-6)]">
-      <span className="flex flex-col gap-[var(--space-1)]">
-        <span className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">Select DND</span>
-        <span className={NOTE}>Prevent sending messages during quiet hours.</span>
-      </span>
-      <span className="flex items-center gap-[var(--space-3)]">
-        <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
-        <span className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">Do Not Disturb (DND)</span>
-      </span>
+    <FormSectionCard
+      title={
+        <span className="flex items-center gap-[var(--space-4)]">
+          <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
+          <span className="flex flex-col">
+            <span>Do Not Disturb (DND)</span>
+            <span className={NOTE}>Prevent sending messages during quiet hours.</span>
+          </span>
+        </span>
+      }
+    >
       {/* Any number of quiet periods (BA, 2026-10-14): each its own days and
           hours, divided by a rule; a day may sit in more than one. */}
       {dnd.rules.map((rule, i) => (
@@ -1099,6 +1034,6 @@ function DndBlock({ f }: F) {
           {TIME_ZONES.find((z) => z.value === dnd.timeZone)?.label ?? dnd.timeZone}
         </span>
       </span>
-    </div>
+    </FormSectionCard>
   )
 }

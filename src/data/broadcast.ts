@@ -12,6 +12,10 @@ export const BROADCAST_COPY = {
   createLede: 'Create a manual notification for a selected audience.',
   emptyTitle: 'No broadcasts created yet',
   emptyLine: 'Create a broadcast to send one message to many customers',
+  /* Composed (docs/broadcast-gaps.md): the list's search and its no-results
+     line, after the Notification management list. */
+  search: 'Search by broadcast name or description',
+  noResults: 'No results found',
   dropTitle: 'Upload audience file',
   dropHint: 'Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000 recipients',
   browse: 'Choose file',
@@ -22,17 +26,14 @@ export const BROADCAST_COPY = {
   fileFormat: 'Invalid file format. Only .csv and .xlsx files can be uploaded',
   xlsxNotInPrototype: 'This prototype can only read .csv. Save the sheet as .csv and upload it again',
   fileEmpty: 'The file has no recipients',
-  tooManyRows: (n: number) => `The file has ${n.toLocaleString('en-US')} recipients. The maximum is 1,000`,
+  tooManyRows: 'The file has more than 1,000 recipients',
   checking: 'Checking file…',
   validated: 'File validated',
-  rowsSummary: (total: number, valid: number) =>
-    `${total.toLocaleString('en-US')} ${total === 1 ? 'recipient' : 'recipients'} · ${valid.toLocaleString('en-US')} valid`,
-  invalidCount: (n: number) => `${n} invalid`,
+  /* Composed (docs/broadcast-gaps.md): the original build has no dialog for a
+     file that fails the full read on Submit. */
+  fileBlockedTitle: 'The audience file cannot be used',
   invalidNote: 'Invalid recipients are skipped. Only valid recipients will receive the broadcast.',
   previewTitle: 'Preview (first 5 rows)',
-  /** Beside the preview title (Figma 89:4665). */
-  previewSize: (rows: number, columns: number) =>
-    `${rows.toLocaleString('en-US')} Rows • ${columns.toLocaleString('en-US')} Columns`,
   required: 'This field is required',
   noColumn: 'Select the column that identifies each recipient',
   noChannel: 'Please enable at least 1 notification channel',
@@ -50,6 +51,26 @@ export const BROADCAST_COPY = {
   draftTitle: 'Draft saved',
   draftBody: (name: string) => `${name} is saved as a draft`,
   draftNeedsName: 'Enter a broadcast name to save a draft',
+  /* Cancel a draft (19 Oct 2026). Composed: the original build has no cancel. */
+  cancel: 'Cancel broadcast',
+  cancelTitle: 'Cancel this broadcast?',
+  cancelBody: (name: string) => `${name} will not be sent, and it cannot be edited again.`,
+  cancelKeep: 'Keep draft',
+  cancelledTitle: 'Broadcast cancelled',
+  cancelledBody: (name: string) => `${name} is cancelled`,
+  /* Download report from a list row or the drawer (22 Oct 2026), through
+     Notification management's confirm and toast. Composed after its copy. */
+  reportTitle: 'Download the delivery report?',
+  reportBody: 'The report will be saved as a CSV file',
+  reportConfirm: 'Download',
+  reportDoneTitle: 'Download Success',
+  reportDoneBody: (file: string) => `${file} is saved`,
+  /* "Be able to download?" No (requester 22 Oct 2026): Notification
+     management's failure toast, Figma 1:14740. */
+  reportFailTitle: 'Unable to download',
+  reportFailBody: 'Please try again',
+  /* The status could not be updated: Submit's fail dialog, reworded. */
+  cancelFailTitle: 'Unable to cancel the broadcast',
 }
 
 export const MAX_FILE_BYTES = 10485760
@@ -95,16 +116,17 @@ export function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim() !== ''))
 }
 
+/** On pick. Only the file type and size are validated (BA, 19 Oct 2026): the
+ *  browser can show a preview but cannot read the whole file, so row counts and
+ *  row checks wait for Submit (`checkAudience`). The prototype parses every row
+ *  here only because it has no server to read the file later. */
 export function readAudience(name: string, text: string, size = text.length): AudienceResult {
   const lower = name.toLowerCase()
   if (!lower.endsWith('.csv') && !lower.endsWith('.xlsx')) return { ok: false, message: BROADCAST_COPY.fileFormat }
   if (size > MAX_FILE_BYTES) return { ok: false, message: BROADCAST_COPY.fileSize }
   if (lower.endsWith('.xlsx')) return { ok: false, message: BROADCAST_COPY.xlsxNotInPrototype }
   const all = parseCsv(text)
-  const rows = all.slice(1)
-  if (all.length === 0 || rows.length === 0) return { ok: false, message: BROADCAST_COPY.fileEmpty }
-  if (rows.length > MAX_RECIPIENTS) return { ok: false, message: BROADCAST_COPY.tooManyRows(rows.length) }
-  return { ok: true, audience: { headers: all[0].map((h) => h.trim()), rows } }
+  return { ok: true, audience: { headers: (all[0] ?? []).map((h) => h.trim()), rows: all.slice(1) } }
 }
 
 export async function readAudienceFile(file: File): Promise<AudienceResult> {
@@ -122,8 +144,6 @@ export const idKind = (type: RecipientType, channels: Channel[]): IdKind | null 
   type === 'cis' ? 'cis' : channels.includes('SMS') ? 'mobile' : channels.includes('Email') ? 'email' : null
 
 export const ID_LABEL: Record<IdKind, string> = { cis: 'CIS ID', mobile: 'Mobile number', email: 'Email address' }
-const GUESS: Record<IdKind, RegExp> = { cis: /cis/i, mobile: /mobile|phone|tel/i, email: /e-?mail/i }
-export const guessColumn = (headers: string[], kind: IdKind) => headers.find((h) => GUESS[kind].test(h)) ?? ''
 const DUPLICATE: Record<IdKind, string> = {
   cis: 'Duplicate CIS ID',
   mobile: 'Duplicate mobile number',
@@ -150,6 +170,19 @@ export function checkRecipients(audience: Audience, column: string, kind: IdKind
   })
   const invalid = rows.filter((r) => r.errors.length).length
   return { rows, valid: rows.length - invalid, invalid }
+}
+
+export type AudienceCheck = { ok: true; check: RecipientCheck } | { ok: false; message: string }
+
+/** On Submit: the whole file is read. No rows, more than 1,000 or no valid
+ *  recipient blocks the broadcast; invalid rows are otherwise skipped. */
+export function checkAudience(audience: Audience, column: string, kind: IdKind): AudienceCheck {
+  const total = audience.rows.length
+  if (total === 0) return { ok: false, message: BROADCAST_COPY.fileEmpty }
+  if (total > MAX_RECIPIENTS) return { ok: false, message: BROADCAST_COPY.tooManyRows }
+  const check = checkRecipients(audience, column, kind)
+  if (check.valid === 0) return { ok: false, message: BROADCAST_COPY.noValidRows }
+  return { ok: true, check }
 }
 
 /* ── message content ───────────────────────────────────────────────────── */
@@ -286,7 +319,13 @@ export type BroadcastContent = {
   pushBody: string
 }
 
-export type BroadcastStatus = 'Draft' | 'Scheduled' | 'Sending' | 'Paused' | 'Completed'
+/** The status list of values (16 Oct 2026; meanings 19 Oct 2026):
+ *  DRAFT — saved as a draft · QUEUE — submitted, accepted by the system ·
+ *  PROCESSING — the system has started sending · PUBLISHED — finished ·
+ *  FAILED — a system error · CANCELLED — a draft cancelled before submit.
+ *  Only a Draft can be cancelled; once submitted it cannot. */
+export const BROADCAST_STATUSES = ['Draft', 'Queue', 'Processing', 'Published', 'Failed', 'Cancelled'] as const
+export type BroadcastStatus = (typeof BROADCAST_STATUSES)[number]
 
 export type Broadcast = {
   id: string
@@ -309,8 +348,11 @@ export type Broadcast = {
   status: BroadcastStatus
   success: number
   failed: number
-  /** Recipients still unsent when the end was reached. */
+  /** Recipients still unsent when the end was reached, or when a system
+   *  error stopped the broadcast (Failed). */
   notSent?: number
+  /** Processing, but inside a quiet period (was the Paused status). */
+  quiet?: boolean
   content: BroadcastContent
   createdBy: string
   createdAt: string
@@ -339,6 +381,48 @@ const cisFile = (n: number) =>
   '\n'
 
 export const BROADCASTS: Broadcast[] = [
+  /* Composed (19 Oct 2026) so the list and drawer show a Failed broadcast: a
+     system error stopped it while it was sending, so whoever was still waiting
+     is Not sent. */
+  {
+    id: 'BC-0009',
+    name: 'Loan payment reminder',
+    description: '',
+    channels: ['Email'],
+    audienceFile: 'loan-due-october.csv',
+    recipients: 500,
+    recipientType: 'direct',
+    recipientColumn: 'EMAIL',
+    startMode: 'now',
+    start: '2026-10-07T14:00',
+    dnd: DEFAULT_DND,
+    status: 'Failed',
+    success: 120,
+    failed: 2,
+    notSent: 378,
+    content: content('', 'Your loan payment is due', 'Dear Customer, your loan payment is due on 15 October 2026.'),
+    createdBy: 'Naree R.',
+    createdAt: '2026-10-07T13:52',
+  },
+  /* Composed (19 Oct 2026): a draft cancelled before it was submitted. */
+  {
+    id: 'BC-0008',
+    name: 'Year-end promotion',
+    description: '',
+    channels: ['SMS'],
+    audienceFile: 'promotion-december.csv',
+    recipients: 800,
+    ...cis,
+    startMode: 'schedule',
+    start: '2026-12-01T09:00',
+    dnd: DEFAULT_DND,
+    status: 'Cancelled',
+    success: 0,
+    failed: 0,
+    content: content('Dear {{CUSTOMER_NAME}}, use code {{PROMOTION_CODE}} for our year-end promotion.'),
+    createdBy: 'Panisa R.',
+    createdAt: '2026-10-08T15:20',
+  },
   {
     id: 'BC-0007',
     name: 'November statement notice',
@@ -370,7 +454,7 @@ export const BROADCASTS: Broadcast[] = [
     start: '2026-10-12T09:00',
     end: '2026-10-16T18:00',
     dnd: BA_DND,
-    status: 'Scheduled',
+    status: 'Queue',
     success: 0,
     failed: 0,
     content: content(
@@ -392,7 +476,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'now',
     start: '2026-10-05T10:00',
     dnd: DEFAULT_DND,
-    status: 'Sending',
+    status: 'Processing',
     success: 612,
     failed: 9,
     content: content(
@@ -412,7 +496,8 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-10-03T19:00',
     dnd: DEFAULT_DND,
-    status: 'Paused',
+    status: 'Processing',
+    quiet: true,
     success: 402,
     failed: 3,
     content: content('Dear Customer, our branch will be closed on 10 October 2026.', 'Branch closure'),
@@ -430,7 +515,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'now',
     start: '2026-09-29T08:15',
     dnd: { ...DEFAULT_DND, enabled: false },
-    status: 'Completed',
+    status: 'Published',
     success: 991,
     failed: 7,
     content: content('Bualuang mBanking will be unavailable on 30 Sep 2026, 00:00–04:00.', 'Scheduled maintenance'),
@@ -449,7 +534,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-09-21T07:00',
     dnd: DEFAULT_DND,
-    status: 'Completed',
+    status: 'Published',
     success: 988,
     failed: 12,
     content: content('', 'Your statement is ready', 'Your credit card statement is ready.'),
@@ -457,7 +542,7 @@ export const BROADCASTS: Broadcast[] = [
     createdAt: '2026-09-19T14:30',
   },
   /* The deck's scenario F (composed, 2026-10-14): the end came before every
-     recipient was sent, so 174 are Not sent and the broadcast is Completed. */
+     recipient was sent, so 174 are Not sent and the broadcast is Published. */
   {
     id: 'BC-0001',
     name: 'Savings interest rate update',
@@ -470,7 +555,7 @@ export const BROADCASTS: Broadcast[] = [
     start: '2026-09-15T10:00',
     end: '2026-09-15T12:00',
     dnd: DEFAULT_DND,
-    status: 'Completed',
+    status: 'Published',
     success: 820,
     failed: 6,
     notSent: 174,
@@ -480,12 +565,13 @@ export const BROADCASTS: Broadcast[] = [
   },
 ]
 
-export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'accent' | 'positive'> = {
+export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'accent' | 'positive' | 'negative'> = {
   Draft: 'caution',
-  Scheduled: 'disabled',
-  Sending: 'accent',
-  Paused: 'caution',
-  Completed: 'positive',
+  Queue: 'disabled',
+  Processing: 'accent',
+  Published: 'positive',
+  Failed: 'negative',
+  Cancelled: 'disabled',
 }
 
 /** Recipients not yet attempted: not sent, not failed, not cut off by the end. */
@@ -494,8 +580,9 @@ export const waitingOf = (b: Broadcast) => Math.max(0, b.recipients - b.success 
 export const EMPTY = '–'
 export const fmtNumber = (n: number) => n.toLocaleString('en-US')
 
-/** The toast the list shows after Create returns — held open on its preset route. */
-export type ListToast = { name: string; draft: boolean }
+/** The toast the list shows after Create returns, or after a draft is
+ *  cancelled — held open on its preset route. */
+export type ListToast = { name: string; draft: boolean; cancelled?: boolean }
 
 /* ── delivery report ───────────────────────────────────────────────────── */
 
@@ -521,6 +608,9 @@ const csvCell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/
 
 export const deliveryReportName = (b: Broadcast) => `${b.id}-delivery-report.csv`
 
+/** A report exists once anything was attempted (Processing, Published or Failed). */
+export const hasDeliveryReport = (b: Broadcast) => b.success + b.failed > 0
+
 export function deliveryReportCsv(b: Broadcast): string {
   const waiting = waitingOf(b)
   const reasons = b.channels.flatMap((c) => FAIL_REASONS[c])
@@ -531,7 +621,7 @@ export function deliveryReportCsv(b: Broadcast): string {
   }
   add(b.success, 'Success', () => '')
   add(b.failed, 'Failed', (i) => reasons[i % reasons.length])
-  add(b.notSent ?? 0, 'Not sent', () => 'Broadcast ended')
+  add(b.notSent ?? 0, 'Not sent', () => (b.status === 'Failed' ? 'System error' : 'Broadcast ended'))
   add(waiting, 'Waiting to send', () => '')
   return rows.map((row) => row.map(csvCell).join(',')).join('\n') + '\n'
 }
