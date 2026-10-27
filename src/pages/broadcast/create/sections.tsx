@@ -132,7 +132,9 @@ export function AudienceFile({ f }: F) {
 }
 
 /** The file row and its preview. A pick checks type and size only (BA,
- *  19 Oct 2026), so nothing here counts rows; the full read is on Submit. */
+ *  19 Oct 2026), so nothing here counts rows; the full read is on Submit.
+ *  No "File validated" beside the size (design critique, 27 Oct 2026): a
+ *  file that fails the pick is never placed, so the tick said nothing. */
 function FileResult({ f }: F) {
   const file = f.file!
   const bad = !!f.read && !f.read.ok
@@ -147,14 +149,6 @@ function FileResult({ f }: F) {
               ? sizeLabel(file.size)
               : f.read.message
             : BROADCAST_COPY.checking
-        }
-        status={
-          f.audience && (
-            <span className="inline-flex shrink-0 items-center gap-[var(--space-1)] type-label-m-emphasized text-[var(--color-text-positive-default)]">
-              <Icon slug="tick-circle" size={16} color="var(--color-icon-positive-default)" />
-              {BROADCAST_COPY.validated}
-            </span>
-          )
         }
         onRemove={f.clearFile}
       />
