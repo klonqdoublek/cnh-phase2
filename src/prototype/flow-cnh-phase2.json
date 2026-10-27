@@ -1,7 +1,7 @@
 {
  "source": {
   "kind": "code",
-  "path": "src/pages/notifications/ImportDialog.tsx · src/data/import-spec.ts (Import, 22 Oct 2026) · cnh-tm-devtarget-v2 · src/pages/BroadcastWizard.tsx · src/pages/broadcast/useBroadcastForm.ts · src/data/broadcast-presets.ts",
+  "path": "src/pages/notifications/ImportDialog.tsx · src/data/import-spec.ts (Import, 27 Oct 2026) · cnh-tm-devtarget-v2 · src/pages/BroadcastWizard.tsx · src/pages/broadcast/useBroadcastForm.ts · src/data/broadcast-presets.ts",
   "extractedAt": "2026-10-06"
  },
  "screen": {
@@ -74,19 +74,6 @@
    "kind": "screen",
    "label": "Uploading — spinner inside the Import dialog",
    "route": "#/list/import/uploading",
-   "section": "Import"
-  },
-  {
-   "id": "fields",
-   "kind": "decision",
-   "label": "Every template has the required fields?",
-   "section": "Import"
-  },
-  {
-   "id": "invalid-structure",
-   "kind": "screen",
-   "label": "Invalid template structure — Import stays blocked until it is removed",
-   "route": "#/list/import/invalid-structure",
    "section": "Import"
   },
   {
@@ -557,32 +544,8 @@
   },
   {
    "from": "uploading",
-   "to": "fields",
-   "style": "solid"
-  },
-  {
-   "from": "fields",
-   "to": "invalid-structure",
-   "label": "No",
-   "style": "dashed"
-  },
-  {
-   "from": "fields",
    "to": "imported-before",
-   "label": "Yes",
    "style": "solid"
-  },
-  {
-   "from": "invalid-structure",
-   "to": "initial",
-   "label": "Remove",
-   "style": "back",
-   "touch": {
-    "x": 1137,
-    "y": 493,
-    "w": 16,
-    "h": 16
-   }
   },
   {
    "from": "imported-before",

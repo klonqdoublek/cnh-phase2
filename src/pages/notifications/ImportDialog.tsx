@@ -27,7 +27,6 @@ type Phase = 'idle' | 'uploading' | 'failed' | 'replace'
 /* The slot's meta is the file type only (requester, 27 Oct 2026: not sure the size can be read
    reliably; was CMS's "type • size", useAssetSlotUpload `fileSizeLabel`). The size still feeds the 10 MB check. */
 const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toUpperCase() : 'File')
-const problemOf = (check: FileCheck) => (check.ok ? null : check)
 
 /**
  * Import templates — a dialog on the list (Korn, 2026-10-05). Shell is webds
@@ -49,10 +48,11 @@ const problemOf = (check: FileCheck) => (check.ok ? null : check)
  * Picking a file only puts it in the slot. The checks run on Import
  * (requester, 22 Oct 2026; was: the moment the file was picked): a file, then
  * 10 MB (CMS's limit) before the upload, then — under the upload spinner —
- * the template structure, the file name imported before, and the upload
- * itself. A file over 10 MB reads "Max file size: 10 MB" in its slot, CMS's
- * upload-failed slot without Try again; a broken structure reads under the
- * slot. Either blocks Import until the file is removed.
+ * the file name imported before and the upload itself. A file over 10 MB
+ * reads "Max file size: 10 MB" in its slot, CMS's upload-failed slot without
+ * Try again, and blocks Import until the file is removed. No template field
+ * is checked (requester, 27 Oct 2026; was "Invalid template structure: …"
+ * under the slot); a file with no line of JSON fails the upload.
  *
  * A file whose name was imported before asks first (requester, 15 Oct 2026):
  * "Replace imported templates?", and Replace swaps that earlier import's templates.
@@ -92,8 +92,7 @@ export function ImportDialog({
     if (demo) {
       const file = new File([demo.text], demo.name, { type: 'application/jsonl' })
       const size = demo.size ?? file.size
-      const problem =
-        preset === 'too-large' ? sizeProblem(size) : preset === 'invalid-structure' ? problemOf(parseTemplates(demo.text)) : null
+      const problem = preset === 'too-large' ? sizeProblem(size) : null
       setPicked({ key: nextKey.current++, file, size, problem })
     } else setPicked(null)
     setPhase(preset === 'uploading' ? 'uploading' : preset === 'failure' ? 'failed' : preset === 'duplicate' ? 'replace' : 'idle')
@@ -135,21 +134,18 @@ export function ImportDialog({
   /* Cancel on "Replace imported templates?": back to the Import dialog, the file still picked. */
   const backToFile = () => setPhase('idle')
 
-  /* Structure, then the file name imported before, then the upload — all under the spinner. */
+  /* The file name imported before, then the upload — both under the spinner. */
   const upload = (replace: boolean) => {
     if (!picked) return
     lastReplace.current = replace
     setMessage(null)
     setPhase('uploading')
-    const { key, file } = picked
+    const { file } = picked
     const fails = file.name.toLowerCase().includes(IMPORT_FAIL_SENTINEL)
     const read = file.text().then(parseTemplates)
     window.setTimeout(() => {
       void read.then((check) => {
-        if (!check.ok) {
-          setPicked((p) => (p?.key === key ? { ...p, problem: check } : p))
-          return setPhase('idle')
-        }
+        if (!check.ok) return setPhase('failed')
         if (!replace && importedNames.includes(file.name)) return setPhase('replace')
         if (fails) return setPhase('failed')
         reset()
@@ -203,7 +199,7 @@ export function ImportDialog({
               meta={typeLabel(picked.file.name)}
               error={!!problem || failed}
               errorMessage={failed ? IMPORT_COPY.failTitle : problem?.message}
-              errorPlacement={failed || problem?.problem === 'size' ? 'slot' : 'below'}
+              errorPlacement="slot"
               retryLabel={IMPORT_COPY.retry}
               onRetry={failed ? () => upload(lastReplace.current) : undefined}
               onRemove={remove}
