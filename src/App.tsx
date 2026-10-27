@@ -51,13 +51,15 @@ export default function App() {
     go('/broadcast')
   }
 
-  const editId = hash.match(/^#\/broadcast\/edit\/([A-Z]+-\d+)$/)?.[1]
+  const editId = hash.match(/^#\/broadcast\/edit\/([A-Z]+-\d+)(?:\/(?:loading|fail))?$/)?.[1]
   const editing = editId ? broadcasts.find((b) => b.id === editId && b.status === 'Draft') : undefined
   if (editing)
     return (
       <BroadcastWizard
         key={hash}
         initial={editing}
+        loading={hash.endsWith('/loading')}
+        failNext={hash.endsWith('/fail')}
         onBack={() => go('/broadcast')}
         onCreate={(b, kind) => {
           setBroadcasts((list) => list.map((x) => (x.id === editing.id ? { ...b, id: editing.id } : x)))
@@ -71,6 +73,7 @@ export default function App() {
     return (
       <BroadcastWizard
         key={hash}
+        loading={hash.endsWith('/loading')}
         failNext={hash.endsWith('/fail')}
         preset={formPreset(hash.match(/^#\/broadcast\/create\/([a-z-]+)$/)?.[1])}
         onBack={() => go('/broadcast')}
@@ -153,6 +156,8 @@ export default function App() {
                 ? { ok: true, file: deliveryReportName(reportDemo) }
                 : undefined
           }
+          state={hash === '#/broadcast/loading' ? 'loading' : hash === '#/broadcast/error' ? 'error' : 'ready'}
+          onRetry={() => go('/broadcast')}
         />
       ) : (
         <Dashboard
