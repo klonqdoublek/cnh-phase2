@@ -20,6 +20,7 @@ export const IMPORT_PRESETS = [
   'too-many',
   'too-large',
   'selected',
+  'drag-replace',
   'duplicate',
   'uploading',
   'failure',
@@ -39,6 +40,9 @@ export const IMPORT_COPY = {
      file's slot, CMS's upload-failed slot without Try again, when Import finds the file over
      the limit. 20–22 Oct it was the empty zone's hint and the file was not taken. */
   size: 'Max file size: 10 MB',
+  /* Composed (BA / Dev, 28 Oct 2026): a file dragged over the picked file replaces it on
+     the drop; this reads over the slot while the file is above it. */
+  dropReplace: 'Drop to replace',
   noFile: 'Select a .jsonl file to import',
   hasErrors: 'Remove the file and choose another to continue',
   uploading: 'Importing templates…',

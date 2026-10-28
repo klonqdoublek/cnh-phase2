@@ -1,7 +1,7 @@
 {
  "source": {
   "kind": "code",
-  "path": "src/pages/notifications/ImportDialog.tsx · src/data/import-spec.ts (Import, 27 Oct 2026) · cnh-tm-devtarget-v2 · src/pages/BroadcastWizard.tsx · src/pages/broadcast/useBroadcastForm.ts · src/data/broadcast-presets.ts",
+  "path": "src/pages/notifications/ImportDialog.tsx · src/data/import-spec.ts (Import, 28 Oct 2026) · cnh-tm-devtarget-v2 · src/pages/BroadcastWizard.tsx · src/pages/broadcast/useBroadcastForm.ts · src/data/broadcast-presets.ts",
   "extractedAt": "2026-10-06"
  },
  "screen": {
@@ -41,6 +41,13 @@
    "kind": "screen",
    "label": "File selected",
    "route": "#/list/import/selected",
+   "section": "Import"
+  },
+  {
+   "id": "drag-replace",
+   "kind": "screen",
+   "label": "New file dragged over the file — Drop to replace",
+   "route": "#/list/import/drag-replace",
    "section": "Import"
   },
   {
@@ -481,6 +488,24 @@
     "w": 16,
     "h": 16
    }
+  },
+  {
+   "from": "selected",
+   "to": "drag-replace",
+   "label": "Drag a .jsonl file onto the file",
+   "style": "solid",
+   "touch": {
+    "x": 754,
+    "y": 488,
+    "w": 412,
+    "h": 84
+   }
+  },
+  {
+   "from": "drag-replace",
+   "to": "selected",
+   "label": "Drop — the new file replaces it",
+   "style": "solid"
   },
   {
    "from": "selected",
