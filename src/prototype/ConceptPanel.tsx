@@ -19,6 +19,7 @@ import {
   type Layout,
   type Look,
   type Mark,
+  type Overflow,
   type Picker,
   type Placement,
   type Trigger,
@@ -78,6 +79,15 @@ const ERASES: { value: Erase; label: string }[] = [
   { value: 'whole', label: 'Whole' },
   { value: 'select', label: 'Select' },
   { value: 'trigger', label: 'Re-pick' },
+]
+
+/* Past one row of pills (requester, 28 Oct 2026); a file with fewer fields
+   shows them all whichever is picked. */
+const OVERFLOWS: { value: Overflow; label: string }[] = [
+  { value: 'all', label: 'Show all' },
+  { value: 'more', label: '+N more' },
+  { value: 'scroll', label: 'Scroll' },
+  { value: 'search', label: 'Search' },
 ]
 
 const MARKS: { value: Mark; label: string }[] = [
@@ -375,6 +385,15 @@ export function ConceptPanel() {
                           items={ERASES.map((x) => x.label)}
                           selectedIndex={ERASES.findIndex((x) => x.value === concept.erase)}
                           onSelect={(i) => setConcept({ erase: ERASES[i].value })}
+                        />
+                      </Option>
+                    )}
+                    {concept.picker === 'pills' && (
+                      <Option label="When many fields" wide>
+                        <SegmentedTab
+                          items={OVERFLOWS.map((o) => o.label)}
+                          selectedIndex={OVERFLOWS.findIndex((o) => o.value === concept.overflow)}
+                          onSelect={(i) => setConcept({ overflow: OVERFLOWS[i].value })}
                         />
                       </Option>
                     )}

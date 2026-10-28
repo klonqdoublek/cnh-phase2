@@ -26,7 +26,7 @@ import { FormStep } from '@/patterns/console-page'
 import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import type { Concept } from '@/prototype/dynamic-field'
+import type { Concept, Overflow } from '@/prototype/dynamic-field'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
 import type { Tint } from './highlight'
 import { triggerMark, useFieldShortcut } from './shortcut'
@@ -430,25 +430,195 @@ function useInsertField(f: BroadcastForm, focus: FocusRef) {
 
 type Insert = (token: string) => void
 
-/** Idea 1 / 1.2: the file's columns as chips, always on show. */
-function FieldPills({ f, onInsert, disabled }: F & { onInsert: Insert; disabled?: boolean }) {
+type Field = BroadcastForm['fields'][number]
+
+/** Pills on show before `+N more` or the search takes over: one row on a
+ *  stacked card. The most columns an audience file may have would set it
+ *  (open, for the BA). */
+const PILLS_SHOWN = 8
+
+/** Closes a pop-up on a click outside `root` or on Esc. */
+function useDismiss(open: boolean, setOpen: (open: boolean) => void, root: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    if (!open) return
+    const away = (e: MouseEvent) => !root.current?.contains(e.target as Node) && setOpen(false)
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', away)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', away)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open, setOpen, root])
+}
+
+/** One field as a Pill Chip (highlight). */
+function Pill({ field, disabled, onInsert }: { field: Field; disabled?: boolean; onInsert: Insert }) {
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
+    /* mousedown would blur the message box and lose the caret first */
+    <span className="shrink-0 whitespace-nowrap" onMouseDown={(e) => e.preventDefault()}>
+      <PillChip
+        appearance="highlight"
+        state={disabled ? 'disabled' : 'default'}
+        aria-label={`Insert ${field.token}`}
+        onClick={() => onInsert(field.token)}
+      >
+        {field.column}
+      </PillChip>
+    </span>
+  )
+}
+
+/** A Pill Chip (default) that opens `fields` in `FieldMenu`: `+N more` after
+ *  the first pills, or `All fields (N)` at the end of the scrolling row. The
+ *  menu opens under the chip, toward the side of the pills' area with room
+ *  for its 240.
+ *  Composed: webds has no chip group with an overflow chip (gap). */
+function FieldListChip({
+  label,
+  fields,
+  disabled,
+  onInsert,
+}: {
+  label: string
+  fields: Field[]
+  disabled?: boolean
+  onInsert: Insert
+}) {
+  const [open, setOpen] = useState(false)
+  const [align, setAlign] = useState<'left' | 'right'>('left')
+  const root = useRef<HTMLSpanElement>(null)
+  useDismiss(open, setOpen, root)
+  const toggle = () => {
+    const left = root.current?.getBoundingClientRect().left ?? 0
+    const right = root.current?.closest('[data-pills]')?.getBoundingClientRect().right ?? innerWidth
+    setAlign(left + 240 > right ? 'right' : 'left')
+    setOpen(!open)
+  }
+  return (
+    <span ref={root} className="relative inline-flex shrink-0 whitespace-nowrap">
+      <span className="inline-flex" onMouseDown={(e) => e.preventDefault()}>
+        <PillChip state={disabled ? 'disabled' : open ? 'selected' : 'default'} aria-expanded={open} onClick={toggle}>
+          {label}
+        </PillChip>
+      </span>
+      {open && (
+        <FieldMenu
+          align={align}
+          options={fields.map((field) => ({ value: field.token, label: field.column }))}
+          onSelect={(token) => {
+            onInsert(token)
+            setOpen(false)
+          }}
+        />
+      )}
+    </span>
+  )
+}
+
+/** The scrolling row (Magnific's filter bar, Mobbin 28 Oct 2026): one line of
+ *  pills, an edge fade and a chevron only on a side that still hides some,
+ *  each click moving most of a row's width. Tab into a hidden pill scrolls it
+ *  into view on its own. */
+function PillRow({ children }: { children: React.ReactNode }) {
+  const row = useRef<HTMLDivElement>(null)
+  const [edge, setEdge] = useState({ start: false, end: false })
+  const measure = useCallback(() => {
+    const el = row.current
+    if (el) setEdge({ start: el.scrollLeft > 1, end: el.scrollLeft + el.clientWidth < el.scrollWidth - 1 })
+  }, [])
+  useLayoutEffect(() => {
+    measure()
+    const ro = new ResizeObserver(measure)
+    if (row.current) ro.observe(row.current)
+    return () => ro.disconnect()
+  }, [measure])
+  const page = (dir: 1 | -1) => {
+    const el = row.current
+    el?.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' })
+  }
+  const side = (dir: 1 | -1) => (
+    <span
+      className={cn(
+        'pointer-events-none absolute inset-y-0 flex w-[64px] items-center from-[var(--color-surface-primary-default)] from-40% to-transparent',
+        dir < 0 ? 'left-0 justify-start bg-gradient-to-r' : 'right-0 justify-end bg-gradient-to-l',
+      )}
+    >
+      <span className="pointer-events-auto inline-flex" onMouseDown={(e) => e.preventDefault()}>
+        <IconButton
+          label={dir < 0 ? 'Show earlier fields' : 'Show more fields'}
+          size={24}
+          icon={<Icon slug={dir < 0 ? 'chevron-left' : 'chevron-right'} size={24} />}
+          onClick={() => page(dir)}
+        />
+      </span>
+    </span>
+  )
+  return (
+    <div className="relative min-w-0 flex-1">
+      <div
+        ref={row}
+        onScroll={measure}
+        className="flex gap-[var(--space-2)] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {children}
+      </div>
+      {edge.start && side(-1)}
+      {edge.end && side(1)}
+    </div>
+  )
+}
+
+/** Idea 1 / 1.2: the file's columns as chips. Past `PILLS_SHOWN` fields the
+ *  Prototype control's *When many fields* decides what shows (requester,
+ *  28 Oct 2026); a smaller file shows them all whichever is picked. */
+function FieldPills({ f, onInsert, disabled, overflow }: F & { onInsert: Insert; disabled?: boolean; overflow: Overflow }) {
+  const [query, setQuery] = useState('')
+  const all = f.fields
+  const mode = all.length > PILLS_SHOWN ? overflow : 'all'
+  const pill = (field: Field) => <Pill key={field.column} field={field} disabled={disabled} onInsert={onInsert} />
+
+  if (mode === 'scroll')
+    return (
+      <div data-pills className="flex min-w-0 flex-col gap-[var(--space-2)]">
+        <span className={LABEL}>Available fields</span>
+        <div className="flex min-w-0 items-center gap-[var(--space-2)]">
+          <PillRow>{all.map(pill)}</PillRow>
+          <FieldListChip label={`All fields (${all.length})`} fields={all} disabled={disabled} onInsert={onInsert} />
+        </div>
+      </div>
+    )
+
+  if (mode === 'search') {
+    const q = query.trim().toLowerCase()
+    const shown = q ? all.filter((field) => field.column.toLowerCase().includes(q)) : all.slice(0, PILLS_SHOWN)
+    return (
+      <div data-pills className="flex min-w-0 flex-col gap-[var(--space-2)]">
+        <span className={LABEL}>Available fields</span>
+        <div className="w-[320px] max-w-full">
+          <FormField spec={{ label: PICKER_DIALOG_COPY_EN.search, kind: 'search' }} value={query} disabled={disabled} onChange={setQuery} />
+        </div>
+        {shown.length > 0 && <div className="flex flex-wrap gap-[var(--space-2)]">{shown.map(pill)}</div>}
+        <span className={NOTE}>
+          {!q
+            ? `Showing ${PILLS_SHOWN} of ${all.length} fields. Search to find the rest.`
+            : shown.length
+              ? `${shown.length} of ${all.length} fields`
+              : PICKER_DIALOG_COPY_EN.noResult[0]}
+        </span>
+      </div>
+    )
+  }
+
+  const rest = all.slice(PILLS_SHOWN)
+  return (
+    <div data-pills className="flex min-w-0 flex-col gap-[var(--space-2)]">
       <span className={LABEL}>Available fields</span>
       <div className="flex flex-wrap gap-[var(--space-2)]">
-        {f.fields.map((field) => (
-          /* mousedown would blur the message box and lose the caret first */
-          <span key={field.column} onMouseDown={(e) => e.preventDefault()}>
-            <PillChip
-              appearance="highlight"
-              state={disabled ? 'disabled' : 'default'}
-              aria-label={`Insert ${field.token}`}
-              onClick={() => onInsert(field.token)}
-            >
-              {field.column}
-            </PillChip>
-          </span>
-        ))}
+        {mode === 'more' ? all.slice(0, PILLS_SHOWN).map(pill) : all.map(pill)}
+        {mode === 'more' && (
+          <FieldListChip label={`+${rest.length} more`} fields={rest} disabled={disabled} onInsert={onInsert} />
+        )}
       </div>
     </div>
   )
@@ -461,14 +631,25 @@ function FieldPills({ f, onInsert, disabled }: F & { onInsert: Insert; disabled?
  *  the pattern's `::after` stroke with the rows and let them show above a
  *  sticky search. A search that matches nothing reads Picker Dialog's own
  *  line, as a disabled row. */
-function FieldMenu({ options, onSelect }: { options: { value: string; label: string }[]; onSelect: (token: string) => void }) {
+function FieldMenu({
+  options,
+  onSelect,
+  align = 'right',
+}: {
+  options: { value: string; label: string }[]
+  onSelect: (token: string) => void
+  align?: 'left' | 'right'
+}) {
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
   const shown = options.filter((o) => !q || o.label.toLowerCase().includes(q))
   return (
     <SelectList
       width={240}
-      className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[360px] [&>.webds-pattern-select-list-3]:min-h-0 [&>.webds-pattern-select-list-3]:overflow-y-auto"
+      className={cn(
+        'absolute top-full z-[10] mt-[var(--space-2)] max-h-[360px] [&>.webds-pattern-select-list-3]:min-h-0 [&>.webds-pattern-select-list-3]:overflow-y-auto',
+        align === 'right' ? 'right-0' : 'left-0',
+      )}
       search={<FormField spec={{ label: PICKER_DIALOG_COPY_EN.search, kind: 'search', autoFocus: true }} value={query} onChange={setQuery} />}
       groups={[
         {
@@ -497,17 +678,7 @@ function FieldMenuButton({
 }: F & { onInsert: Insert; icon?: boolean; dialog?: boolean; braces?: boolean; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
-  useEffect(() => {
-    if (!open || dialog) return
-    const away = (e: MouseEvent) => !root.current?.contains(e.target as Node) && setOpen(false)
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
-    document.addEventListener('mousedown', away)
-    document.addEventListener('keydown', esc)
-    return () => {
-      document.removeEventListener('mousedown', away)
-      document.removeEventListener('keydown', esc)
-    }
-  }, [open, dialog])
+  useDismiss(open && !dialog, setOpen, root)
   const off = disabled || !f.fields.length
   const options = f.fields.map((field) => ({ value: field.token, label: field.column }))
   const color = icon && off ? 'var(--color-icon-disabled-default)' : icon ? 'var(--color-icon-highlight-default)' : 'currentColor'
@@ -662,7 +833,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
         const body = (
           <>
             {perCard && concept.picker === 'pills' && (
-              <FieldPills f={f} disabled={!editable} onInsert={(t) => insert(t, c)} />
+              <FieldPills f={f} disabled={!editable} overflow={concept.overflow} onInsert={(t) => insert(t, c)} />
             )}
             <ChannelFields f={f} channel={c} on={editable} hint={hint} tint={typed && concept.look === 'tint' ? tint : undefined} />
           </>
@@ -707,7 +878,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
 
   const top = (
     <>
-      {shared && concept.picker === 'pills' && hasFields && <FieldPills f={f} onInsert={insertShared} />}
+      {shared && concept.picker === 'pills' && hasFields && <FieldPills f={f} overflow={concept.overflow} onInsert={insertShared} />}
       {!hasFields && (
         <p className={NOTE}>
           {typed
