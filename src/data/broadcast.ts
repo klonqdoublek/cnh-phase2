@@ -403,7 +403,76 @@ const cisFile = (n: number) =>
   ).join('\n') +
   '\n'
 
+const directFile = (n: number) =>
+  'MOBILE_NO,CUSTOMER_NAME,AMOUNT\n' +
+  Array.from(
+    { length: n },
+    (_, i) => `08${String(10000000 + (i + 1) * 7919).slice(-8)},${FIRST[i % 8]} ${LAST[(i * 3) % 8]},${(250 + ((i * 37) % 2000)).toFixed(2)}`,
+  ).join('\n') +
+  '\n'
+
 export const BROADCASTS: Broadcast[] = [
+  /* Composed (28 Oct 2026) so every status has a Direct recipient example as
+     well as a CIS one: this Draft, BC-0011 Queue and BC-0010 Cancelled. */
+  {
+    id: 'BC-0012',
+    name: 'Card delivery notice',
+    description: 'Tell customers their new debit card is on its way.',
+    channels: ['SMS'],
+    audienceFile: 'card-delivery-mobile.csv',
+    audienceText: directFile(420),
+    recipients: 420,
+    recipientType: 'direct',
+    recipientColumn: 'MOBILE_NO',
+    startMode: 'schedule',
+    start: '2026-11-04T10:00',
+    dnd: DEFAULT_DND,
+    status: 'Draft',
+    success: 0,
+    failed: 0,
+    content: content('Dear {{CUSTOMER_NAME}}, your new debit card will be delivered within 7 days.'),
+    createdBy: 'Naree R.',
+    createdAt: '2026-10-09T11:20',
+  },
+  {
+    id: 'BC-0011',
+    name: 'Fixed deposit maturity reminder',
+    description: '',
+    channels: ['Email'],
+    audienceFile: 'fixed-deposit-email.csv',
+    recipients: 350,
+    recipientType: 'direct',
+    recipientColumn: 'EMAIL',
+    startMode: 'schedule',
+    start: '2026-10-15T08:00',
+    end: '2026-10-17T18:00',
+    dnd: DEFAULT_DND,
+    status: 'Queue',
+    success: 0,
+    failed: 0,
+    content: content('', 'Your fixed deposit is maturing', 'Dear Customer, your fixed deposit will mature on 20 October 2026.'),
+    createdBy: 'Somchai J.',
+    createdAt: '2026-10-09T09:05',
+  },
+  {
+    id: 'BC-0010',
+    name: 'Mobile number update request',
+    description: '',
+    channels: ['SMS'],
+    audienceFile: 'mobile-update.csv',
+    recipients: 150,
+    recipientType: 'direct',
+    recipientColumn: 'MOBILE_NO',
+    startMode: 'schedule',
+    start: '2026-10-20T09:00',
+    dnd: DEFAULT_DND,
+    status: 'Cancelled',
+    success: 0,
+    failed: 0,
+    content: content('Dear Customer, please update your mobile number at any Bangkok Bank branch.'),
+    createdBy: 'Panisa R.',
+    createdAt: '2026-10-08T16:30',
+  },
   /* Composed (19 Oct 2026) so the list and drawer show a Failed broadcast: a
      system error stopped it while it was sending, so whoever was still waiting
      is Not sent. */
