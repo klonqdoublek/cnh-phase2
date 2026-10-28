@@ -63,7 +63,7 @@ const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
      offers Download report. */
   Failed: (b) =>
     `A system error stopped the broadcast.${b.notSent ? ` ${fmtNumber(b.notSent)} recipients were not sent.` : ''}${
-      b.notSent && hasDeliveryReport(b) ? ' Download report to see who they are.' : ''
+      b.notSent && hasDeliveryReport(b) ? ' Download report for details.' : ''
     }`,
   Cancelled: () => 'Cancelled before it was submitted. Nothing was sent.',
 }
