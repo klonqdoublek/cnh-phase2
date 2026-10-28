@@ -212,7 +212,7 @@ export function ConceptPanel() {
           open && 'border-b border-[var(--color-border-primary-default)]',
         )}
       >
-        <span className="type-label-l-emphasized text-[var(--color-text-primary-default)]">Prototype control</span>
+        <span className="type-label-l-emphasized shrink-0 whitespace-nowrap text-[var(--color-text-primary-default)]">Prototype control</span>
         {!open && (state || concepts) && (
           <span className="type-label-m text-[var(--color-text-secondary-default)]">
             {state && <>· {state.label} </>}
