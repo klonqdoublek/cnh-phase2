@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { DetailDrawer } from '@/patterns/detail-drawer'
 import {
   BROADCAST_COPY,
+  dndNeverSends,
   firstSend,
   fmtDateTime,
   fmtDnd,
@@ -52,7 +53,10 @@ function resumesAt(b: Broadcast) {
 
 const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
   Draft: () => 'Not submitted yet. Nothing is sent until the broadcast is submitted.',
-  Queue: (b) => `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
+  Queue: (b) =>
+    dndNeverSends(b.dnd)
+      ? BROADCAST_COPY.dndNeverSends
+      : `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
   Processing: (b) =>
     b.quiet ? `Inside the quiet period. Sending resumes at ${resumesAt(b)}.` : 'Messages are being sent.',
   Published: (b) =>

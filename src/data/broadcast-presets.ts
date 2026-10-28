@@ -20,6 +20,8 @@ export const FORM_PRESETS = [
   'filled',
   'quiet',
   'dnd-rules',
+  'dnd-all-week',
+  'dnd-all-week-confirm',
   'end',
   'large-file',
   'checking',
@@ -214,6 +216,17 @@ export const nextWeekday = () => {
 /** Days until the next Saturday, so a start then waits out the weekend rule. */
 export const nextSaturday = () => ((6 - new Date().getDay() + 7) % 7) || 7
 
+/** Do Not Disturb that leaves no time to send, made of two periods so the
+ *  warning shows they add up (BA / Dev sync, 28 Oct 2026). */
+const ALL_WEEK_DND: Dnd = {
+  enabled: true,
+  rules: [
+    { id: 'dnd-weekdays-all-day', days: [1, 2, 3, 4, 5], allDay: true, from: '00:00', to: '00:00' },
+    { id: 'dnd-weekend-all-day', days: [6, 0], allDay: true, from: '00:00', to: '00:00' },
+  ],
+  timeZone: 'Asia/Bangkok',
+}
+
 export function formSeed(preset: FormPreset): FormSeed {
   switch (preset) {
     case 'file-error':
@@ -260,6 +273,10 @@ export function formSeed(preset: FormPreset): FormSeed {
       return { ...filled, mode: 'schedule', start: { inDays: nextWeekday(), time: '21:00' }, dnd: DEFAULT_DND }
     case 'dnd-rules':
       return { ...filled, mode: 'schedule', start: { inDays: nextSaturday(), time: '10:00' }, dnd: BA_DND }
+    case 'dnd-all-week':
+      return { ...filled, dnd: ALL_WEEK_DND }
+    case 'dnd-all-week-confirm':
+      return { ...filled, dnd: ALL_WEEK_DND, open: 'confirm' }
     case 'end':
       return {
         ...filled,
