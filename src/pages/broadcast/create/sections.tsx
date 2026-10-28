@@ -22,6 +22,7 @@ import { FormField } from '@/patterns/form-field'
 import { PICKER_DIALOG_COPY_EN, PickerDialog } from '@/patterns/picker-dialog'
 import { SelectList } from '@/patterns/select-list'
 import { FormSectionCard } from '@/patterns/form-section-card'
+import { InfoNote } from '@/patterns/info-note'
 import { FormStep } from '@/patterns/console-page'
 import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
@@ -603,10 +604,12 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   const insertShared: Insert = (token) => setNeedsField(!insert(token))
   const typed = concept.picker === 'shortcut'
   const shortcut = useFieldShortcut(f, concept.trigger, typed)
-  /* Composed (21 Oct 2026), as Clay's "Type '/' to …" under each box. */
-  const hint = typed && hasFields ? `Type ${triggerMark(concept.trigger)} to add a dynamic field` : undefined
   const columns = f.fields.map((field) => field.column).join('\n')
   const mark = triggerMark(concept.trigger)
+  /* Composed (21 Oct 2026), after Clay's "Type '/' to …". Said once, on the
+     right of the card title where Idea 2 puts its button (requester, 28 Oct
+     2026), not under every box. webds `info-note`: icon and text, no surface. */
+  const shortcutNote = typed && hasFields && <InfoNote>Type {mark} to add a dynamic field</InfoNote>
   const tint = useMemo<Tint>(() => ({ columns: new Set(columns.split('\n')), erase: concept.erase, mark }), [columns, concept.erase, mark])
 
   /* Every idea titles the card "Create broadcast message" (requester, 21 Oct
@@ -664,7 +667,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
             {perCard && concept.picker === 'pills' && (
               <FieldPills f={f} disabled={!editable} onInsert={(t) => insert(t, c)} />
             )}
-            <ChannelFields f={f} channel={c} on={editable} hint={hint} tint={typed && concept.look === 'tint' ? tint : undefined} />
+            <ChannelFields f={f} channel={c} on={editable} tint={typed && concept.look === 'tint' ? tint : undefined} />
           </>
         )
         if (direct)
@@ -732,6 +735,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
         <span className="flex min-h-[44px] items-center justify-between gap-[var(--space-4)]">
           Create broadcast message
           {sharedButton}
+          {shortcutNote}
         </span>
       }
       rowGap={6}
@@ -789,7 +793,7 @@ function DirectChannelCard({
 }
 
 /** A channel's message boxes — the Template form's TH fields. */
-function ChannelFields({ f, channel, on, hint, tint }: F & { channel: Channel; on: boolean; hint?: string; tint?: Tint }) {
+function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boolean; tint?: Tint }) {
   const box = (id: keyof BroadcastContent, label: string, placeholder: string, extra?: { multiline?: boolean; boxHeight?: 77 }) => (
     <Text
       id={id}
@@ -801,7 +805,6 @@ function ChannelFields({ f, channel, on, hint, tint }: F & { channel: Channel; o
       error={f.errors[id]}
       placeholder={placeholder}
       onChange={f.setC(id)}
-      hint={hint}
       tint={tint}
       {...extra}
     />
