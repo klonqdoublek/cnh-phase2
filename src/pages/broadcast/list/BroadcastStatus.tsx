@@ -1,5 +1,5 @@
 import { StatusBadge, type StatusTone } from '@/patterns/status-badge'
-import { STATUS_TONE, type BroadcastStatus as Status } from '@/data/broadcast'
+import { STATUS_LABEL, STATUS_TONE, type BroadcastStatus as Status } from '@/data/broadcast'
 
 /* The original draws its package's Badge with the icon off. webds `Badge`
  * always draws a mark (BBL's placeholder when none is passed), so the status
@@ -16,7 +16,7 @@ const TONE: Record<(typeof STATUS_TONE)[Status], StatusTone> = {
 export function BroadcastStatus({ status, size = 'm' }: { status: Status; size?: 'l' | 'm' }) {
   return (
     <StatusBadge tone={TONE[STATUS_TONE[status]]} size={size}>
-      {status}
+      {STATUS_LABEL[status]}
     </StatusBadge>
   )
 }

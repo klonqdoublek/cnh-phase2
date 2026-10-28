@@ -8,10 +8,12 @@ import { EmptyState } from '@/patterns/empty-state'
 import {
   BROADCAST_COPY,
   BROADCAST_STATUSES,
+  STATUS_LABEL,
   fmtDateTime,
   fmtDndRule,
   hasDeliveryReport,
   type Broadcast,
+  type BroadcastStatus as BroadcastStatusValue,
   type Dnd,
   type ListToast as ListToastValue,
 } from '@/data/broadcast'
@@ -172,6 +174,7 @@ export function BroadcastList({
         <FilterSelect
           label="Status"
           options={BROADCAST_STATUSES}
+          optionLabel={(s) => STATUS_LABEL[s as BroadcastStatusValue]}
           value={statuses}
           onChange={(v) => refilter(() => setStatuses(v))}
         />
