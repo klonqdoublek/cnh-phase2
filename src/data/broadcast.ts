@@ -28,7 +28,6 @@ export const BROADCAST_COPY = {
   fileEmpty: 'The file has no recipients',
   tooManyRows: 'The file has more than 1,000 recipients',
   checking: 'Checking file…',
-  validated: 'File validated',
   /* Composed (docs/broadcast-gaps.md): the original build has no dialog for a
      file that fails the full read on Submit. */
   fileBlockedTitle: 'The audience file cannot be used',
@@ -36,6 +35,11 @@ export const BROADCAST_COPY = {
   previewTitle: 'Preview (first 5 rows)',
   required: 'This field is required',
   noColumn: 'Select the column that identifies each recipient',
+  /** PROPOSAL, composed (not in the original build), pending BA (Q15). */
+  wrongColumn: (column: string, holds: 'mobile' | 'email', wanted: 'mobile' | 'email') => {
+    const plural = { mobile: 'mobile numbers', email: 'email addresses' }
+    return `${column} contains ${plural[holds]}. Select the column that contains ${plural[wanted]}`
+  },
   noChannel: 'Please enable at least 1 notification channel',
   noDirectChannel: 'Select Email or SMS',
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
@@ -150,6 +154,19 @@ const DUPLICATE: Record<IdKind, string> = {
   email: 'Duplicate email address',
 }
 
+/** What a column holds: mobile numbers or email addresses when more than half of
+ * its filled values are, so a few bad rows do not hide it; null otherwise (a CIS
+ * ID has no fixed format yet). PROPOSAL, pending BA (Q15). */
+export function columnHolds(audience: Audience, column: string): 'mobile' | 'email' | null {
+  const index = audience.headers.indexOf(column)
+  const values = audience.rows.map((row) => (row[index] ?? '').trim()).filter(Boolean)
+  if (index < 0 || !values.length) return null
+  const most = (test: (v: string) => boolean) => values.filter(test).length > values.length / 2
+  if (most((v) => EMAIL.test(v.toLowerCase()))) return 'email'
+  if (most((v) => MOBILE.test(v.replace(/[\s-]/g, '')))) return 'mobile'
+  return null
+}
+
 export type RecipientRow = { line: number; id: string; errors: string[] }
 export type RecipientCheck = { rows: RecipientRow[]; valid: number; invalid: number }
 
@@ -240,7 +257,9 @@ export const BA_DND: Dnd = {
   ],
   timeZone: 'Asia/Bangkok',
 }
-export const TIME_ZONES = [{ value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)' }]
+/** `offset` follows the quiet period's time label (design critique, 27 Oct
+ *  2026), in place of a Time zone row under the periods. */
+export const TIME_ZONES = [{ value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)', offset: 'GMT+7' }]
 
 const minutes = (hhmm: string) => {
   const [h, m] = hhmm.split(':').map(Number)
@@ -572,6 +591,19 @@ export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'acce
   Published: 'positive',
   Failed: 'negative',
   Cancelled: 'disabled',
+}
+
+/** What the badge and the Status filter read. FAILED reads "System error"
+ *  (design critique, 27 Oct 2026): the drawer's Delivery result also counts
+ *  "Failed" recipients, and the two read as the same thing. The value stays
+ *  FAILED. PROPOSAL, pending BA confirmation. */
+export const STATUS_LABEL: Record<BroadcastStatus, string> = {
+  Draft: 'Draft',
+  Queue: 'Queue',
+  Processing: 'Processing',
+  Published: 'Published',
+  Failed: 'System error',
+  Cancelled: 'Cancelled',
 }
 
 /** Recipients not yet attempted: not sent, not failed, not cut off by the end. */

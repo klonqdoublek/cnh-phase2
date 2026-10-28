@@ -6,9 +6,7 @@ import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { ContainedIconButton } from '@/bbl/contained-icon-button'
-import { Divider } from '@/bbl/divider'
 import { FieldLabel } from '@/bbl/field'
-import { GhostButton } from '@/bbl/ghost-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
@@ -141,7 +139,9 @@ export function AudienceFile({ f }: F) {
 }
 
 /** The file row and its preview. A pick checks type and size only (BA,
- *  19 Oct 2026), so nothing here counts rows; the full read is on Submit. */
+ *  19 Oct 2026), so nothing here counts rows; the full read is on Submit.
+ *  No "File validated" beside the size (design critique, 27 Oct 2026): a
+ *  file that fails the pick is never placed, so the tick said nothing. */
 function FileResult({ f }: F) {
   const file = f.file!
   const bad = !!f.read && !f.read.ok
@@ -156,14 +156,6 @@ function FileResult({ f }: F) {
               ? sizeLabel(file.size)
               : f.read.message
             : BROADCAST_COPY.checking
-        }
-        status={
-          f.audience && (
-            <span className="inline-flex shrink-0 items-center gap-[var(--space-1)] type-label-m-emphasized text-[var(--color-text-positive-default)]">
-              <Icon slug="tick-circle" size={16} color="var(--color-icon-positive-default)" />
-              {BROADCAST_COPY.validated}
-            </span>
-          )
         }
         onRemove={f.clearFile}
       />
@@ -609,7 +601,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
       className={cn(
         'grid items-stretch',
         concept.layout === 'stacked'
-          ? 'grid-cols-1 gap-[var(--space-6)]'
+          ? 'grid-cols-1 gap-[var(--space-8)]'
           : direct
             ? 'grid-cols-2 gap-[var(--space-8)]'
             : 'grid-cols-3 gap-[var(--space-8)]',
@@ -872,9 +864,12 @@ export function Delivery({ f }: F) {
 function Outlook({ f }: F) {
   if (!f.start || !f.first) return null
   return (
-    <div className="flex items-start gap-[var(--space-3)] rounded-[var(--radius-2)] bg-[var(--color-surface-highlight-subtle-default)] px-[var(--space-4)] py-[var(--space-3)] type-body-m text-[var(--color-text-primary-default)]">
-      <Icon slug="time" size={24} color="var(--color-icon-highlight-default)" />
-      <span>
+    <Alert
+      appearance="brand"
+      icon={<Icon slug="information" size={24} color="var(--color-icon-highlight-default)" />}
+      /* Title, not Description: the Figma Alert has no switch to hide its Title,
+         so the board draws this note as the Title-only Alert. */
+      title={<>
         {f.waits
           ? `${f.mode === 'now' ? 'Now' : 'The start'} is inside the quiet period. Sending starts at ${fmtDateTime(f.first)}.`
           : f.mode === 'now'
@@ -882,8 +877,8 @@ function Outlook({ f }: F) {
             : `Sending starts at ${fmtDateTime(f.start)}.`}
         {f.dnd.enabled && ' Sending pauses during the quiet period and resumes after it.'}
         {f.end && ` Sending stops at ${fmtDateTime(new Date(f.end))}; recipients not sent by then are counted as Not sent.`}
-      </span>
-    </div>
+      </>}
+    />
   )
 }
 
@@ -924,7 +919,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
       <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
         <div className="flex items-end gap-[var(--space-4)]">
           <TimeInput
-            label="Quiet period from"
+            label={`Quiet period from (${TIME_ZONES.find((z) => z.value === f.dnd.timeZone)?.offset ?? f.dnd.timeZone})`}
             value={rule.allDay ? '' : rule.from}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { from: v })}
@@ -977,8 +972,9 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
 
 /** Do Not Disturb, its own card under the Delivery Date card in the same
  *  step (requester, 21 Oct 2026; Figma 409:75574): the switch before the
- *  title and its note, the quiet periods divided by a rule, Add period, and
- *  the one time zone there is, shown as text. The switch is drawn in the
+ *  title and its note, each quiet period on its own card, Add more period.
+ *  The one time zone there is follows the time label (design critique, 27 Oct
+ *  2026; was a Time zone row under the periods). The switch is drawn in the
  *  title rather than through the card's `toggle`, which names the switch only
  *  from a string title. */
 export function DndCard({ f }: F) {
@@ -996,25 +992,19 @@ export function DndCard({ f }: F) {
       }
     >
       {/* Any number of quiet periods (BA, 2026-10-14): each its own days and
-          hours, divided by a rule; a day may sit in more than one. */}
+          hours, on its own bordered card (requester, 22 Oct 2026; Figma
+          436:243478); a day may sit in more than one. Card Surface draws no
+          stroke at rest, so the border is the Figma override. */}
       {dnd.rules.map((rule, i) => (
-        <div key={rule.id} className="flex flex-col gap-[var(--space-6)]">
-          {i > 0 && <Divider />}
+        <CardSurface key={rule.id} className="h-auto items-start border border-[var(--color-border-primary-default)]">
           <DndRuleRow f={f} rule={rule} index={i} />
-        </div>
+        </CardSurface>
       ))}
       <span className="flex">
-        <GhostButton appearance="highlight" padding="none" disabled={!dnd.enabled} onClick={f.addDndRule}>
+        <OutlineButton disabled={!dnd.enabled} onClick={f.addDndRule}>
+          Add more period
           <Icon slug="plus" size={16} color="currentColor" />
-          Add period
-        </GhostButton>
-      </span>
-      {/* One time zone only, so no select (Figma 89:4665). */}
-      <span className="flex flex-col gap-[var(--space-1)]">
-        <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Time zone</span>
-        <span className="type-body-m text-[var(--color-text-primary-default)]">
-          {TIME_ZONES.find((z) => z.value === dnd.timeZone)?.label ?? dnd.timeZone}
-        </span>
+        </OutlineButton>
       </span>
     </FormSectionCard>
   )
