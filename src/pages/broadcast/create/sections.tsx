@@ -913,7 +913,9 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   )
 }
 
-/** A channel's message boxes — the Template form's TH fields. */
+/** A channel's message boxes — the Template form's TH fields, without the
+ *  (TH): one broadcast is written in one language, Thai or English (BA / Dev
+ *  sync, 28 Oct 2026). */
 function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boolean; tint?: Tint }) {
   const box = (id: keyof BroadcastContent, label: string, placeholder: string, extra?: { multiline?: boolean; boxHeight?: 77 }) => (
     <Text
@@ -933,18 +935,18 @@ function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boo
   if (channel === 'Push notification')
     return (
       <>
-        {box('pushTitle', 'Push title (TH)', 'Enter push title in Thai')}
-        {box('pushBody', 'Push message (TH)', 'Enter push message in Thai', { boxHeight: 77 })}
+        {box('pushTitle', 'Push title', 'Enter push title')}
+        {box('pushBody', 'Push message', 'Enter push message', { boxHeight: 77 })}
       </>
     )
   if (channel === 'Email')
     return (
       <>
-        {box('emailSubject', 'Email subject (TH)', 'Enter email subject')}
-        {box('emailBody', 'Email content (TH)', 'Enter email content', { multiline: true })}
+        {box('emailSubject', 'Email subject', 'Enter email subject')}
+        {box('emailBody', 'Email content', 'Enter email content', { multiline: true })}
       </>
     )
-  return box('smsMessage', 'SMS message (TH)', 'Enter SMS message in Thai', { multiline: true })
+  return box('smsMessage', 'SMS message', 'Enter SMS message', { multiline: true })
 }
 
 /* ── Delivery ───────────────────────────────────────────────────────────── */
