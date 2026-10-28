@@ -18,8 +18,9 @@ import { ScrollBar } from '@/bbl/scroll-bar'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
 import { ToggleSwitch } from '@/bbl/toggle-switch'
-import { DropdownMenu } from '@/patterns/dropdown-menu'
-import { PickerDialog } from '@/patterns/picker-dialog'
+import { FormField } from '@/patterns/form-field'
+import { PICKER_DIALOG_COPY_EN, PickerDialog } from '@/patterns/picker-dialog'
+import { SelectList } from '@/patterns/select-list'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { FormStep } from '@/patterns/console-page'
 import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
@@ -453,8 +454,32 @@ function FieldPills({ f, onInsert, disabled }: F & { onInsert: Insert; disabled?
   )
 }
 
-/** Idea 2 / 2.2: a button that opens the file's columns as a webds Dropdown
- *  Menu. The drafts draw the button only; the menu is composed (gap).
+/** The pop-up under Idea 2 / 2.2's button: webds `select-list`, the pattern
+ *  that puts the library's Search Field above a single-pick list (requester,
+ *  28 Oct 2026; was Dropdown Menu, which has no search). The search row stays
+ *  pinned while the columns scroll. A search that matches nothing reads
+ *  Picker Dialog's own line, as a disabled row. */
+function FieldMenu({ options, onSelect }: { options: { value: string; label: string }[]; onSelect: (token: string) => void }) {
+  const [query, setQuery] = useState('')
+  const q = query.trim().toLowerCase()
+  const shown = options.filter((o) => !q || o.label.toLowerCase().includes(q))
+  return (
+    <SelectList
+      width={240}
+      className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[360px] overflow-y-auto [&>.webds-pattern-select-list-2]:sticky [&>.webds-pattern-select-list-2]:top-0 [&>.webds-pattern-select-list-2]:z-[1] [&>.webds-pattern-select-list-2]:bg-[var(--color-surface-primary-default)]"
+      search={<FormField spec={{ label: PICKER_DIALOG_COPY_EN.search, kind: 'search', autoFocus: true }} value={query} onChange={setQuery} />}
+      options={
+        shown.length
+          ? shown
+          : [{ value: '', label: PICKER_DIALOG_COPY_EN.noResult[0], disabled: true }]
+      }
+      onSelect={onSelect}
+    />
+  )
+}
+
+/** Idea 2 / 2.2: a button that opens the file's columns in `FieldMenu`.
+ *  The drafts draw the button only; the pop-up is composed (gap).
  *  Idea 3 / 3.2 (`dialog`): the same button opens webds `picker-dialog`
  *  instead, single pick, as CMS's Link Document Type (requester, 20 Oct 2026). */
 function FieldMenuButton({
@@ -510,18 +535,16 @@ function FieldMenuButton({
           </OutlineButton>
         )}
       </span>
+      {/* The search box takes the focus; the message box keeps its caret
+          (`useInsertField` reads the last box's selection). */}
       {open && !dialog && (
-        <span onMouseDown={(e) => e.preventDefault()}>
-          <DropdownMenu
-            width={240}
-            className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[320px] overflow-y-auto"
-            options={options}
-            onSelect={(token) => {
-              onInsert(token)
-              setOpen(false)
-            }}
-          />
-        </span>
+        <FieldMenu
+          options={options}
+          onSelect={(token) => {
+            onInsert(token)
+            setOpen(false)
+          }}
+        />
       )}
       {open && dialog && (
         <PickerDialog
