@@ -8,7 +8,8 @@ import type { Channel } from './templates'
 export const FORM_PRESETS = [
   'file-error',
   'cis',
-  'direct',
+  'email',
+  'sms',
   'wrong-column',
   'errors',
   'step1-filled',
@@ -232,18 +233,24 @@ export function formSeed(preset: FormPreset): FormSeed {
       return { file: { name: 'recipients.txt', text: 'CIS_ID\n100001\n' } }
     case 'cis':
       return { file: filled.file, recipientType: 'cis' }
-    case 'direct':
+    case 'email':
       return {
         file: { name: 'audience-direct.csv', text: DIRECT_CSV },
-        recipientType: 'direct',
+        recipientType: 'email',
+        channels: ['Email'],
+      }
+    case 'sms':
+      return {
+        file: { name: 'audience-direct.csv', text: DIRECT_CSV },
+        recipientType: 'sms',
         channels: ['SMS'],
       }
     case 'wrong-column':
-      // PROPOSAL, pending BA (Q15): Direct SMS with the email column, Submit pressed.
+      // PROPOSAL, pending BA (Q15): SMS with the email column, Submit pressed.
       return {
         ...filled,
         file: { name: 'audience-direct.csv', text: DIRECT_CSV },
-        recipientType: 'direct',
+        recipientType: 'sms',
         column: 'EMAIL',
         channels: ['SMS'],
         press: 'submit',
@@ -287,7 +294,7 @@ export function formSeed(preset: FormPreset): FormSeed {
       return {
         ...filled,
         file: { name: 'audience-direct.csv', text: DIRECT_CSV },
-        recipientType: 'direct',
+        recipientType: 'sms',
         column: 'MOBILE_NO',
         channels: ['SMS'],
         open: 'confirm',

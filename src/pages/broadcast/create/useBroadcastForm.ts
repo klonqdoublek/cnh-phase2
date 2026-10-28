@@ -9,6 +9,7 @@ import {
   dndNeverSends,
   firstSend,
   idKind,
+  TYPE_CHANNEL,
   readAudience,
   readAudienceFile,
   type AudienceResult,
@@ -38,7 +39,6 @@ export const CHANNEL_FIELDS: Record<Channel, (keyof BroadcastContent)[]> = {
   Email: ['emailSubject', 'emailBody'],
   SMS: ['smsMessage'],
 }
-export const DIRECT_CHANNELS: Channel[] = ['Email', 'SMS']
 /** Each message box's maximum — the Template form's TH fields, which draft 2.2
  *  (Figma 85:19401, 15 Oct 2026) copies into the channel cards. */
 export const CONTENT_MAX: Record<keyof BroadcastContent, number> = {
@@ -158,10 +158,10 @@ export function useBroadcastForm({
   const [failPending, setFailPending] = useState(!!failNext)
 
   const audience = read && read.ok ? read.audience : null
-  const kind = idKind(recipientType, channels)
+  const kind = idKind(recipientType)
   /** The full read on Submit; a preset that opens on its result runs it on arrival. */
   const [arrival] = useState(() =>
-    (seed.open === 'confirm' || seed.open === 'blocked') && audience && column && kind
+    (seed.open === 'confirm' || seed.open === 'blocked') && audience && column
       ? checkAudience(audience, column, kind)
       : null,
   )
@@ -172,7 +172,8 @@ export function useBroadcastForm({
   const fields = useMemo(() => fieldsOf(audience, column), [audience, column])
   const checking = file !== null && read === null
   const dirty = !!(file || name || description || channels.length || Object.values(content).some(Boolean))
-  const offered = recipientType === 'direct' ? DIRECT_CHANNELS : [...CHANNELS]
+  /* CIS ID offers every channel on its own switch; Email and SMS send by that one channel. */
+  const offered = recipientType === 'cis' ? [...CHANNELS] : [TYPE_CHANNEL[recipientType]]
 
   const clear = (...keys: ErrorKey[]) =>
     setErrors((prev) => {
@@ -201,25 +202,17 @@ export function useBroadcastForm({
 
   const setRecipientType = (type: RecipientType) => {
     setType(type)
-    const next = type === 'direct' ? channels.filter((c) => DIRECT_CHANNELS.includes(c)).slice(0, 1) : channels
-    setChannels(next)
+    /* Email and SMS are always on their one channel; back on CIS ID, that channel stays on. */
+    if (type !== 'cis') setChannels([TYPE_CHANNEL[type]])
     setColumn('')
-    /* The channel message names the recipient type ("Select Email or SMS"). */
     clear('channels')
   }
   const toggleChannel = (channel: Channel, on: boolean) => {
     setChannels((prev) => (on ? CHANNELS.filter((c) => c === channel || prev.includes(c)) : prev.filter((c) => c !== channel)))
     if (!on) clear(...CHANNEL_FIELDS[channel])
   }
-  const chooseDirect = (channel: Channel) => {
-    setChannels([channel])
-    if (idKind('direct', [channel]) !== kind) setColumn('')
-    clear(...CHANNEL_FIELDS[channel === 'SMS' ? 'Email' : 'SMS'])
-  }
-  /** A channel card's switch. Direct recipient sends by Email or SMS, never
-   *  both, so switching one on there switches the other off. */
-  const setChannel = (channel: Channel, on: boolean) =>
-    recipientType === 'direct' && on ? chooseDirect(channel) : toggleChannel(channel, on)
+  /** A channel card's switch, on CIS ID only. */
+  const setChannel = toggleChannel
 
   const start = mode === 'now' ? new Date() : combine(startDate, startTime)
   /** Broadcast End belongs to Schedule delivery only (requester, 15 Oct 2026):
@@ -252,9 +245,8 @@ export function useBroadcastForm({
     if (description.length > 250) e.description = BROADCAST_COPY.msgMax(250)
     if (!file) e.file = BROADCAST_COPY.noFile
     else if (read && !read.ok) e.file = read.message
-    if (recipientType === 'direct' && !channels.length) e.channels = BROADCAST_COPY.noDirectChannel
-    else if (!channels.length) e.channels = BROADCAST_COPY.noChannel
-    if (audience?.headers.length && kind && !column) e.column = BROADCAST_COPY.noColumn
+    if (!channels.length) e.channels = BROADCAST_COPY.noChannel
+    if (audience?.headers.length && !column) e.column = BROADCAST_COPY.noColumn
     for (const c of channels)
       for (const k of CHANNEL_FIELDS[c])
         if (!content[k].trim()) e[k] = BROADCAST_COPY.required
@@ -281,13 +273,13 @@ export function useBroadcastForm({
   /** Read the whole file: a file that cannot be used blocks the broadcast,
    *  otherwise its result goes into the confirm dialog. */
   const readFile = () => {
-    if (!audience || !kind) return
+    if (!audience) return
     setCheck(null)
     setReadingFile(true)
     window.setTimeout(() => {
       setReadingFile(false)
-      /* PROPOSAL, pending BA (Q15): a Direct column that holds the other channel's
-       * contacts, such as SMS with the email column, is a wrong column, not a bad file. */
+      /* PROPOSAL, pending BA (Q15): an Email or SMS column that holds the other
+       * channel's contacts, such as SMS with the email column, is a wrong column, not a bad file. */
       const holds = columnHolds(audience, column)
       if (holds && (kind === 'mobile' || kind === 'email') && holds !== kind) {
         setErrors((prev) => ({ ...prev, column: BROADCAST_COPY.wrongColumn(column, holds, kind) }))
@@ -389,7 +381,6 @@ export function useBroadcastForm({
     offered,
     channels,
     toggleChannel,
-    chooseDirect,
     setChannel,
     content,
     fields,

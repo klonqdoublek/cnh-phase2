@@ -15,6 +15,7 @@ import {
   fmtNumber,
   hasDeliveryReport,
   quietUntil,
+  RECIPIENT_TYPE_LABEL,
   waitingOf,
   type Broadcast,
   type BroadcastStatus as Status,
@@ -102,7 +103,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
       rows: [
         ['Description', b.description],
         ['Audience file', b.audienceFile],
-        ['Recipient type', b.recipientType === 'cis' ? 'CIS' : 'Direct recipient'],
+        ['Recipient type', RECIPIENT_TYPE_LABEL[b.recipientType]],
         ['Recipient column', b.recipientColumn],
         [
           'Broadcast start',
