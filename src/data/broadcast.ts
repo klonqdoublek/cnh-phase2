@@ -45,7 +45,6 @@ export const BROADCAST_COPY = {
     return `${column} contains ${plural[holds]}. Select the column that contains ${plural[wanted]}`
   },
   noChannel: 'Please enable at least 1 notification channel',
-  noDirectChannel: 'Select Email or SMS',
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
   pickField: 'Click in a message field first, then choose a field to insert',
   startPast: 'Start must be later than the current time',
@@ -145,11 +144,18 @@ export async function readAudienceFile(file: File): Promise<AudienceResult> {
 
 /* ── recipients ────────────────────────────────────────────────────────── */
 
-export type RecipientType = 'cis' | 'direct'
+/** Three recipient types (BA / Dev sync, 28 Oct 2026): CIS ID, Email or SMS.
+ *  Before, CIS or Direct recipient, where Direct then picked Email or SMS on
+ *  the channel cards; the second pick confused users. */
+export type RecipientType = 'cis' | 'email' | 'sms'
 export type IdKind = 'cis' | 'mobile' | 'email'
 
-export const idKind = (type: RecipientType, channels: Channel[]): IdKind | null =>
-  type === 'cis' ? 'cis' : channels.includes('SMS') ? 'mobile' : channels.includes('Email') ? 'email' : null
+export const RECIPIENT_TYPE_LABEL: Record<RecipientType, string> = { cis: 'CIS ID', email: 'Email', sms: 'SMS' }
+
+/** The one channel an Email or SMS broadcast sends by; CIS ID picks its own. */
+export const TYPE_CHANNEL: Record<Exclude<RecipientType, 'cis'>, Channel> = { email: 'Email', sms: 'SMS' }
+
+export const idKind = (type: RecipientType): IdKind => (type === 'sms' ? 'mobile' : type)
 
 export const ID_LABEL: Record<IdKind, string> = { cis: 'CIS ID', mobile: 'Mobile number', email: 'Email address' }
 const DUPLICATE: Record<IdKind, string> = {
@@ -417,8 +423,8 @@ const directFile = (n: number) =>
   '\n'
 
 export const BROADCASTS: Broadcast[] = [
-  /* Composed (28 Oct 2026) so every status has a Direct recipient example as
-     well as a CIS one: this Draft, BC-0011 Queue and BC-0010 Cancelled. */
+  /* Composed (28 Oct 2026) so every status has an Email or SMS example as
+     well as a CIS ID one: this Draft, BC-0011 Queue and BC-0010 Cancelled. */
   {
     id: 'BC-0012',
     name: 'Card delivery notice',
@@ -427,7 +433,7 @@ export const BROADCASTS: Broadcast[] = [
     audienceFile: 'card-delivery-mobile.csv',
     audienceText: directFile(420),
     recipients: 420,
-    recipientType: 'direct',
+    recipientType: 'sms',
     recipientColumn: 'MOBILE_NO',
     startMode: 'schedule',
     start: '2026-11-04T10:00',
@@ -446,7 +452,7 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['Email'],
     audienceFile: 'fixed-deposit-email.csv',
     recipients: 350,
-    recipientType: 'direct',
+    recipientType: 'email',
     recipientColumn: 'EMAIL',
     startMode: 'schedule',
     start: '2026-10-15T08:00',
@@ -466,7 +472,7 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['SMS'],
     audienceFile: 'mobile-update.csv',
     recipients: 150,
-    recipientType: 'direct',
+    recipientType: 'sms',
     recipientColumn: 'MOBILE_NO',
     startMode: 'schedule',
     start: '2026-10-20T09:00',
@@ -488,7 +494,7 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['Email'],
     audienceFile: 'loan-due-october.csv',
     recipients: 500,
-    recipientType: 'direct',
+    recipientType: 'email',
     recipientColumn: 'EMAIL',
     startMode: 'now',
     start: '2026-10-07T14:00',
@@ -568,7 +574,7 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['SMS'],
     audienceFile: 'savings-mobile.csv',
     recipients: 1000,
-    recipientType: 'direct',
+    recipientType: 'sms',
     recipientColumn: 'MOBILE_NO',
     startMode: 'now',
     start: '2026-10-05T10:00',
@@ -626,7 +632,7 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['Email'],
     audienceFile: 'cc-statement.csv',
     recipients: 1000,
-    recipientType: 'direct',
+    recipientType: 'email',
     recipientColumn: 'EMAIL',
     startMode: 'schedule',
     start: '2026-09-21T07:00',

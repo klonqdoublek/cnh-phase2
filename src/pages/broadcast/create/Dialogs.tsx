@@ -1,7 +1,7 @@
 import { Button } from '@/bbl/button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
-import { BROADCAST_COPY, fmtDateTime, fmtDnd } from '@/data/broadcast'
+import { BROADCAST_COPY, RECIPIENT_TYPE_LABEL, fmtDateTime, fmtDnd } from '@/data/broadcast'
 import { CHANNELS } from '@/data/templates'
 import { NOTE } from './fields'
 import { MiniTable } from './sections'
@@ -66,6 +66,8 @@ export function Dialogs({ f, onBack }: { f: BroadcastForm; onBack: () => void })
             <dd className="m-0 text-[var(--color-text-primary-default)]">{f.name}</dd>
             <dt className="text-[var(--color-text-secondary-default)]">Recipients</dt>
             <dd className="m-0 text-[var(--color-text-primary-default)]">{f.file?.name}</dd>
+            <dt className="text-[var(--color-text-secondary-default)]">Recipient type</dt>
+            <dd className="m-0 text-[var(--color-text-primary-default)]">{RECIPIENT_TYPE_LABEL[f.recipientType]}</dd>
             <dt className="text-[var(--color-text-secondary-default)]">Recipient column</dt>
             <dd className="m-0 text-[var(--color-text-primary-default)]">{f.column}</dd>
             <dt className="text-[var(--color-text-secondary-default)]">Channel</dt>
