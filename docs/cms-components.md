@@ -58,3 +58,4 @@ The date picker came over on `update/broadcast-date-picker` (PR #2). Until that 
 - `Badge` has no neutral type.
 - `GhostButton` has no positive tone.
 - `detail-drawer` sections take rows only: no note under the rows, no action in the head (CNH `DrawerSection`).
+- Import background processing (CNH only, 28 Oct 2026): webds ships no spinner smaller than 48 (the job rows use the `time` icon), no progress ring (direction C's ring is authored from Border tokens) and no floating panel (direction A's panel is Surface/Primary, Radius 3, Border/Primary inset and `--shadow-overlay`). Toast has no info appearance, so B's "Import in progress" uses Positive.
