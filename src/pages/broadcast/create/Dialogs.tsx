@@ -93,7 +93,7 @@ export function Dialogs({ f, onBack }: { f: BroadcastForm; onBack: () => void })
                 widths="80px 200px 1fr"
                 rows={f.check.rows
                   .filter((r) => r.errors.length)
-                  .map((r) => [String(r.line), r.id || '–', r.errors.join(' · ')])}
+                  .map((r) => [String(r.line), r.id || '–', r.errors.join(', ')])}
                 negativeLast
                 maxHeight
               />

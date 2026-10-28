@@ -100,7 +100,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
         [
           'Broadcast start',
           b.startMode === 'now'
-            ? `As soon as possible · ${fmtDateTime(new Date(b.start))}`
+            ? `${fmtDateTime(new Date(b.start))} (as soon as possible)`
             : fmtDateTime(new Date(b.start)),
         ],
         ['Broadcast end', b.end ? fmtDateTime(new Date(b.end)) : ''],

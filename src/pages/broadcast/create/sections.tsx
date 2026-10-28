@@ -357,7 +357,7 @@ function RecipientType({ f }: F) {
         <ModeOption
           on={f.recipientType === 'direct'}
           label="Direct recipient"
-          description="Send to phone / email from file · Email or SMS only"
+          description="Send by Email or SMS to contacts from file"
           className="w-[377px]"
           onSelect={() => f.setRecipientType('direct')}
         />
