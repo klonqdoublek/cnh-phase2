@@ -23,6 +23,7 @@ The **Customer Notification Hub (CNH)** is Bangkok Bank's back-office console fo
 
 | Date | Source | What it settles |
 |---|---|---|
+| 28 Oct 2026 | BA / Dev sync (requester's summary) | One broadcast, one language (Thai or English); recipient type, Do Not Disturb warning and status meanings on their own branches |
 | 21 Oct 2026 | Requirement update | After upload the recipient column starts unselected; the system cannot count rows or columns, so no counts are shown |
 | 15 Oct 2026 | Requester's call | Import takes one file at a time, with the CMS checks (one file, 10 MB); a file imported before asks before it imports over it |
 | 14 Oct 2026 | BA feedback on the prototype, and BA answers to Q1, Q2 and Q5 | List columns, report download, 5-minute steps, several DND periods, Broadcast End, Direct recipient stays, DND rather than Service Window |
@@ -126,7 +127,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
      - Save draft does not read the file.
    - "Create broadcast message" (requester, 21 Oct; draft 2.2 has no title on this card): the file's columns as chips that insert `{{COLUMN}}` into the box the cursor was last in, over one card per channel, stacked in one column like the Template form's channel cards (requester, 27 Oct 2026; was three across).
      - Each card is switched on and off in its own title row. The switches replace the channel checkboxes. A card that is off keeps what was typed and disables it. Under Direct recipient, Email and SMS are picked by a radio in each card's title row instead of a switch (Figma 325:62582): one at a time, the picked card is Card Surface `State=Selected` (Border/Highlight), both cards' fields stay editable as drawn, and only the picked channel is sent.
-     - Fields are the Template form's TH fields: Push title (TH)\* (255) and Push message (TH)\* (2048); Email subject (TH)\* (255) and Email content (TH)\* (2048); SMS message (TH)\* (800).
+     - Fields are the Template form's TH fields without the *(TH)*: Push title\* (255) and Push message\* (2048); Email subject\* (255) and Email content\* (2048); SMS message\* (800). One broadcast is written in one language, Thai or English (for example for foreign customers); there is no language select (BA / Dev sync and requester, 28 Oct 2026; before, every label read *(TH)* and the push and SMS placeholders *in Thai*).
      - No channel on: an Alert above the cards and a red stroke on each card.
 3. **Delivery Date.** Two cards in one step: "Select Delivery Date" ([Figma 89:4665](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=89-4665), 15 Oct 2026), then Do Not Disturb ([Figma 409:75574](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--WIP_Broadcast-Message?node-id=409-75574), 21 Oct 2026):
    - **Send as soon as possible**, or **Schedule delivery** with Start date and time\* (5-minute steps, later than now).
@@ -226,6 +227,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 27 Oct 2026 | Design critique: the uploaded audience file row drops *File validated* (green tick) beside the size. A file that fails the type or size check is never placed, so the label told the user nothing; the full read is still on Submit. Changed transcribed copy. Figma not updated yet. |
 | 27 Oct 2026 | The channel cards under *Create broadcast message* (Push notification, Email, SMS) stack in one column, as CNH's Template form stacks its channel cards; before, three across. Requester's call. Layout only. Figma not updated yet. |
 | 27 Oct 2026 | Direct recipient's Email and SMS cards are picked by a radio in the title row, not a switch, as Figma 325:62582 draws (requester). Ported from `add/dynamic-field-concepts` (e64e5e8) without the dynamic field concepts, into the one-column layout. Layout and control only. |
+| 28 Oct 2026 | BA / Dev sync: a broadcast is not Thai only. One broadcast is written in one language, Thai or English (for example for foreign customers). No language select (requester): the message fields drop *(TH)* (`Push title`, `Push message`, `Email subject`, `Email content`, `SMS message`) and the placeholders drop *in Thai*. Limits unchanged. Changed transcribed copy. Figma not updated yet. |
 
 ## Open items
 
