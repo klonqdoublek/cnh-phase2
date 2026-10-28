@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
+import { LineTab } from '@/bbl/line-tab'
+import { RadioButton } from '@/bbl/radio-button'
 import { SegmentedTab } from '@/bbl/segmented-tab'
-import { useHash } from '@/lib/hash'
+import { go, useHash } from '@/lib/hash'
 import { cn } from '@/lib/cn'
 import {
   FEW_FIELDS,
@@ -21,12 +23,17 @@ import {
   type Placement,
   type Trigger,
 } from './dynamic-field'
+import { KINDS, screenOf, stateOf } from './screen-states'
 
-/* Prototype runner only — the floating Prototype control over Create / Edit
- * broadcast. Channel layout comes first; under it, the design direction —
- * how a field is picked — with its own options in one row, and a line naming
- * the draft that combination is (./dynamic-field.ts). Drag it by its title bar; it remembers
- * where it was left and whether it was collapsed. `?panel=0` keeps it out of
+/* Prototype runner only — the floating Prototype control, in two groups
+ * (requester, 28 Oct 2026). Screen state: on every screen with more than one
+ * state it lists them, so loading, error, empty and dialog states are one
+ * click away (./screen-states.ts); on Create / Edit broadcast the audience
+ * file's size too. Design direction, on Create / Edit broadcast only: channel
+ * layout, then how a field is picked with its own options in one row, and a
+ * line naming the draft that combination is (./dynamic-field.ts). Drag it by
+ * its title bar; it remembers where it was left, whether it was collapsed and
+ * which group was open. `?panel=0` keeps it out of
  * the task flow's frames, as the Task flow button. Not product UI: never hand
  * this file to a dev team. */
 
@@ -87,8 +94,24 @@ function Option({ label, wide, children }: { label: string; wide?: boolean; chil
   )
 }
 
+type Group = 'state' | 'direction'
+const GROUPS: { value: Group; label: string }[] = [
+  { value: 'state', label: 'Screen state' },
+  { value: 'direction', label: 'Design direction' },
+]
+
+/** A group's section: a heading over its controls. */
+function Section({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-[var(--space-2)]">
+      <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">{label}</span>
+      {children}
+    </div>
+  )
+}
+
 const KEY = 'cnh-concept-panel'
-type Saved = { x: number; y: number; open: boolean }
+type Saved = { x: number; y: number; open: boolean; group: Group }
 const load = (): Partial<Saved> => {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? '{}')
@@ -120,6 +143,7 @@ export function ConceptPanel() {
   const box = useRef<HTMLDivElement>(null)
   const saved = useRef(load()).current
   const [open, setOpen] = useState(saved.open ?? true)
+  const [group, setGroup] = useState<Group>(saved.group === 'direction' ? 'direction' : 'state')
   /* Default: bottom right, above the page's 76 footer. */
   const [pos, setPos] = useState<{ x: number; y: number } | null>(
     saved.x != null && saved.y != null ? { x: saved.x, y: saved.y } : null,
@@ -138,11 +162,16 @@ export function ConceptPanel() {
   }, [place, open, hash])
 
   useEffect(() => {
-    if (pos) save({ ...pos, open })
-  }, [pos, open])
+    if (pos) save({ ...pos, open, group })
+  }, [pos, open, group])
 
   if (new URLSearchParams(location.search).get('panel') === '0') return null
-  if (!/^#\/broadcast\/(create|edit)/.test(hash)) return null
+  const screen = screenOf(hash)
+  const concepts = /^#\/broadcast\/(create|edit)/.test(hash)
+  if (!screen && !concepts) return null
+  const state = screen && stateOf(screen, hash)
+  /* Off Create / Edit broadcast there is no direction to pick: Screen state alone, no tabs. */
+  const shown: Group = concepts ? group : 'state'
 
   const idea = concept.picker === 'shortcut' ? undefined : ideaOf(concept)
   const name = nameOf(concept)
@@ -184,11 +213,15 @@ export function ConceptPanel() {
         )}
       >
         <span className="type-label-l-emphasized text-[var(--color-text-primary-default)]">Prototype control</span>
-        {!open && (
+        {!open && (state || concepts) && (
           <span className="type-label-m text-[var(--color-text-secondary-default)]">
-            · {LAYOUTS.find((l) => l.value === concept.layout)?.label} ·{' '}
-            {name ?? 'Not drawn'} ·{' '}
-            {concept.columns === 'few' ? 'Few' : 'Many'} fields
+            {state && <>· {state.label} </>}
+            {concepts && (
+              <>
+                · {LAYOUTS.find((l) => l.value === concept.layout)?.label} · {name ?? 'Not drawn'} ·{' '}
+                {concept.columns === 'few' ? 'Few' : 'Many'} fields
+              </>
+            )}
           </span>
         )}
         <span className="ml-auto flex">
@@ -201,114 +234,171 @@ export function ConceptPanel() {
       </div>
 
       {open && (
-        <div className="flex flex-col gap-[var(--space-4)] p-[var(--space-4)]">
-          <div className="flex flex-col gap-[var(--space-2)]">
-            <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">1. Channel layout</span>
-            <SegmentedTab
-              items={LAYOUTS.map((l) => l.label)}
-              selectedIndex={LAYOUTS.findIndex((l) => l.value === concept.layout)}
-              onSelect={(i) => setConcept({ layout: LAYOUTS[i].value })}
-            />
-          </div>
-
-          <div className="flex flex-col gap-[var(--space-2)]">
-            <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">2. Design direction</span>
-            <SegmentedTab
-              items={DIRECTIONS.map((d) => d.label)}
-              selectedIndex={DIRECTIONS.findIndex((d) => d.value === concept.picker)}
-              onSelect={(i) => setConcept({ picker: DIRECTIONS[i].value })}
-            />
-            {/* Placement wants the wider column; the shortcut's two options split it evenly. */}
-            <div
-              className={cn(
-                'grid gap-[var(--space-3)]',
-                concept.picker === 'shortcut' ? 'grid-cols-2' : 'grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
-              )}
-            >
-              {concept.picker === 'shortcut' ? (
-                <Option label="Type to open">
-                  <SegmentedTab
-                    items={TRIGGERS.map((t) => t.label)}
-                    selectedIndex={TRIGGERS.findIndex((t) => t.value === concept.trigger)}
-                    onSelect={(i) => setConcept({ trigger: TRIGGERS[i].value })}
-                  />
-                </Option>
-              ) : (
-                <Option label="Placement">
-                  <SegmentedTab
-                    items={PLACEMENTS.map((p) => p.label)}
-                    selectedIndex={PLACEMENTS.findIndex((p) => p.value === concept.placement)}
-                    onSelect={(i) => setConcept({ placement: PLACEMENTS[i].value })}
-                  />
-                </Option>
-              )}
-              {concept.picker === 'shortcut' && (
-                <Option label="Field in text">
-                  <SegmentedTab
-                    items={LOOKS.map((l) => l.label)}
-                    selectedIndex={LOOKS.findIndex((l) => l.value === concept.look)}
-                    onSelect={(i) => setConcept({ look: LOOKS[i].value })}
-                  />
-                </Option>
-              )}
-              {concept.picker === 'shortcut' && concept.look === 'tint' && (
-                <Option label="Backspace on a field" wide>
-                  <SegmentedTab
-                    items={ERASES.map((x) => x.label)}
-                    selectedIndex={ERASES.findIndex((x) => x.value === concept.erase)}
-                    onSelect={(i) => setConcept({ erase: ERASES[i].value })}
-                  />
-                </Option>
-              )}
-              {(concept.picker === 'button' || concept.picker === 'dialog') && (
-                <Option label="Button icon">
-                  <SegmentedTab
-                    items={MARKS.map((m) => m.label)}
-                    selectedIndex={MARKS.findIndex((m) => m.value === concept.mark)}
-                    onSelect={(i) => setConcept({ mark: MARKS[i].value })}
-                  />
-                </Option>
-              )}
+        <>
+          {concepts && (
+            <div role="tablist" aria-label="Prototype control group" className="flex px-[var(--space-4)] pt-[var(--space-3)]">
+              {GROUPS.map((g) => (
+                <LineTab
+                  key={g.value}
+                  role="tab"
+                  aria-selected={shown === g.value}
+                  selected={shown === g.value}
+                  onClick={() => setGroup(g.value)}
+                  className="flex-1"
+                >
+                  {g.label}
+                </LineTab>
+              ))}
             </div>
-            <p className="type-body-s text-[var(--color-text-secondary-default)]">
-              <span
-                className={cn(
-                  'type-label-m-emphasized',
-                  name ? 'text-[var(--color-text-primary-default)]' : 'text-[var(--color-text-secondary-default)]',
-                )}
-              >
-                {name ?? 'Not drawn'}
-              </span>
-              {' · '}
-              {variant?.note}
-              {idea && (
-                <>
-                  {' · '}
-                  <a
-                    href={`${FIGMA_FILE}?node-id=${idea.node}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[var(--color-text-link-default)] hover:underline"
-                  >
-                    Figma
-                  </a>
-                </>
-              )}
-            </p>
-          </div>
+          )}
 
-          <div className="flex flex-col gap-[var(--space-2)]">
-            <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">3. Audience file</span>
-            <SegmentedTab
-              items={COLUMNS.map((c) => c.label)}
-              selectedIndex={COLUMNS.findIndex((c) => c.value === concept.columns)}
-              onSelect={(i) => setConcept({ columns: COLUMNS[i].value })}
-            />
-            <span className="type-body-s text-[var(--color-text-secondary-default)]">
-              Swaps the CIS preset's file, so the fields follow its columns. Resets what was typed.
-            </span>
+          <div className="flex max-h-[calc(100vh-160px)] flex-col gap-[var(--space-4)] overflow-y-auto p-[var(--space-4)]">
+            {shown === 'state' && (
+              <>
+                {concepts && (
+                  <Section label="Audience file">
+                    <SegmentedTab
+                      items={COLUMNS.map((c) => c.label)}
+                      selectedIndex={COLUMNS.findIndex((c) => c.value === concept.columns)}
+                      onSelect={(i) => setConcept({ columns: COLUMNS[i].value })}
+                    />
+                    <span className="type-body-s text-[var(--color-text-secondary-default)]">
+                      Swaps the CIS preset's file, so the fields follow its columns. Resets what was typed.
+                    </span>
+                  </Section>
+                )}
+
+                {screen ? (
+                  <Section label={screen.name}>
+                    <div role="radiogroup" aria-label="Screen state" className="flex flex-col">
+                      {KINDS.map((kind) => {
+                        const states = screen.states.filter((st) => st.kind === kind)
+                        if (!states.length) return null
+                        return (
+                          <div key={kind} className="flex flex-col">
+                            <span className="type-label-s px-[var(--space-2)] pt-[var(--space-2)] text-[var(--color-text-secondary-default)]">
+                              {kind}
+                            </span>
+                            {states.map((st) => (
+                              <label
+                                key={st.route}
+                                className="flex cursor-pointer items-center gap-[var(--space-2)] rounded-[var(--radius-2)] px-[var(--space-2)] py-[var(--space-1)] hover:bg-[var(--color-surface-secondary-default)]"
+                              >
+                                <RadioButton selected={st.route === state?.route} aria-label={st.label} onClick={() => go(st.route.slice(1))} />
+                                <span className="type-body-s text-[var(--color-text-primary-default)]">{st.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Section>
+                ) : (
+                  <span className="type-body-s text-[var(--color-text-secondary-default)]">This screen has one state.</span>
+                )}
+              </>
+            )}
+
+            {shown === 'direction' && (
+              <>
+                <div className="flex flex-col gap-[var(--space-2)]">
+                  <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">1. Channel layout</span>
+                  <SegmentedTab
+                    items={LAYOUTS.map((l) => l.label)}
+                    selectedIndex={LAYOUTS.findIndex((l) => l.value === concept.layout)}
+                    onSelect={(i) => setConcept({ layout: LAYOUTS[i].value })}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-[var(--space-2)]">
+                  <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">2. Dynamic field</span>
+                  <SegmentedTab
+                    items={DIRECTIONS.map((d) => d.label)}
+                    selectedIndex={DIRECTIONS.findIndex((d) => d.value === concept.picker)}
+                    onSelect={(i) => setConcept({ picker: DIRECTIONS[i].value })}
+                  />
+                  {/* Placement wants the wider column; the shortcut's two options split it evenly. */}
+                  <div
+                    className={cn(
+                      'grid gap-[var(--space-3)]',
+                      concept.picker === 'shortcut' ? 'grid-cols-2' : 'grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
+                    )}
+                  >
+                    {concept.picker === 'shortcut' ? (
+                      <Option label="Type to open">
+                        <SegmentedTab
+                          items={TRIGGERS.map((t) => t.label)}
+                          selectedIndex={TRIGGERS.findIndex((t) => t.value === concept.trigger)}
+                          onSelect={(i) => setConcept({ trigger: TRIGGERS[i].value })}
+                        />
+                      </Option>
+                    ) : (
+                      <Option label="Placement">
+                        <SegmentedTab
+                          items={PLACEMENTS.map((p) => p.label)}
+                          selectedIndex={PLACEMENTS.findIndex((p) => p.value === concept.placement)}
+                          onSelect={(i) => setConcept({ placement: PLACEMENTS[i].value })}
+                        />
+                      </Option>
+                    )}
+                    {concept.picker === 'shortcut' && (
+                      <Option label="Field in text">
+                        <SegmentedTab
+                          items={LOOKS.map((l) => l.label)}
+                          selectedIndex={LOOKS.findIndex((l) => l.value === concept.look)}
+                          onSelect={(i) => setConcept({ look: LOOKS[i].value })}
+                        />
+                      </Option>
+                    )}
+                    {concept.picker === 'shortcut' && concept.look === 'tint' && (
+                      <Option label="Backspace on a field" wide>
+                        <SegmentedTab
+                          items={ERASES.map((x) => x.label)}
+                          selectedIndex={ERASES.findIndex((x) => x.value === concept.erase)}
+                          onSelect={(i) => setConcept({ erase: ERASES[i].value })}
+                        />
+                      </Option>
+                    )}
+                    {(concept.picker === 'button' || concept.picker === 'dialog') && (
+                      <Option label="Button icon">
+                        <SegmentedTab
+                          items={MARKS.map((m) => m.label)}
+                          selectedIndex={MARKS.findIndex((m) => m.value === concept.mark)}
+                          onSelect={(i) => setConcept({ mark: MARKS[i].value })}
+                        />
+                      </Option>
+                    )}
+                  </div>
+                  <p className="type-body-s text-[var(--color-text-secondary-default)]">
+                    <span
+                      className={cn(
+                        'type-label-m-emphasized',
+                        name ? 'text-[var(--color-text-primary-default)]' : 'text-[var(--color-text-secondary-default)]',
+                      )}
+                    >
+                      {name ?? 'Not drawn'}
+                    </span>
+                    {' · '}
+                    {variant?.note}
+                    {idea && (
+                      <>
+                        {' · '}
+                        <a
+                          href={`${FIGMA_FILE}?node-id=${idea.node}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[var(--color-text-link-default)] hover:underline"
+                        >
+                          Figma
+                        </a>
+                      </>
+                    )}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
-        </div>
+        </>
       )}
     </div>
   )

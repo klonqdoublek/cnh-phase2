@@ -73,7 +73,9 @@ export const VARIANTS = [
 
 export const FIGMA_FILE = 'https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--WIP_Broadcast-Message'
 
-const DEFAULT: Concept = { ...IDEAS[0].concept, columns: 'many', mark: 'plus', trigger: 'slash', look: 'tint', erase: 'whole' }
+/* Stacked (CNH) is the chosen channel layout (requester, 28 Oct 2026), so a
+   link without `?df=` opens on Idea 1.2, the draft drawn in it. */
+const DEFAULT: Concept = { ...IDEAS[1].concept, columns: 'many', mark: 'plus', trigger: 'slash', look: 'tint', erase: 'whole' }
 
 const keyOf = (c: Concept) => `${c.picker}-${c.placement}-${c.layout}-${c.columns}-${c.mark}-${c.trigger}-${c.look}-${c.erase}`
 

@@ -29,7 +29,7 @@ Hash routes, one per state, the same as the original build — the flow archive 
 - Broadcast: `#/broadcast`, `#/broadcast/{empty,submitted,draft-saved,cancelled,download-success,download-failed}`, `#/broadcast/download[/fail]`, `#/broadcast/create[/<preset>]`, `#/broadcast/view/<id>[/cancel|/cancel-fail|/download[/fail]]`, `#/broadcast/edit/<id>`
 - `#/login`
 
-`?panel=0` hides the Task flow button (the task flow renders screens in iframes with it). `?flow=1` opens the task flow on load.
+The floating Prototype control has two groups. **Screen state** lists the states of the screen on show (`src/prototype/screen-states.ts`) and opens each one; add a state's route there when you add one here. **Design direction** switches the dynamic-field concepts on Create / Edit broadcast. `?panel=0` hides the Task flow button and the Prototype control (the task flow renders screens in iframes with it). `?flow=1` opens the task flow on load.
 
 ## Design system — webds
 
