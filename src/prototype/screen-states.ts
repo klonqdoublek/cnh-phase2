@@ -45,7 +45,6 @@ const IMPORT: Screen = {
     s('#/list/import/no-file', 'Error', 'Import pressed with no file'),
     s('#/list/import/too-many', 'Error', 'More than one file dragged over'),
     s('#/list/import/too-large', 'Error', 'File over 10 MB'),
-    s('#/list/import/invalid-structure', 'Error', 'Invalid template structure'),
     s('#/list/import/failure', 'Error', 'Import failure'),
     s('#/list/import/duplicate', 'Dialog', 'Replace imported templates?'),
     s('#/list/import/success', 'Toast', 'Import success'),
@@ -61,6 +60,15 @@ const CREATE_NOTIFICATION: Screen = {
   ],
 }
 
+const editBroadcast = (id: string): Screen => ({
+  name: 'Edit broadcast',
+  states: [
+    s(`#/broadcast/edit/${id}`, 'Default', 'The draft'),
+    s(`#/broadcast/edit/${id}/loading`, 'Loading', 'Loading'),
+    s(`#/broadcast/edit/${id}/fail`, 'Error', 'Submit fails on the next press'),
+  ],
+})
+
 const editNotification = (id: string): Screen => ({
   name: 'Edit notification',
   states: [s(`#/edit/${id}`, 'Default', 'The record'), s(`#/edit/${id}/fail`, 'Error', 'Save fails on the next press')],
@@ -70,7 +78,9 @@ const BROADCAST_LIST: Screen = {
   name: 'Broadcast list',
   states: [
     s('#/broadcast', 'Default', 'Broadcast list'),
+    s('#/broadcast/loading', 'Loading', 'Loading'),
     s('#/broadcast/empty', 'Empty', 'No broadcasts'),
+    s('#/broadcast/error', 'Error', 'Unable to get information'),
     s('#/broadcast/download/fail', 'Error', 'Download fails on the next press'),
     s('#/broadcast/download', 'Dialog', 'Download the delivery report?'),
     s('#/broadcast/submitted', 'Toast', 'Broadcast submitted'),
@@ -114,9 +124,11 @@ const CREATE_BROADCAST: Screen = {
     s('#/broadcast/create/dnd-rules', 'Data', 'Start on a weekend, BA DND rules'),
     s('#/broadcast/create/end', 'Data', 'Broadcast End set'),
     s('#/broadcast/create/large-file', 'Data', 'Large file, 100 × 55'),
+    s('#/broadcast/create/loading', 'Loading', 'Loading'),
     s('#/broadcast/create/checking', 'Loading', 'Checking file…'),
     s('#/broadcast/create/submitting', 'Loading', 'Submitting'),
     s('#/broadcast/create/file-error', 'Error', 'File cannot be read'),
+    s('#/broadcast/create/wrong-column', 'Error', 'Wrong recipient column (proposal)'),
     s('#/broadcast/create/errors', 'Error', 'Every section marked'),
     s('#/broadcast/create/no-channel', 'Error', 'Step 1 filled, Submit pressed'),
     s('#/broadcast/create/channel-typing', 'Error', 'A channel on and typed in'),
@@ -139,8 +151,10 @@ export function screenOf(hash: string): Screen | null {
   if (/^#\/create(\/[a-z]+)?$/.test(hash)) return CREATE_NOTIFICATION
   const edit = hash.match(/^#\/edit\/([^/]+)/)
   if (edit) return editNotification(edit[1])
-  if (/^#\/broadcast(\/(empty|submitted|draft-saved|cancelled|download(\/fail)?|download-success|download-failed))?$/.test(hash))
+  if (/^#\/broadcast(\/(loading|error|empty|submitted|draft-saved|cancelled|download(\/fail)?|download-success|download-failed))?$/.test(hash))
     return BROADCAST_LIST
+  const editB = hash.match(/^#\/broadcast\/edit\/([A-Z]+-\d+)/)
+  if (editB) return editBroadcast(editB[1])
   const view = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)/)
   if (view) {
     const detail = broadcastDetail(view[1])

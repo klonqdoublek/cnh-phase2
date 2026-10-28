@@ -5,10 +5,8 @@
 
 import {
   CHANNELS,
-  CHANNEL_CODE,
   CODE_OF,
   EMPTY_DETAIL,
-  SERVICE_CODE_LOV,
   toExport,
   toJsonl,
   type Channel,
@@ -21,7 +19,6 @@ export const IMPORT_PRESETS = [
   'no-file',
   'too-many',
   'too-large',
-  'invalid-structure',
   'selected',
   'duplicate',
   'uploading',
@@ -38,13 +35,10 @@ export const IMPORT_COPY = {
      a time", is gone: the CMS drop zone carries one hint line (12 Oct 2026). */
   dropTitle: 'Drag and drop a .jsonl file here · Max file size: 10 MB',
   browse: 'Browse file',
-  structure: 'Invalid template structure',
   /* CMS's slot hint (ASSET_COPY.sizeHint). Since 22 Oct 2026 (requester) it reads in the
      file's slot, CMS's upload-failed slot without Try again, when Import finds the file over
      the limit. 20–22 Oct it was the empty zone's hint and the file was not taken. */
   size: 'Max file size: 10 MB',
-  /* CMS's two-files message in the drop zone (ASSET_COPY.tooMany). */
-  oneFile: '1 File Only',
   noFile: 'Select a .jsonl file to import',
   hasErrors: 'Remove the file and choose another to continue',
   uploading: 'Importing templates…',
@@ -71,42 +65,27 @@ export const IMPORT_FAIL_SENTINEL = 'error'
 export const MAX_IMPORT_BYTES = 10 * 1024 * 1024
 export const UPLOAD_MS = 1200
 
-const isText = (v: unknown): v is string => typeof v === 'string' && v.trim() !== ''
 const text = (v: unknown) => (typeof v === 'string' ? v : '')
 
-type RawTemplate = Record<string, unknown>
+/* No field is checked before the upload (requester, 27 Oct 2026; was "Invalid template
+   structure: Missing …" under the slot), so a missing field reads as empty. */
+const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 
-export function structureProblem(record: unknown, line: number, many: boolean): string | null {
-  const at = many ? ` (line ${line})` : ''
-  if (!record || typeof record !== 'object' || Array.isArray(record)) return `Not a template object${at}`
-  const r = record as RawTemplate
-  if (r.recordType !== 'TEMPLATE') return `Not a template record${at}`
-  if (!isText(r.templateName)) return `Missing templateName${at}`
-  if (!isText(r.description)) return `Missing description${at}`
-  const codes = r.serviceCodes
-  if (!Array.isArray(codes) || codes.length === 0) return `Missing serviceCodes${at}`
-  if (!codes.every((c) => SERVICE_CODE_LOV.includes(c))) return `Unknown service code${at}`
-  const channels = r.channels
-  if (!Array.isArray(channels) || channels.length === 0) return `Missing channels${at}`
-  if (!channels.every((c) => c in CHANNEL_CODE)) return `Unknown channel${at}`
-  if (!Array.isArray(r.templateLanguages)) return `Missing templateLanguages${at}`
-  return null
-}
-
-export function fromExport(r: TemplateExport): Template {
+export function fromExport(r: Partial<TemplateExport>): Template {
   const lang = (l: string) =>
-    (r.templateLanguages.find((x) => x?.language === l) ?? {}) as Record<string, unknown>
+    (list(r.templateLanguages).find((x) => (x as { language?: string } | null)?.language === l) ?? {}) as Record<string, unknown>
   const en = lang('en')
   const th = lang('th')
   const either = (k: string) => text(en[k]) || text(th[k])
-  const serviceCode = r.serviceCodes[0]
+  const serviceCode = text(list(r.serviceCodes)[0])
+  const channels = list(r.channels)
   return {
     id: '',
-    name: r.templateName.trim(),
-    description: r.description.trim(),
+    name: text(r.templateName).trim(),
+    description: text(r.description).trim(),
     productName: text(r.productName).trim(),
     serviceCode,
-    channels: CHANNELS.filter((c) => r.channels.includes(CODE_OF[c])),
+    channels: CHANNELS.filter((c) => channels.includes(CODE_OF[c])),
     status: 'Draft',
     detail: {
       templateRefCode: '',
@@ -135,9 +114,10 @@ export function fromExport(r: TemplateExport): Template {
   }
 }
 
+/** `unreadable`: no line of JSON to import; the upload fails ("Unable to import templates"). */
 export type FileCheck =
   | { ok: true; templates: Template[] }
-  | { ok: false; problem: 'size' | 'structure'; message: string }
+  | { ok: false; problem: 'size' | 'unreadable'; message: string }
 
 /** The upload control takes .jsonl only (requester, 22 Oct 2026): another type is never picked. */
 export const isJsonl = (name: string) => name.toLowerCase().endsWith('.jsonl')
@@ -145,23 +125,20 @@ export const isJsonl = (name: string) => name.toLowerCase().endsWith('.jsonl')
 export function parseTemplates(body: string): FileCheck {
   const lines = body
     .split(/\r?\n/)
-    .map((t, i) => ({ t: t.trim(), n: i + 1 }))
-    .filter((l) => l.t)
-  if (lines.length === 0)
-    return { ok: false, problem: 'structure', message: `${IMPORT_COPY.structure}: the file has no templates` }
-  const many = lines.length > 1
-  const records: unknown[] = []
-  for (const { t, n } of lines)
+    .map((t) => t.trim())
+    .filter(Boolean)
+  const unreadable = { ok: false, problem: 'unreadable', message: IMPORT_COPY.failTitle } as const
+  if (lines.length === 0) return unreadable
+  const records: Partial<TemplateExport>[] = []
+  for (const t of lines)
     try {
-      records.push(JSON.parse(t))
+      const record: unknown = JSON.parse(t)
+      if (!record || typeof record !== 'object' || Array.isArray(record)) return unreadable
+      records.push(record as Partial<TemplateExport>)
     } catch {
-      return { ok: false, problem: 'structure', message: `${IMPORT_COPY.structure}: line ${n} is not valid JSON` }
+      return unreadable
     }
-  for (let i = 0; i < records.length; i++) {
-    const problem = structureProblem(records[i], lines[i].n, many)
-    if (problem) return { ok: false, problem: 'structure', message: `${IMPORT_COPY.structure}: ${problem}` }
-  }
-  return { ok: true, templates: (records as TemplateExport[]).map(fromExport) }
+  return { ok: true, templates: records.map(fromExport) }
 }
 
 /** Checked on Import, before the upload (requester, 22 Oct 2026; was: when the file was picked). */
@@ -204,17 +181,12 @@ const VALID_FILES: DemoFile[] = [
   },
 ]
 
-const BAD_STRUCTURE: DemoFile = {
-  name: 'broken-template.jsonl',
-  text: toJsonl([{ ...demo('No channels', 'x', 'AIA', [], 'NANOTI') }]),
-}
-
 /** One file per import (15 Oct 2026); `duplicate` picks a file the history already holds. */
 export function presetFile(preset: ImportPreset): DemoFile | null {
+  /* `too-many` draws the refused drag, which looks the same as the empty zone (27 Oct 2026). */
   if (preset === 'initial' || preset === 'no-file' || preset === 'too-many') return null
   /* A stand-in size: the route cannot carry a file over 10 MB. */
   if (preset === 'too-large') return { ...VALID_FILES[0], size: 14.2 * 1024 * 1024 }
-  if (preset === 'invalid-structure') return BAD_STRUCTURE
   if (preset === 'duplicate') return VALID_FILES[2]
   return VALID_FILES[0]
 }

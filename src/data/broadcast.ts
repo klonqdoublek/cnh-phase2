@@ -16,6 +16,8 @@ export const BROADCAST_COPY = {
      line, after the Notification management list. */
   search: 'Search by broadcast name or description',
   noResults: 'No results found',
+  /* The list's load fail: Notification management's copy, reused (20 Oct 2026). */
+  loadFail: 'Unable to get information',
   dropTitle: 'Upload audience file',
   dropHint: 'Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000 recipients',
   browse: 'Choose file',
