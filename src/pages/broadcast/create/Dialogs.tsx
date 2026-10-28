@@ -4,13 +4,15 @@ import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { BROADCAST_COPY, fmtDateTime, fmtDnd } from '@/data/broadcast'
 import { CHANNELS } from '@/data/templates'
 import { NOTE } from './fields'
-import { MiniTable } from './sections'
+import { MiniTable, NeverSendsAlert } from './sections'
 import type { BroadcastForm } from './useBroadcastForm'
 
 /* The form's dialogs — webds `confirm-dialog`, the `sectioned` shell the CNH
  * file draws (600 wide, Cancel as the outline on the left, the answer filled on
  * the right). */
-export function Dialogs({ f, onBack }: { f: BroadcastForm; onBack: () => void }) {
+/** `dndWarn`: the confirm dialog warns about Do Not Disturb that never ends
+ *  (the Prototype control's On submit option, 28 Oct 2026). */
+export function Dialogs({ f, onBack, dndWarn }: { f: BroadcastForm; onBack: () => void; dndWarn: boolean }) {
   return (
     <>
       {(f.creating || f.readingFile) && (
@@ -61,6 +63,11 @@ export function Dialogs({ f, onBack }: { f: BroadcastForm; onBack: () => void })
           onDismiss={() => f.setConfirmOpen(false)}
           className="z-50"
         >
+          {dndWarn && f.neverSends && (
+            <div className="mb-[var(--space-4)]">
+              <NeverSendsAlert />
+            </div>
+          )}
           <dl className="m-0 grid grid-cols-[140px_1fr] gap-x-[var(--space-4)] gap-y-[var(--space-2)] type-body-m">
             <dt className="text-[var(--color-text-secondary-default)]">Broadcast</dt>
             <dd className="m-0 text-[var(--color-text-primary-default)]">{f.name}</dd>

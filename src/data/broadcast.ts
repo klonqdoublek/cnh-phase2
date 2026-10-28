@@ -52,6 +52,8 @@ export const BROADCAST_COPY = {
   endBeforeStart: 'End must be later than the start',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
+  /** Composed (BA / Dev sync, 28 Oct 2026): a warning, not an error; Submit still works. */
+  dndNeverSends: 'Do Not Disturb covers every day, all day. No message will be sent.',
   submitTitle: 'Submit this broadcast?',
   submitFailTitle: 'Unable to submit the broadcast',
   createdTitle: 'Broadcast submitted',
@@ -301,6 +303,16 @@ export function quietUntil(t: Date, dnd: Dnd): Date | null {
     if (until && (!end || until > end)) end = until
   }
   return end
+}
+
+/** Whether the quiet periods leave no moment in the week to send, however
+ *  they add up: Mon – Sun All day, or Mon – Fri All day and Sat, Sun All day
+ *  (BA / Dev sync, 28 Oct 2026). Every 5-minute step of one week is tried. */
+export function dndNeverSends(dnd: Dnd): boolean {
+  if (!dnd.enabled || !dnd.rules.length) return false
+  const monday = new Date(2026, 9, 26)
+  for (let m = 0; m < 7 * 24 * 60; m += 5) if (!quietUntil(new Date(monday.getTime() + m * 60_000), dnd)) return false
+  return true
 }
 
 /** The first moment a broadcast starting at `t` can actually send — rules

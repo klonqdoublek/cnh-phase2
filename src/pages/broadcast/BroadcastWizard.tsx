@@ -10,6 +10,7 @@ import { Dialogs } from './create/Dialogs'
 import { AudienceFile, BasicInfo, Delivery, DndCard, MessageContent, Section, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
 import { seedWithColumns, useConcept } from '@/prototype/dynamic-field'
+import { useDndWarning } from '@/prototype/dnd-warning'
 
 export type SaveKind = 'draft' | 'submit'
 
@@ -48,6 +49,8 @@ function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: Broadc
   /* Which dynamic-field draft the message area draws — the prototype's
      Concept panel switches it (src/prototype/ConceptPanel.tsx). */
   const concept = useConcept()
+  /* Where Do Not Disturb that never ends is warned about (28 Oct 2026). */
+  const dndWarning = useDndWarning()
 
   return (
     <div className="relative h-full bg-[var(--color-surface-secondary-default)]">
@@ -95,13 +98,13 @@ function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: Broadc
             <Section title="Step 3: Delivery Date">
               <div className="flex flex-col gap-[var(--space-8)]">
                 <Delivery f={f} />
-                <DndCard f={f} />
+                <DndCard f={f} warn={dndWarning === 'inline'} />
               </div>
             </Section>
           </>
         )}
       </ConsolePage>
-      <Dialogs f={f} onBack={onBack} />
+      <Dialogs f={f} onBack={onBack} dndWarn={dndWarning === 'submit'} />
     </div>
   )
 }

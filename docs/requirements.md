@@ -23,6 +23,7 @@ The **Customer Notification Hub (CNH)** is Bangkok Bank's back-office console fo
 
 | Date | Source | What it settles |
 |---|---|---|
+| 28 Oct 2026 | BA / Dev sync (requester's summary) | Do Not Disturb that covers every day, all day warns the user (two options to compare, dev to confirm); recipient type, language and status meanings on their own branches |
 | 21 Oct 2026 | Requirement update | After upload the recipient column starts unselected; the system cannot count rows or columns, so no counts are shown |
 | 15 Oct 2026 | Requester's call | Import takes one file at a time, with the CMS checks (one file, 10 MB); a file imported before asks before it imports over it |
 | 14 Oct 2026 | BA feedback on the prototype, and BA answers to Q1, Q2 and Q5 | List columns, report download, 5-minute steps, several DND periods, Broadcast End, Direct recipient stays, DND rather than Service Window |
@@ -132,6 +133,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
    - **Send as soon as possible**, or **Schedule delivery** with Start date and time\* (5-minute steps, later than now).
    - Optional **End date and time**, later than the start, with Clear, **for Schedule delivery only**. Send as soon as possible has no end (requester, 15 Oct, following the draft; the BA's Q2 answer on 14 Oct did not say which modes). Start sits on the left and End on the right (requester, 20 Oct; draft 2.2 draws End first).
    - **Do Not Disturb (DND)** card: the switch before the title, "Prevent sending messages during quiet hours." under it (no "Select DND" heading). The switch is off on a new broadcast, and the periods below it are disabled until it is on. Then any number of quiet periods, each on its own bordered card: days, hours (5-minute steps) or **All day**, and a trash when there are two or more. **Add more period +** (Outline button) under the cards. The one time zone, Asia/Bangkok (GMT+7), follows the time label: **Quiet period from (GMT+7)** (design critique, 27 Oct 2026; was a *Time zone* row under the periods). Whether the user can pick a time zone is open (Q19).
+   - **Every day, all day** (BA / Dev sync, 28 Oct 2026): when the quiet periods leave no time to send, however they add up (Mon – Sun All day, or Mon – Fri All day and Sat, Sun All day), the user is warned: *Do Not Disturb covers every day, all day. No message will be sent.* (webds Alert, Caution, Title only; composed). It is a warning, not an error: Submit still goes ahead (requester). Two options to compare, switched in the Prototype control (*3. DND every day, all day*, `?dndw=`): **On the DND card**, under the periods as soon as they add up (`inline`, the default; the sync thinks dev can do it), or **After Submit**, at the top of the confirm dialog (`submit`). Dev still to confirm which. Either way the Delivery card's outlook no longer promises a start, and a Queue broadcast's drawer note reads the same warning. Presets `#/broadcast/create/dnd-all-week` and `dnd-all-week-confirm`.
 
 ### Delivery rules
 
@@ -226,6 +228,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 27 Oct 2026 | Design critique: the uploaded audience file row drops *File validated* (green tick) beside the size. A file that fails the type or size check is never placed, so the label told the user nothing; the full read is still on Submit. Changed transcribed copy. Figma not updated yet. |
 | 27 Oct 2026 | The channel cards under *Create broadcast message* (Push notification, Email, SMS) stack in one column, as CNH's Template form stacks its channel cards; before, three across. Requester's call. Layout only. Figma not updated yet. |
 | 27 Oct 2026 | Direct recipient's Email and SMS cards are picked by a radio in the title row, not a switch, as Figma 325:62582 draws (requester). Ported from `add/dynamic-field-concepts` (e64e5e8) without the dynamic field concepts, into the one-column layout. Layout and control only. |
+| 28 Oct 2026 | BA / Dev sync: Do Not Disturb that covers every day, all day warns the user; two options to try, inline on the rule at once or only after Submit, dev to confirm (the sync thinks inline works). Requester: a warning only, Submit still goes ahead; both options built, switched in the Prototype control. The check adds the periods up. Copy composed. Figma not updated yet. |
 
 ## Open items
 
