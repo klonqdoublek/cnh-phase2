@@ -22,6 +22,7 @@ The date picker came over on `update/broadcast-date-picker` (PR #2). Until that 
 | `components/upload/UploadZone.tsx` | `components/asset/EmptyAssetSlot.tsx` | Same markup. Made generic: `buttonLabel`, `hint`, `accept`, `multiple`, `error`, `onFiles`. |
 | `components/upload/UploadedFile.tsx` | `components/asset/UploadedAssetSlot.tsx` | Same markup. Generic `name`, `meta`, `status`, `error`, `onPreview`, `onRemove`. Preview and trash show only when their handler is passed. `errorPlacement="slot"` + `onRetry` draws CMS's `State=Error (upload failed)` (Figma `136:92553`, not in CMS code): message in the meta row, Ghost **Try again**. |
 | `components/upload/FilePreviewDialog.tsx` | `AssetPreviewModal` + `PreviewPane` + `JsonPreview` + `download-asset.ts` | Reads the real picked file. No Reference ID line. Uses `ConfirmDialog layer="fixed"`. Actions are OK / Import (`confirmLabel`, `onConfirm`), not CMS's Download / OK (design critique, 20 Oct 2026). |
+| `components/patterns/picker-dialog.tsx` (webds install) | `components/patterns/picker-dialog.tsx` | Not copied: CMS's Link Document Type dialog became the webds pattern `picker-dialog` (v0.40), so CNH installs it with `scripts/webds-add.mjs`. Used single-pick, without Create new, for the dynamic-field dialog (Idea 3, 3.2). The install refreshed `confirm-dialog`, `form-field`, `icon`, `overlay-loader` and `webds-components.css` to the registry's current versions (new optional props, defaults unchanged). |
 | `pages/broadcast/list/ListFooter.tsx` | `components/list/ListFooter.tsx` + `BoundedPagination.tsx` | Merged into one file; page is 0-based. The counter uses a hyphen (`1-6 of 6`); CMS uses an en-dash (`1–6`, PRD §8.1). |
 
 ## Still in CMS, not yet borrowed
@@ -33,7 +34,7 @@ The date picker came over on `update/broadcast-date-picker` (PR #2). Until that 
 | `components/list/ListStateView.tsx`, `ListEmpty.tsx` | Loading, error with Try again, empty with Create, and no results. |
 | `components/shell/SideDrawer.tsx`, `components/drawer/DetailTableBox.tsx`, `DetailRow.tsx` | Host for `detail-drawer` (scrim, slide, Escape) and a row-divided detail table. |
 | `components/dialogs/LeaveWithoutSavingDialog.tsx`, `StatusChangeFlow.tsx`, `components/common/SubmitOverlay.tsx` | Leave dialog; confirm, loading, failed and success sequence; full-page submit spinner. |
-| `components/fields/CreatableSingleList.tsx`, `components/product-form/PickerDialog.tsx` | Single-select picker with search and "+ Create new"; picker dialog with No data and Can't show data states. |
+| `components/fields/CreatableSingleList.tsx` | Single-select list with search and "+ Create new", inline (not in a dialog). |
 | `components/list/GreyBadge.tsx` | Neutral badge (webds `Badge` has no grey type). |
 | `components/list/SidewaysScroll.tsx` | Horizontal scroll wrapper for a wide table. |
 | `components/asset/DisabledAssetSlot.tsx` | Read-only empty upload slot. |

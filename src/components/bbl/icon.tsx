@@ -43,7 +43,9 @@ export function Icon({
   dir = 'webds-icons',
   className,
 }: IconProps) {
-  const url = `url(/${dir}/${slug}-${size}.svg)`
+  /* webds-icons is served from the site root, under /prototypes/<name>/ too. Any
+     other folder is the consumer's own public/, so it follows the app's base. */
+  const url = `url(${dir === 'webds-icons' ? '/' : import.meta.env.BASE_URL}${dir}/${slug}-${size}.svg)`
   return (
     <span
       aria-hidden

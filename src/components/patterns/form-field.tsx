@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { TextField } from '@/bbl/text-field'
 import { TextArea } from '@/bbl/text-area'
 import { SelectField } from '@/bbl/select-field'
+import { SearchField } from '@/bbl/search-field'
+import { PillChip } from '@/bbl/pill-chip'
+import { FieldHint, FieldLabel, FieldRoot, toneFor } from '@/bbl/field'
 import { SelectList } from './select-list'
 import { DropdownMenu } from './dropdown-menu'
 import { MultiSelectDropdown } from './multi-select-dropdown'
@@ -45,7 +48,17 @@ import { MultiSelectDropdown } from './multi-select-dropdown'
  *  ", " is what the source draws in the filled field (1:172833). */
 const SEPARATOR = ', '
 
-export type FormFieldKind = 'text' | 'textarea' | 'select' | 'multiselect'
+/* `search` and `chips` — v0.40, from CMS Web Content Admin Portal
+ * (`MI2zFydRz9Qi673VeklnkI`), which wrote both itself:
+ *
+ *   search  the library's Search Field with an <input> in its value slot and its
+ *           own `has Clear Field` mark once there is text — no Cancel button,
+ *           the label as the placeholder. CMS draws the Product list's box 64
+ *           (`boxHeight: 64`); the set's own 56 otherwise.
+ *   chips   a short single choice (2–3 options) as Pill Chips, Highlight, under
+ *           an Outside label — every option visible at once instead of a
+ *           dropdown. `role="radiogroup"`. */
+export type FormFieldKind = 'text' | 'textarea' | 'select' | 'multiselect' | 'search' | 'chips'
 
 export type FormFieldSpec = {
   label: string
@@ -69,6 +82,8 @@ export type FormFieldSpec = {
   inputType?: 'text' | 'email' | 'password'
   /** Passed to the `<input>` so a password manager can fill the field. */
   autoComplete?: string
+  /** Search only: take focus on mount, the way a pick dialog opens on its search. */
+  autoFocus?: boolean
 }
 
 export type FormFieldProps = {
@@ -104,7 +119,7 @@ export type FormFieldProps = {
   selectMenu?: 'select-list' | 'dropdown-menu'
 }
 
-const BOX_HEIGHT: Record<number, string> = { 56: 'h-[56px]', 77: 'h-[77px]' }
+const BOX_HEIGHT: Record<number, string> = { 56: 'h-[56px]', 64: 'webds-pattern-form-field-box-64', 77: 'h-[77px]' }
 
 export function FormField({
   spec,
@@ -118,7 +133,7 @@ export function FormField({
   selectDefaultOpen = false,
   selectMenu = 'select-list',
 }: FormFieldProps) {
-  const [focused, setFocused] = useState(false)
+  const [focused, setFocused] = useState(spec.kind === 'search' && !!spec.autoFocus && !disabled)
   const [open, setOpen] = useState(selectDefaultOpen)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -129,6 +144,77 @@ export function FormField({
   const hasHint = spec.hasHint !== false
   const counter = hasHint && spec.max ? `${value.length}/${spec.max}` : undefined
   const message = error ?? (hasHint ? spec.hint : undefined)
+
+  if (spec.kind === 'search') {
+    /* Search Field's own names: it has no Error-on-typing and no Disabled -
+       Completed. At rest it draws the label, not the value slot, so the box
+       itself takes the click and focuses the input once it exists. The box is
+       also a Tab stop until then: with no <input> at rest, Tab skipped the
+       field (CMS v4.58, Picker Dialog, 2026-10-19). */
+    const state = disabled ? 'Disabled' : focused ? (value ? 'Typing' : 'Focused') : value ? 'Completed' : 'Default'
+    return (
+      <div
+        className="webds-pattern-form-field-search"
+        tabIndex={focused || disabled ? -1 : 0}
+        onFocus={() => !disabled && setFocused(true)}
+        onClick={() => !disabled && setFocused(true)}
+      >
+        <SearchField
+          state={state}
+          label={spec.label}
+          showCancel={false}
+          boxClassName={spec.boxHeight ? BOX_HEIGHT[spec.boxHeight] : undefined}
+          onClear={
+            value && !disabled
+              ? () => {
+                  onChange('')
+                  inputRef.current?.focus()
+                }
+              : undefined
+          }
+          value={
+            <input
+              ref={inputRef}
+              type="search"
+              className="webds-pattern-form-field-6 webds-pattern-form-field-search-input"
+              value={value}
+              disabled={disabled}
+              aria-label={spec.label}
+              placeholder={spec.placeholder ?? spec.label}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              onChange={(e) => onChange(e.target.value)}
+            />
+          }
+        />
+      </div>
+    )
+  }
+
+  if (spec.kind === 'chips') {
+    return (
+      <FieldRoot className="webds-pattern-form-field-chips">
+        <FieldLabel colour={disabled ? 'disabled' : 'tertiary'} required={spec.required}>
+          {spec.label}
+        </FieldLabel>
+        <div role="radiogroup" aria-label={spec.label} className="webds-pattern-form-field-chips-row">
+          {(spec.options ?? []).map((o) => (
+            <PillChip
+              key={o}
+              appearance="highlight"
+              state={disabled ? 'disabled' : o === value ? 'selected' : 'default'}
+              role="radio"
+              aria-checked={o === value}
+              onClick={() => !disabled && onChange(o)}
+            >
+              {o}
+            </PillChip>
+          ))}
+        </div>
+        <FieldHint message={message} tone={toneFor(error ? 'Error' : 'Default')} />
+      </FieldRoot>
+    )
+  }
 
   if (spec.kind === 'select') {
     const state = disabled

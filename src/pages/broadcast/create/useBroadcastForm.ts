@@ -97,13 +97,16 @@ export function useBroadcastForm({
   failNext,
   preset,
   initial,
+  adaptSeed = (s) => s,
 }: {
   onCreate: (broadcast: Omit<Broadcast, 'id'>, kind: SaveKind) => void
   failNext?: boolean
   preset?: FormPreset
   initial?: Broadcast
+  /** Prototype only: lets the Prototype control swap the seeded file. */
+  adaptSeed?: (seed: FormSeed) => FormSeed
 }) {
-  const [seed] = useState<FormSeed>(() => (initial ? fromDraft(initial) : preset ? formSeed(preset) : {}))
+  const [seed] = useState<FormSeed>(() => adaptSeed(initial ? fromDraft(initial) : preset ? formSeed(preset) : {}))
   /* Errors are the last Submit's (or Save draft's) and stay until the next
    * one, while the user types or switches a channel on: CNH Phase 1 "Error
    * behavior" (Figma JjvzdUwg5LlKHDQvo2fny0 123:95723, requester 22 Oct 2026).

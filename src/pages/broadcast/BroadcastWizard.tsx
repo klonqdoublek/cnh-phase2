@@ -9,6 +9,7 @@ import type { FormPreset } from '@/data/broadcast-presets'
 import { Dialogs } from './create/Dialogs'
 import { AudienceFile, BasicInfo, Delivery, DndCard, MessageContent, Section, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
+import { seedWithColumns, useConcept } from '@/prototype/dynamic-field'
 
 export type SaveKind = 'draft' | 'submit'
 
@@ -33,10 +34,20 @@ export type BroadcastWizardProps = {
  * Do Not Disturb is its own card under Delivery Date, in the same step
  * (requester, 21 Oct 2026; Figma 409:75574).
  */
-export function BroadcastWizard({ onBack, onCreate, failNext, loading, preset, initial }: BroadcastWizardProps) {
-  const f = useBroadcastForm({ onCreate, failNext, preset, initial })
+export function BroadcastWizard(props: BroadcastWizardProps) {
+  /* The Prototype control's file size reseeds the form, so it remounts. */
+  const { columns } = useConcept()
+  return <Wizard key={columns} {...props} />
+}
+
+function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: BroadcastWizardProps) {
+  const { columns } = useConcept()
+  const f = useBroadcastForm({ onCreate, failNext, preset, initial, adaptSeed: seedWithColumns(columns) })
   const body = useRef<HTMLDivElement>(null)
   const focus: FocusRef = useRef(null)
+  /* Which dynamic-field draft the message area draws — the prototype's
+     Concept panel switches it (src/prototype/ConceptPanel.tsx). */
+  const concept = useConcept()
 
   return (
     <div className="relative h-full bg-[var(--color-surface-secondary-default)]">
@@ -78,7 +89,7 @@ export function BroadcastWizard({ onBack, onCreate, failNext, loading, preset, i
             <Section title="Step 2: Validate Audience file">
               <div className="flex flex-col gap-[var(--space-8)]">
                 <AudienceFile f={f} />
-                <MessageContent f={f} focus={focus} />
+                <MessageContent f={f} focus={focus} concept={concept} />
               </div>
             </Section>
             <Section title="Step 3: Delivery Date">

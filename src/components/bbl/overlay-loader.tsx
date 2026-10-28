@@ -26,6 +26,13 @@ export type OverlayLoaderProps = {
   spinner?: SpinnerAppearance
   animated?: boolean
   label?: string
+  /**
+   * `fill` (the default) fills its positioned parent, as the loose component is
+   * drawn. `fixed` covers the viewport above everything — a whole-page busy
+   * state while a form submits. CMS Web Content Admin Portal wrote that wrapper
+   * itself (SubmitOverlay) because this had no way to say it; v0.40.
+   */
+  layer?: 'fill' | 'fixed'
   className?: string
 }
 
@@ -35,6 +42,7 @@ export function OverlayLoader({
   spinner = 'on-inverse',
   animated = true,
   label,
+  layer = 'fill',
   className,
 }: OverlayLoaderProps) {
   /* The scrim is a CHILD of the loader, not its root: the loose component is a
@@ -42,7 +50,7 @@ export function OverlayLoader({
      names that instance as a part. Rendering the Scrim as the root put its own
      24 of horizontal padding on the loader. */
   return (
-    <div className={cn('webds-overlay-loader', className)}>
+    <div className={cn('webds-overlay-loader', layer === 'fixed' && 'webds-overlay-loader--fixed', className)}>
       <Scrim appearance={scrim} data-part="Building Block / Scrim" className="webds-overlay-loader-2" />
       <SpinnerLoader
         size={size}
