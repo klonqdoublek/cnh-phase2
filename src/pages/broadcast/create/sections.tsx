@@ -6,7 +6,7 @@ import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { ContainedIconButton } from '@/bbl/contained-icon-button'
-import { FieldLabel } from '@/bbl/field'
+import { FieldLabel, FieldRoot } from '@/bbl/field'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
@@ -738,14 +738,16 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
         )}
       </div>
       <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
-        <div className="flex items-end gap-[var(--space-4)]">
+        <div className="flex items-start gap-[var(--space-4)]">
           <TimeInput
             label={`Quiet period from (${TIME_ZONES.find((z) => z.value === f.dnd.timeZone)?.offset ?? f.dnd.timeZone})`}
             value={rule.allDay ? '' : rule.from}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { from: v })}
           />
-          <span className="pb-[var(--space-4)] type-body-m text-[var(--color-text-secondary-default)]">to</span>
+          <BesideField>
+            <span className="type-body-m text-[var(--color-text-secondary-default)]">to</span>
+          </BesideField>
           {/* The original draws no label here, only the room for one, so the two
               boxes share a line. */}
           <TimeInput
@@ -753,19 +755,11 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
             value={rule.allDay ? '' : rule.to}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { to: v })}
+            /* The end falls on the next day (BA, 2026-10-19), said under the
+               box so the row keeps its width. */
+            hint={endsNextDay(rule) ? 'Next day' : undefined}
           />
-          {/* The end falls on the next day (BA, 2026-10-19). */}
-          {endsNextDay(rule) && (
-            <span
-              className={cn(
-                'pb-[var(--space-4)] type-body-m',
-                off ? 'text-[var(--color-text-disabled-default)]' : 'text-[var(--color-text-secondary-default)]',
-              )}
-            >
-              Next day
-            </span>
-          )}
-          <span className="flex h-[56px] items-center">
+          <BesideField>
             <Choice
               kind="checkbox"
               label="All day"
@@ -774,9 +768,9 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
               on={rule.allDay}
               onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
             />
-          </span>
+          </BesideField>
           {f.dnd.rules.length > 1 && (
-            <span className="flex h-[56px] items-center pl-[var(--space-4)]">
+            <BesideField className="pl-[var(--space-4)]">
               <IconButton
                 label={`Remove quiet period${which}`}
                 disabled={off}
@@ -789,7 +783,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
                 }
                 onClick={() => f.removeDndRule(rule.id)}
               />
-            </span>
+            </BesideField>
           )}
         </div>
         {timeError && (
@@ -799,6 +793,17 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
         )}
       </div>
     </div>
+  )
+}
+
+/** What sits beside the time boxes, set under an empty label on a 56-tall line
+ *  so it stays level with the boxes when the To box carries a hint under it. */
+function BesideField({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <FieldRoot className="w-auto shrink-0">
+      <FieldLabel> </FieldLabel>
+      <span className={cn('flex h-[56px] items-center', className)}>{children}</span>
+    </FieldRoot>
   )
 }
 
