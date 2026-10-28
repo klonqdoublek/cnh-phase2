@@ -11,7 +11,7 @@ import { TableHeaderCell } from '@/bbl/table-header-cell'
 import { TablePagination } from '@/bbl/table-pagination'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { PageHeader } from '@/patterns/page-header'
-import { IMPORT_COPY, presetTemplates, type ImportPreset } from '@/data/import-spec'
+import { isJobPreset, presetFileName, presetTemplates, type ImportPreset } from '@/data/import-spec'
 import {
   CHANNELS,
   FILE_EXT,
@@ -27,6 +27,11 @@ import { FilterSelect } from './FilterSelect'
 import { ImportDialog } from './ImportDialog'
 import { ListSearch } from './ListSearch'
 import { ListToast } from './ListToast'
+import { useImportDirection } from '@/prototype/import-direction'
+import { ImportFeedback, useImportFeedback } from './import-status/ImportStatus'
+import { ImportIndicator } from './import-status/ImportIndicator'
+import { RecentImports } from './import-status/RecentImports'
+import type { ImportJobs } from './import-status/jobs'
 
 export type ListState = 'loading' | 'error' | 'empty' | 'ready'
 /** The toast the list shows after the form returns. */
@@ -49,6 +54,8 @@ export type DashboardProps = {
   importedNames: string[]
   /** `replace`: the user chose to import over an earlier import of `fileName`. */
   onImport: (templates: Template[], fileName?: string, replace?: boolean) => void
+  /** The server's import jobs (BA / Dev, 28 Oct 2026): Import submits one; its templates land when it is done. */
+  importJobs: ImportJobs
 }
 
 const TONE: Record<TemplateStatus, BadgeType> = { Published: 'positive', Inactive: 'disabled', Draft: 'caution' }
@@ -93,6 +100,7 @@ export function Dashboard({
   downloadRequest = null,
   onDownloadRequestHandled,
   onImport,
+  importJobs,
   importPreset,
   importedNames,
 }: DashboardProps) {
@@ -107,22 +115,27 @@ export function Dashboard({
   const [downloadFailed, setDownloadFailed] = useState(false)
   const [downloaded, setDownloaded] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
-  const [imported, setImported] = useState<number | null>(null)
   const landed = useRef(false)
   const onImportRef = useRef(onImport)
   onImportRef.current = onImport
+  const seedJob = useRef(importJobs.seed)
+  seedJob.current = importJobs.seed
+  const direction = useImportDirection()
+  const feedback = useImportFeedback(importJobs.jobs, direction)
 
-  /* `#/list/import/<preset>` opens the dialog in that state; `success` lands
-     the preset templates on the list once and holds the toast. */
+  /* `#/list/import/<preset>` opens the dialog in that state. A job preset
+     (`processing`, `process-failed`, `success`) is on the list with the dialog
+     closed: it seeds one held job, and `success` lands the preset templates once. */
   useEffect(() => {
     if (!importPreset) return
-    if (importPreset !== 'success') return setImportOpen(true)
+    if (!isJobPreset(importPreset)) return setImportOpen(true)
     setImportOpen(false)
-    if (landed.current) return
-    landed.current = true
     const templates = presetTemplates()
+    const status = importPreset === 'success' ? 'done' : importPreset === 'processing' ? 'processing' : 'failed'
+    seedJob.current({ fileName: presetFileName(), templates, replace: false, status })
+    if (status !== 'done' || landed.current) return
+    landed.current = true
     onImportRef.current?.(templates)
-    setImported(templates.length)
   }, [importPreset])
 
   const clearSelection = () => setSelected(new Set())
@@ -319,6 +332,14 @@ export function Dashboard({
         title="Notification management"
         actions={[
           <div key="actions" className="flex items-center gap-[var(--space-4)]">
+            {direction === 'C' && (
+              <ImportIndicator
+                jobs={importJobs.jobs}
+                open={feedback.popoverOpen}
+                onOpenChange={feedback.setPopoverOpen}
+                onRetry={importJobs.retry}
+              />
+            )}
             <OutlineButton onClick={() => setImportOpen(true)}>Import</OutlineButton>
             <Button onClick={onCreate}>
               Create notification
@@ -330,6 +351,7 @@ export function Dashboard({
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {filters}
+        {direction === 'B' && <RecentImports jobs={importJobs.jobs} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />}
         {!isReady ? (
           body
         ) : (
@@ -517,25 +539,18 @@ export function Dashboard({
       />
       <ImportDialog
         open={importOpen}
-        preset={importPreset === 'success' ? undefined : importPreset}
+        preset={isJobPreset(importPreset) ? undefined : importPreset}
         importedNames={importedNames}
         onClose={() => setImportOpen(false)}
         onImported={(list, fileName, replace) => {
+          /* Passing the dialog's checks submits the file to the server (BA / Dev, 28 Oct 2026). */
           setImportOpen(false)
           setPage(0)
           clearSelection()
-          onImport?.(list, fileName, replace)
-          setImported(list.length)
+          importJobs.submit(list, fileName, replace)
         }}
       />
-      <ListToast
-        open={imported !== null}
-        appearance="positive"
-        title={IMPORT_COPY.successTitle}
-        description={imported === null ? '' : IMPORT_COPY.successBody(imported)}
-        autoHideMs={importPreset === 'success' ? undefined : 3000}
-        onClose={() => setImported(null)}
-      />
+      <ImportFeedback feedback={feedback} jobs={importJobs.jobs} held={isJobPreset(importPreset)} onRetry={importJobs.retry} />
       <ListToast
         open={downloadFailed}
         appearance="negative"

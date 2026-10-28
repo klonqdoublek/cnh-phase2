@@ -13,6 +13,7 @@ import { TemplateDrawer } from '@/pages/template/TemplateDrawer'
 import { BroadcastList } from '@/pages/broadcast/BroadcastList'
 import { BroadcastDrawer } from '@/pages/broadcast/BroadcastDrawer'
 import { BroadcastWizard, type SaveKind } from '@/pages/broadcast/BroadcastWizard'
+import { useImportJobs } from '@/pages/notifications/import-status/jobs'
 
 /* Routes are the cnh-tm-phase2 build's, one per state, so the webds flow
  * archive (cnh-phase2) and its task flow still point at the right screen. */
@@ -31,6 +32,17 @@ export default function App() {
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>(BROADCASTS)
   const [created, setCreated] = useState<ListToast | null>(null)
   const [openBroadcast, setOpenBroadcast] = useState<Broadcast | null>(null)
+
+  /* Puts imported templates on the list. Importing over a file replaces the templates its earlier import added. */
+  const landImport = (imported: Template[], fileName?: string, replace?: boolean) => {
+    const gone = new Set(replace && fileName ? importHistory[fileName] : [])
+    const base = nextRunning(templates)
+    const stamped = imported.map((t, i) => stampImported(t, base + i))
+    setTemplates((list) => [...stamped, ...list.filter((t) => !gone.has(t.id))])
+    if (fileName) setImportHistory((h) => ({ ...h, [fileName]: stamped.map((t) => t.id) }))
+  }
+  /* Since 28 Oct 2026 (BA / Dev) Import submits a job; the templates land when the server is done, about 10 minutes later. */
+  const importJobs = useImportJobs(landImport)
 
   const backToList = (n: ListNotice) => {
     setNotice(n)
@@ -172,14 +184,8 @@ export default function App() {
           onDownloadRequestHandled={() => setDownloadRequest(null)}
           importPreset={importPreset}
           importedNames={Object.keys(importHistory)}
-          onImport={(imported, fileName, replace) => {
-            /* Importing over a file replaces the templates its earlier import added. */
-            const gone = new Set(replace && fileName ? importHistory[fileName] : [])
-            const base = nextRunning(templates)
-            const stamped = imported.map((t, i) => stampImported(t, base + i))
-            setTemplates((list) => [...stamped, ...list.filter((t) => !gone.has(t.id))])
-            if (fileName) setImportHistory((h) => ({ ...h, [fileName]: stamped.map((t) => t.id) }))
-          }}
+          onImport={landImport}
+          importJobs={importJobs}
         />
       )}
 

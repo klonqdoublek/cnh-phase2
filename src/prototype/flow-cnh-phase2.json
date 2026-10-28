@@ -110,9 +110,29 @@
    "section": "Import"
   },
   {
+   "id": "processing",
+   "kind": "screen",
+   "label": "Submitted — importing on the server, about 10 minutes (direction A–D)",
+   "route": "#/list/import/processing",
+   "section": "Import"
+  },
+  {
+   "id": "processed",
+   "kind": "decision",
+   "label": "Able to import on the server?",
+   "section": "Import"
+  },
+  {
+   "id": "process-failed",
+   "kind": "screen",
+   "label": "Import fails on the server — Try again (PROPOSAL)",
+   "route": "#/list/import/process-failed",
+   "section": "Import"
+  },
+  {
    "id": "success",
    "kind": "screen",
-   "label": "Import success — new drafts on top, toast 3 s",
+   "label": "Import done — new drafts on the list",
    "route": "#/list/import/success",
    "section": "Import"
   },
@@ -610,9 +630,33 @@
   },
   {
    "from": "uploaded",
+   "to": "processing",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "processing",
+   "to": "processed",
+   "label": "About 10 minutes",
+   "style": "solid"
+  },
+  {
+   "from": "processed",
    "to": "success",
    "label": "Yes",
    "style": "solid"
+  },
+  {
+   "from": "processed",
+   "to": "process-failed",
+   "label": "No",
+   "style": "dashed"
+  },
+  {
+   "from": "process-failed",
+   "to": "processing",
+   "label": "Try again",
+   "style": "back"
   },
   {
    "from": "uploaded",

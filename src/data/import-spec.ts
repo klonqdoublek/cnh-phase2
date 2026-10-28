@@ -24,6 +24,8 @@ export const IMPORT_PRESETS = [
   'duplicate',
   'uploading',
   'failure',
+  'processing',
+  'process-failed',
   'success',
 ] as const
 export type ImportPreset = (typeof IMPORT_PRESETS)[number]
@@ -50,6 +52,28 @@ export const IMPORT_COPY = {
      second line, "Please try again", became CMS's Try again button. */
   failTitle: 'Unable to import templates',
   retry: 'Try again',
+  /* Background processing (BA / Dev, 28 Oct 2026): Import that passes the dialog's checks
+     sends the file to a server; its templates reach the list about 10 minutes later. The
+     strings below are composed for the four directions (Prototype control, Design
+     direction) and are a proposal until one is chosen. */
+  processingNote: 'Takes about 10 minutes',
+  startedTitle: 'Import in progress',
+  startedBody: 'The templates appear in the list as draft in about 10 minutes.',
+  startedDialogBody: 'This takes about 10 minutes. The templates appear in the list as draft when it is done. You can leave this page.',
+  ok: 'OK',
+  close: 'Close',
+  statusProcessing: 'Importing',
+  statusDone: 'Imported',
+  statusFailed: 'Failed',
+  panelTitle: (processing: number, failed: number) =>
+    processing ? `Importing ${processing} ${processing === 1 ? 'file' : 'files'}` : failed ? 'Import failed' : 'Import complete',
+  historyTitle: 'Recent imports',
+  submittedAt: (time: string) => `Submitted ${time}`,
+  indicator: 'Imports',
+  /* PROPOSAL, pending BA: a failure on the server after the upload. "Please try again" is
+     the list's transcribed download-failure line. */
+  failBody: (name: string) => `${name} could not be imported. Please try again.`,
+  failToastBody: 'Please try again',
   successTitle: 'Templates imported',
   successBody: (n: number) => `${n} ${n === 1 ? 'template was' : 'templates were'} added as draft`,
   /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
@@ -68,6 +92,10 @@ export const IMPORT_FAIL_SENTINEL = 'error'
 /** CMS's limit (MAX_ASSET_BYTES); the BA has not set one for Import yet (size limits, P2-1…P2-9). */
 export const MAX_IMPORT_BYTES = 10 * 1024 * 1024
 export const UPLOAD_MS = 1200
+/** The server's ~10 minutes, shortened so a demo can watch a job finish. */
+export const PROCESS_MS = 8000
+/** A file name containing this fails on the server after the upload (PROPOSAL, pending BA). */
+export const IMPORT_PROCESS_FAIL_SENTINEL = 'reject'
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '')
 
@@ -204,3 +232,10 @@ export const presetTemplates = () => {
   const check = parseTemplates(VALID_FILES[0].text)
   return check.ok ? check.templates : []
 }
+
+/** Presets drawn on the list after the Import dialog has closed: the server's job, not the dialog. */
+export const JOB_PRESETS = ['processing', 'process-failed', 'success'] as const satisfies readonly ImportPreset[]
+export const isJobPreset = (p: ImportPreset | undefined): p is (typeof JOB_PRESETS)[number] =>
+  (JOB_PRESETS as readonly string[]).includes(p ?? '')
+/** The file the job presets show: the one `selected` picks. */
+export const presetFileName = () => VALID_FILES[0].name

@@ -25,13 +25,16 @@ import {
   type Trigger,
 } from './dynamic-field'
 import { KINDS, screenOf, stateOf, type Kind } from './screen-states'
+import { IMPORT_DIRECTIONS, IMPORT_PLAYGROUND, setImportDirection, useImportDirection } from './import-direction'
 
 /* Prototype runner only — the floating Prototype control, in two groups
  * (requester, 28 Oct 2026). Screen state: on every screen with more than one
  * state it lists them, so loading, error, empty and dialog states are one
  * click away (./screen-states.ts), folded by kind so only the kind on show
  * is open (requester, 28 Oct 2026); on Create / Edit broadcast the audience
- * file's size too. Design direction, on Create / Edit broadcast only: channel
+ * file's size too. Design direction, on the list and Import: the four Import
+ * background-processing directions (./import-direction.ts, 28 Oct 2026). On
+ * Create / Edit broadcast: channel
  * layout, then how a field is picked with its own options in one row, and a
  * line naming the draft that combination is (./dynamic-field.ts). Drag it by
  * its title bar; it remembers where it was left, whether it was collapsed and
@@ -151,6 +154,7 @@ const clamp = (x: number, y: number, el: HTMLElement | null) => {
 export function ConceptPanel() {
   const hash = useHash()
   const concept = useConcept()
+  const importDirection = useImportDirection()
   const box = useRef<HTMLDivElement>(null)
   const saved = useRef(load()).current
   const [open, setOpen] = useState(saved.open ?? true)
@@ -185,10 +189,13 @@ export function ConceptPanel() {
   if (new URLSearchParams(location.search).get('panel') === '0') return null
   const screen = screenOf(hash)
   const concepts = /^#\/broadcast\/(create|edit)/.test(hash)
+  /* The list and Import: the four background-processing directions (28 Oct 2026). */
+  const importDirs = hash === '' || hash === '#/' || /^#\/list(\/import(\/[a-z-]+)?)?$/.test(hash)
+  const directions = concepts || importDirs
   if (!screen && !concepts) return null
   const state = screen && stateOf(screen, hash)
-  /* Off Create / Edit broadcast there is no direction to pick: Screen state alone, no tabs. */
-  const shown: Group = concepts ? group : 'state'
+  /* Where there is no direction to pick: Screen state alone, no tabs. */
+  const shown: Group = directions ? group : 'state'
 
   const idea = concept.picker === 'shortcut' ? undefined : ideaOf(concept)
   const name = nameOf(concept)
@@ -252,7 +259,7 @@ export function ConceptPanel() {
 
       {open && (
         <>
-          {concepts && (
+          {directions && (
             <div role="tablist" aria-label="Prototype control group" className="flex px-[var(--space-4)] pt-[var(--space-3)]">
               {GROUPS.map((g) => (
                 <LineTab
@@ -328,7 +335,35 @@ export function ConceptPanel() {
               </>
             )}
 
-            {shown === 'direction' && (
+            {shown === 'direction' && importDirs && (
+              <Section label="Import: background processing">
+                <div role="radiogroup" aria-label="Import direction" className="flex flex-col gap-[var(--space-2)]">
+                  {IMPORT_DIRECTIONS.map((d) => (
+                    <label key={d.id} className="flex cursor-pointer items-start gap-[var(--space-2)]">
+                      <RadioButton
+                        selected={d.id === importDirection}
+                        aria-label={`${d.label} ${d.name}`}
+                        onClick={() => setImportDirection(d.id)}
+                      />
+                      <span className="flex min-w-0 flex-col">
+                        <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">
+                          {d.label}. {d.name}
+                        </span>
+                        <span className="type-body-s text-[var(--color-text-secondary-default)]">{d.note}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <span className="type-body-s text-[var(--color-text-secondary-default)]">
+                  Submit a file to watch it: about 10 minutes runs as 8 seconds. A file name with "reject" fails on the server.{' '}
+                  <a href={IMPORT_PLAYGROUND} target="_blank" rel="noreferrer" className="text-[var(--color-text-link-default)] hover:underline">
+                    Figma
+                  </a>
+                </span>
+              </Section>
+            )}
+
+            {shown === 'direction' && concepts && (
               <>
                 <div className="flex flex-col gap-[var(--space-2)]">
                   <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">1. Channel layout</span>
