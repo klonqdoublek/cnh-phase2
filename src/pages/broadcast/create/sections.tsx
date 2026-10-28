@@ -437,7 +437,9 @@ function ChannelAlert({ f }: F) {
 }
 
 /** "Create broadcast message" (requester, 21 Oct 2026; draft 2.2 has no
- *  title here): the chips over one card per channel offered, three across. Each card is
+ *  title here): the chips over one card per channel offered, stacked in one
+ *  column as the Template form stacks its channel cards (requester, 27 Oct
+ *  2026; was three across). Each card is
  *  switched on its own title row (webds `form-section-card`): off keeps what
  *  was typed and disables it. Direct recipient offers Email and SMS, one at a
  *  time. */
@@ -449,7 +451,7 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
       <ChannelAlert f={f} />
       <div
         data-error={invalid ? 'true' : undefined}
-        className="grid grid-cols-3 items-stretch gap-[var(--space-8)]"
+        className="flex flex-col gap-[var(--space-8)]"
         onFocusCapture={(e) => {
           const el = e.target as HTMLInputElement | HTMLTextAreaElement
           const key = el.closest('[data-field]')?.getAttribute('data-field')
