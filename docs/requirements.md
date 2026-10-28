@@ -125,7 +125,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
        - If the read fails, the system-fail dialog *Unable to submit the broadcast* (Close / Try again) appears, and Try again reads the file again.
      - Save draft does not read the file.
    - "Create broadcast message" (requester, 21 Oct; draft 2.2 has no title on this card): the file's columns as chips that insert `{{COLUMN}}` into the box the cursor was last in, over one card per channel, stacked in one column like the Template form's channel cards (requester, 27 Oct 2026; was three across).
-     - Each card is switched on and off in its own title row. The switches replace the channel checkboxes and Direct recipient's Email / SMS radio. Under Direct recipient, switching one on switches the other off. A card that is off keeps what was typed and disables it.
+     - Each card is switched on and off in its own title row. The switches replace the channel checkboxes. A card that is off keeps what was typed and disables it. Under Direct recipient, Email and SMS are picked by a radio in each card's title row instead of a switch (Figma 325:62582): one at a time, the picked card is Card Surface `State=Selected` (Border/Highlight), both cards' fields stay editable as drawn, and only the picked channel is sent.
      - Fields are the Template form's TH fields: Push title (TH)\* (255) and Push message (TH)\* (2048); Email subject (TH)\* (255) and Email content (TH)\* (2048); SMS message (TH)\* (800).
      - No channel on: an Alert above the cards and a red stroke on each card.
 3. **Delivery Date.** Two cards in one step: "Select Delivery Date" ([Figma 89:4665](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=89-4665), 15 Oct 2026), then Do Not Disturb ([Figma 409:75574](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--WIP_Broadcast-Message?node-id=409-75574), 21 Oct 2026):
@@ -221,6 +221,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 27 Oct 2026 | Design critique: the Do Not Disturb time zone moves from its own *Time zone* row under the periods into the time label, **Quiet period from (GMT+7)**. To confirm with the BA whether the time zone can be picked (Q19); the design team expects not. Figma not updated yet. |
 | 27 Oct 2026 | Design critique: the uploaded audience file row drops *File validated* (green tick) beside the size. A file that fails the type or size check is never placed, so the label told the user nothing; the full read is still on Submit. Changed transcribed copy. Figma not updated yet. |
 | 27 Oct 2026 | The channel cards under *Create broadcast message* (Push notification, Email, SMS) stack in one column, as CNH's Template form stacks its channel cards; before, three across. Requester's call. Layout only. Figma not updated yet. |
+| 27 Oct 2026 | Direct recipient's Email and SMS cards are picked by a radio in the title row, not a switch, as Figma 325:62582 draws (requester). Ported from `add/dynamic-field-concepts` (e64e5e8) without the dynamic field concepts, into the one-column layout. Layout and control only. |
 
 ## Open items
 
