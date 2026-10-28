@@ -456,9 +456,11 @@ function FieldPills({ f, onInsert, disabled }: F & { onInsert: Insert; disabled?
 
 /** The pop-up under Idea 2 / 2.2's button: webds `select-list`, the pattern
  *  that puts the library's Search Field above a single-pick list (requester,
- *  28 Oct 2026; was Dropdown Menu, which has no search). The search row stays
- *  pinned while the columns scroll. A search that matches nothing reads
- *  Picker Dialog's own line, as a disabled row. */
+ *  28 Oct 2026; was Dropdown Menu, which has no search). The columns go in as
+ *  one unlabelled group and only that group scrolls: scrolling the root moved
+ *  the pattern's `::after` stroke with the rows and let them show above a
+ *  sticky search. A search that matches nothing reads Picker Dialog's own
+ *  line, as a disabled row. */
 function FieldMenu({ options, onSelect }: { options: { value: string; label: string }[]; onSelect: (token: string) => void }) {
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
@@ -466,13 +468,15 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
   return (
     <SelectList
       width={240}
-      className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[360px] overflow-y-auto [&>.webds-pattern-select-list-2]:sticky [&>.webds-pattern-select-list-2]:top-0 [&>.webds-pattern-select-list-2]:z-[1] [&>.webds-pattern-select-list-2]:bg-[var(--color-surface-primary-default)]"
+      className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[360px] [&>.webds-pattern-select-list-3]:min-h-0 [&>.webds-pattern-select-list-3]:overflow-y-auto"
       search={<FormField spec={{ label: PICKER_DIALOG_COPY_EN.search, kind: 'search', autoFocus: true }} value={query} onChange={setQuery} />}
-      options={
-        shown.length
-          ? shown
-          : [{ value: '', label: PICKER_DIALOG_COPY_EN.noResult[0], disabled: true }]
-      }
+      groups={[
+        {
+          options: shown.length
+            ? shown
+            : [{ value: '', label: PICKER_DIALOG_COPY_EN.noResult[0], disabled: true }],
+        },
+      ]}
       onSelect={onSelect}
     />
   )
