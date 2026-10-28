@@ -666,16 +666,16 @@ export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'acce
   Cancelled: 'disabled',
 }
 
-/** What the badge and the Status filter read. FAILED reads "System error"
- *  (design critique, 27 Oct 2026): the drawer's Delivery result also counts
- *  "Failed" recipients, and the two read as the same thing. The value stays
- *  FAILED. PROPOSAL, pending BA confirmation. */
+/** What the badge and the Status filter read. FAILED reads "Error" (UX
+ *  writer, 28 Oct 2026; "System error" since the 27 Oct critique): the
+ *  drawer's Delivery result also counts "Failed" recipients, and the two read
+ *  as the same thing. The value stays FAILED. PROPOSAL, pending BA. */
 export const STATUS_LABEL: Record<BroadcastStatus, string> = {
   Draft: 'Draft',
   Queue: 'Queue',
   Processing: 'Processing',
   Published: 'Published',
-  Failed: 'System error',
+  Failed: 'Error',
   Cancelled: 'Cancelled',
 }
 
