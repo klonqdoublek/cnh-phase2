@@ -367,7 +367,10 @@ export type BroadcastContent = {
 
 /** The status list of values (16 Oct 2026; meanings 19 Oct 2026):
  *  DRAFT — saved as a draft · QUEUE — submitted, accepted by the system ·
- *  PROCESSING — the system has started sending · PUBLISHED — finished ·
+ *  PROCESSING — the system has picked the broadcast up and is validating it,
+ *  nothing sent yet · PUBLISHED — validated; it sends, pauses in a quiet
+ *  period and finishes under Published (BA / Dev sync, 28 Oct 2026; was
+ *  "started sending" and "finished"; the lifecycle is pending BA confirmation) ·
  *  FAILED — a system error · CANCELLED — a draft cancelled before submit.
  *  Only a Draft can be cancelled; once submitted it cannot. */
 export const BROADCAST_STATUSES = ['Draft', 'Queue', 'Processing', 'Published', 'Failed', 'Cancelled'] as const
@@ -397,7 +400,8 @@ export type Broadcast = {
   /** Recipients still unsent when the end was reached, or when a system
    *  error stopped the broadcast (Failed). */
   notSent?: number
-  /** Processing, but inside a quiet period (was the Paused status). */
+  /** Published and still sending, but inside a quiet period (was the Paused
+   *  status, then Processing until 28 Oct 2026). */
   quiet?: boolean
   content: BroadcastContent
   createdBy: string
@@ -591,9 +595,10 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'now',
     start: '2026-10-05T10:00',
     dnd: DEFAULT_DND,
+    /* Validating (28 Oct 2026): nothing attempted yet, so no report. */
     status: 'Processing',
-    success: 612,
-    failed: 9,
+    success: 0,
+    failed: 0,
     content: content(
       'Dear Customer, effective 1 November 2026, our savings account interest rate will be updated. Thank you.',
     ),
@@ -611,7 +616,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-10-03T19:00',
     dnd: DEFAULT_DND,
-    status: 'Processing',
+    status: 'Published',
     quiet: true,
     success: 402,
     failed: 3,
@@ -736,7 +741,8 @@ const csvCell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/
 
 export const deliveryReportName = (b: Broadcast) => `${b.id}-delivery-report.csv`
 
-/** A report exists once anything was attempted (Processing, Published or Failed). */
+/** A report exists once anything was attempted (Published or Failed; Processing
+ *  only validates, BA / Dev sync 28 Oct 2026). */
 export const hasDeliveryReport = (b: Broadcast) => b.success + b.failed > 0
 
 export function deliveryReportCsv(b: Broadcast): string {

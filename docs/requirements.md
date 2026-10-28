@@ -147,26 +147,26 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
   - At the end, sending stops. Recipients left are counted as **Not sent**, and the broadcast still ends **Published**.
   - There is no Expired status.
   - The end does not appear in the list.
-- **Status on submit:** **Processing** if it is sent now and not inside a quiet period, otherwise **Queue**.
-- **Statuses** (list of values 16 Oct 2026; meanings 19 Oct 2026). The badge shows them in title case.
+- **Status on submit:** always **Queue**; the system then picks it up and validates it (**Processing**), and once validated it is **Published** (BA / Dev sync, 28 Oct 2026; before, a broadcast sent now and outside a quiet period went straight to Processing). **PENDING BA confirmation** of this lifecycle: see the BA question under Open items.
+- **Statuses** (list of values 16 Oct 2026; meanings 19 Oct 2026, Processing and Published 28 Oct 2026). The badge shows them in title case.
 
   | Status | Meaning | Badge |
   |---|---|---|
   | DRAFT | Saved with **Save draft**. | Caution (yellow) |
   | QUEUE | Submitted; the system has accepted it. | Disabled (grey) |
-  | PROCESSING | The system has started sending. | Accent (blue) |
-  | PUBLISHED | Finished. | Positive (green) |
+  | PROCESSING | The system has picked the broadcast up and is validating it. Nothing is sent yet: no Delivery result, no report; the drawer note reads *Checking the broadcast before sending. Nothing is sent yet.* (composed). (BA / Dev sync, 28 Oct 2026; was *started sending*.) | Accent (blue) |
+  | PUBLISHED | Validated (BA / Dev sync, 28 Oct 2026; was *finished*). In the prototype, sending, paused in a quiet period and finished are all Published; the Delivery result shows the progress. PENDING BA confirmation. | Positive (green) |
   | FAILED | A system error stopped it, in Queue or Processing. The badge and the Status filter read **Error** (UX writer, 28 Oct 2026; *System error* from the 27 Oct design critique; PROPOSAL, pending BA confirmation). | Negative (red) |
   | CANCELLED | A saved draft was cancelled because it is no longer needed. | Disabled (grey) |
 
-  - The old Scheduled is Queue, Sending is Processing, Completed is Published.
-  - The old Paused is Processing; the drawer still says it is inside the quiet period.
+  - The old Scheduled is Queue, Sending and Completed are Published (Sending was Processing until 28 Oct 2026).
+  - The old Paused is Published (Processing until 28 Oct 2026); the drawer still says it is inside the quiet period. Fixture BC-0004.
   - **Cancel is for a Draft only.** Once submitted (Queue and later) a broadcast cannot be cancelled; this is a system limit.
   - A Cancelled broadcast stays in the list, read only, with no actions.
   - A Failed broadcast keeps its Delivery result, with its note as a Negative (red) Alert (27 Oct 2026). Recipients still waiting when it stopped are counted as **Not sent** (report reason `System error`), and Download report is offered once anything was attempted. There is no retry.
 - **Edit:** a Draft reopens in Edit and saves under the same ID. Queue and later cannot be edited (P2-20). Cancelled cannot be edited.
 - **Delivery report:** a CSV, `{id}-delivery-report.csv`, with one row per recipient: ID, Channel, Result (Success, Failed, Not sent, Waiting to send) and Reason.
-  - Offered once anything was attempted (Processing, Published, Failed).
+  - Offered once anything was attempted (Published, Failed; Processing only validates since 28 Oct 2026).
   - In the prototype the rows are mock data built from the counts.
 
 ### Recipient file (from the BA deck; not every rule is in the prototype)
@@ -231,10 +231,12 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 28 Oct 2026 | BA / Dev sync: Recipient type is **CIS ID**, **Email** or **SMS**, three radios (was CIS / Direct recipient; Direct's second pick of Email or SMS on the channel cards confused users). Email and SMS show only their channel's card, always on, no switch or radio (requester). The drawer and the confirm dialog read `CIS ID`, `Email` or `SMS`; the confirm dialog gets the `Recipient type` row the 28 Oct copy ruling describes. Presets `#/broadcast/create/email` and `/sms` replace `/direct`. Email and SMS radio descriptions composed. Supersedes Q5's "Direct recipient stays" (14 Oct) and the 27 Oct radio ruling. Figma not updated yet. |
 | 28 Oct 2026 | BA / Dev sync: a broadcast is not Thai only. One broadcast is written in one language, Thai or English (for example for foreign customers). No language select (requester): the message fields drop *(TH)* (`Push title`, `Push message`, `Email subject`, `Email content`, `SMS message`) and the placeholders drop *in Thai*. Limits unchanged. Changed transcribed copy. Figma not updated yet. |
 | 28 Oct 2026 | BA / Dev sync: Do Not Disturb that covers every day, all day warns the user; two options to try, inline on the rule at once or only after Submit, dev to confirm (the sync thinks inline works). Requester: a warning only, Submit still goes ahead; both options built, switched in the Prototype control. The check adds the periods up. Copy composed. Figma not updated yet. |
+| 28 Oct 2026 | BA / Dev sync: **Processing** means the system has picked the broadcast up and is validating it, not sending; **Published** means it passed validation. Requester: sending, the quiet-period pause and finished all live under Published; Submit always lands on Queue; Processing has no Delivery result and no report. Fixtures BC-0005 (Processing, nothing attempted) and BC-0004 (Published, inside the quiet period). Drawer note for Processing composed. PENDING BA confirmation of the lifecycle. Figma not updated yet. |
 
 ## Open items
 
 - **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12, Q15 (wrong recipient column, PROPOSAL), Q19 (time zone), Q16 (a file Submit cannot use, PROPOSAL), Q17 and Q18. Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
+- **Broadcast status lifecycle (28 Oct 2026), to confirm with the BA:** Submit → QUEUE; PROCESSING validates and sends nothing; PUBLISHED covers sending, pausing in a quiet period and finished, with Not sent at the end. Still to ask: does an error while sending (after PUBLISHED) turn it FAILED; what status does a broadcast get when validation fails in PROCESSING; is there really no separate "finished" status.
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy). Since 15 Oct the prototype answers three of them for demo, pending the BA: one file, 10 MB, and import over a file with the same name. Still to ask: duplicates by name or by content, and what happens to replaced templates that were edited or Published.
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.

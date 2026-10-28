@@ -57,10 +57,15 @@ const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
     dndNeverSends(b.dnd)
       ? BROADCAST_COPY.dndNeverSends
       : `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
-  Processing: (b) =>
-    b.quiet ? `Inside the quiet period. Sending resumes at ${resumesAt(b)}.` : 'Messages are being sent.',
+  /* Processing only validates, Published sends (BA / Dev sync, 28 Oct 2026):
+     the sending lines moved from Processing to Published. Processing's is composed. */
+  Processing: () => 'Checking the broadcast before sending. Nothing is sent yet.',
   Published: (b) =>
-    b.notSent && b.end
+    waitingOf(b) > 0
+      ? b.quiet
+        ? `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`
+        : 'Messages are being sent.'
+      : b.notSent && b.end
       ? `The broadcast ended at ${fmtDateTime(new Date(b.end))}. ${fmtNumber(b.notSent)} recipients were not sent.`
       : 'Every recipient was sent a message.',
   /* Failed and Cancelled (19 Oct 2026): composed, the original build has
@@ -75,8 +80,8 @@ const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
 
 function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
   const draft = b.status === 'Draft'
-  /* Never submitted, so nothing was attempted. */
-  const unsent = draft || b.status === 'Cancelled'
+  /* Nothing was attempted: never submitted, or still being validated (28 Oct 2026). */
+  const unsent = draft || b.status === 'Cancelled' || b.status === 'Processing'
   const waiting = waitingOf(b)
   const c = b.content
   return [
@@ -154,9 +159,8 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
  * close, Escape, a click outside, and a focus trap. A Draft's footer has
  * Cancel broadcast (behind a confirm dialog) and Edit. Once submitted, a
  * broadcast cannot be cancelled (a system limit, 19 Oct 2026); its footer has
- * Download report once anything was attempted (Processing, Published or
- * Failed), where the CNH template drawer keeps its Download — behind the same
- * confirm as the list row's download. Queue and Cancelled keep an empty
+ * Download report once anything was attempted (Published or Failed), where the CNH template drawer keeps its Download — behind the same
+ * confirm as the list row's download. Queue, Processing and Cancelled keep an empty
  * footer, so every drawer ends on the same rule (Figma `Footer · Empty`).
  */
 export function BroadcastDrawer({

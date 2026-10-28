@@ -338,7 +338,9 @@ export function useBroadcastForm({
         setFailed(true)
         return
       }
-      onCreate(record(mode === 'now' && !waits ? 'Processing' : 'Queue'), 'submit')
+      /* Submit is accepted into the queue; the system then validates it (Processing,
+         BA / Dev sync 28 Oct 2026). Before, sending now went straight to Processing. */
+      onCreate(record('Queue'), 'submit')
     }, CREATE_MS)
   }
 
