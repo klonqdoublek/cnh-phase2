@@ -13,7 +13,6 @@ import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
 import { OutlineButton } from '@/bbl/outline-button'
 import { PillChip } from '@/bbl/pill-chip'
-import { RadioButton } from '@/bbl/radio-button'
 import { ScrollBar } from '@/bbl/scroll-bar'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
@@ -24,7 +23,18 @@ import { SelectList } from '@/patterns/select-list'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { InfoNote } from '@/patterns/info-note'
 import { FormStep } from '@/patterns/console-page'
-import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, endsNextDay, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
+import {
+  BROADCAST_COPY,
+  DAYS,
+  ID_LABEL,
+  RECIPIENT_TYPE_LABEL,
+  TIME_ZONES,
+  endsNextDay,
+  fmtDateTime,
+  type BroadcastContent,
+  type DndRule,
+  type RecipientType as RecipientTypeValue,
+} from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import type { Concept, Overflow } from '@/prototype/dynamic-field'
@@ -343,36 +353,38 @@ export function MiniTable({
   )
 }
 
+/* Three types since the BA / Dev sync (28 Oct 2026), was CIS / Direct
+   recipient. The CIS ID line is the original build's; Email and SMS are composed. */
+const RECIPIENT_TYPES: { value: RecipientTypeValue; description: string }[] = [
+  { value: 'cis', description: 'Send to customers using CIS ID from file' },
+  { value: 'email', description: 'Send email to addresses from file' },
+  { value: 'sms', description: 'Send SMS to mobile numbers from file' },
+]
+
 function RecipientType({ f }: F) {
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
       <FieldLabel required>Select Recipient type</FieldLabel>
       <div role="radiogroup" aria-label="Recipient type" className="flex gap-[var(--space-2)] py-[var(--space-3)]">
-        <ModeOption
-          on={f.recipientType === 'cis'}
-          label="CIS"
-          description="Send to customers using CIS ID from file"
-          className="w-[377px]"
-          onSelect={() => f.setRecipientType('cis')}
-        />
-        <ModeOption
-          on={f.recipientType === 'direct'}
-          label="Direct recipient"
-          description="Send by Email or SMS to contacts from file"
-          className="w-[377px]"
-          onSelect={() => f.setRecipientType('direct')}
-        />
+        {RECIPIENT_TYPES.map((t) => (
+          <ModeOption
+            key={t.value}
+            on={f.recipientType === t.value}
+            label={RECIPIENT_TYPE_LABEL[t.value]}
+            description={t.description}
+            className="w-[377px]"
+            onSelect={() => f.setRecipientType(t.value)}
+          />
+        ))}
       </div>
     </div>
   )
 }
 
 function ColumnSelect({ f }: F) {
-  const label = f.kind ? `${ID_LABEL[f.kind]} column` : 'Recipient column'
+  const label = `${ID_LABEL[f.kind]} column`
   const hint = f.audience
-    ? f.kind
-      ? `Select the column that contains ${ID_LABEL[f.kind].toLowerCase().replace('cis id', 'CIS ID')}`
-      : 'Choose Email or SMS first'
+    ? `Select the column that contains ${ID_LABEL[f.kind].toLowerCase().replace('cis id', 'CIS ID')}`
     : 'Upload the file first'
   return (
     <Select
@@ -381,7 +393,7 @@ function ColumnSelect({ f }: F) {
       required
       value={f.column}
       options={f.audience?.headers ?? []}
-      disabled={!f.audience || !f.kind}
+      disabled={!f.audience}
       error={f.errors.column}
       hint={hint}
       placeholder="Select column"
@@ -763,14 +775,14 @@ function ChannelAlert({ f }: F) {
  *    layout     cards three across (1, 2, 2.2) · stacked full width as CNH (1.2)
  *
  *  Each card is switched on its own title row (webds `form-section-card`):
- *  off keeps what was typed and disables it. Direct recipient offers Email
- *  and SMS, one at a time. */
+ *  off keeps what was typed and disables it. An Email or SMS broadcast has
+ *  that one card, always on, with no switch (BA / Dev sync, 28 Oct 2026). */
 export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; concept: Concept }) {
   const invalid = !!f.errors.channels
   const insert = useInsertField(f, focus)
   const [needsField, setNeedsField] = useState(false)
   const shared = concept.placement === 'shared'
-  const direct = f.recipientType === 'direct'
+  const single = f.recipientType !== 'cis'
   const hasFields = f.fields.length > 0
   const insertShared: Insert = (token) => setNeedsField(!insert(token))
   const typed = concept.picker === 'shortcut'
@@ -803,9 +815,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
         'grid items-stretch',
         concept.layout === 'stacked'
           ? 'grid-cols-1 gap-[var(--space-8)]'
-          : direct
-            ? 'grid-cols-2 gap-[var(--space-8)]'
-            : 'grid-cols-3 gap-[var(--space-8)]',
+          : 'grid-cols-3 gap-[var(--space-8)]',
       )}
       {...shortcut.handlers}
       onFocusCapture={(e) => {
@@ -819,8 +829,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
     >
       {f.offered.map((c) => {
         const on = f.channels.includes(c)
-        /* Direct draws its fields live on both cards (Figma 325:62582). */
-        const editable = direct || on
+        const editable = on
         const perCard = !shared && hasFields
         const cardButton = perCard && menu && (
           <FieldMenuButton
@@ -841,19 +850,6 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
             <ChannelFields f={f} channel={c} on={editable} tint={typed && concept.look === 'tint' ? tint : undefined} />
           </>
         )
-        if (direct)
-          return (
-            <DirectChannelCard
-              key={c}
-              channel={c}
-              selected={on}
-              invalid={invalid}
-              action={cardButton}
-              onSelect={() => f.setChannel(c, true)}
-            >
-              {body}
-            </DirectChannelCard>
-          )
         return (
           <FormSectionCard
             key={c}
@@ -868,7 +864,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
                 c
               )
             }
-            toggle={{ on, onToggle: (v) => f.setChannel(c, v) }}
+            toggle={single ? undefined : { on, onToggle: (v) => f.setChannel(c, v) }}
             invalid={invalid}
             rowGap={4}
           >
@@ -914,52 +910,6 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
       {top}
       {cards}
     </FormSectionCard>
-  )
-}
-
-/** Direct recipient's channel card (Figma 325:62582, 20 Oct 2026): Email and
- *  SMS two across, one picked at a time by the radio in its title row. The
- *  picked card is Card Surface `State=Selected` (Border/Highlight); both
- *  cards' fields stay live, as drawn. The rule "pick a channel" strokes both
- *  cards negative, as `form-section-card` does. */
-function DirectChannelCard({
-  channel,
-  selected,
-  invalid,
-  action,
-  onSelect,
-  children,
-}: {
-  channel: Channel
-  selected: boolean
-  invalid: boolean
-  action?: React.ReactNode
-  onSelect: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <CardSurface
-      tabIndex={-1}
-      state={selected ? 'selected' : 'default'}
-      data-invalid={invalid ? 'true' : undefined}
-      className={cn(
-        'flex h-auto min-w-0 flex-col items-stretch gap-[var(--space-8)] p-[var(--space-6)] hover:bg-[var(--color-surface-primary-default)] active:bg-[var(--color-surface-primary-default)]',
-        /* Same 1px on both, so picking one does not move its content; the
-           Selected stroke is drawn inside it. */
-        'border',
-        selected ? 'border-transparent' : 'border-[var(--color-border-primary-default)]',
-        invalid && 'webds-pattern-form-section-card--s1',
-      )}
-    >
-      <span className="flex items-center gap-[var(--space-4)]">
-        <label className="flex flex-1 cursor-pointer items-center gap-[var(--space-3)]">
-          <RadioButton selected={selected} aria-label={channel} onClick={onSelect} />
-          <span className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">{channel}</span>
-        </label>
-        {action}
-      </span>
-      <div className="flex flex-col gap-[var(--space-4)]">{children}</div>
-    </CardSurface>
   )
 }
 
