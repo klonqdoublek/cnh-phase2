@@ -39,7 +39,15 @@ export type Look = 'plain' | 'tint'
  *  Mention's default). */
 export type Erase = 'whole' | 'select' | 'trigger'
 
-export type Concept = { picker: Picker; placement: Placement; layout: Layout; columns: Columns; mark: Mark; trigger: Trigger; look: Look; erase: Erase }
+/** What the pills do once the file has more fields than one row holds
+ *  (requester, 28 Oct 2026, after the Mobbin board "Dynamic field chips at
+ *  scale"): show them all, show the first few and a `+N more` chip that opens
+ *  the rest with a search (Google Ads), one row that scrolls with ‹ › and an
+ *  `All fields (N)` list (Magnific), or a search that filters the chips
+ *  (Meetup). */
+export type Overflow = 'all' | 'more' | 'scroll' | 'search'
+
+export type Concept = { picker: Picker; placement: Placement; layout: Layout; columns: Columns; mark: Mark; trigger: Trigger; look: Look; erase: Erase; overflow: Overflow }
 
 export const IDEAS = [
   { id: '1', label: 'Idea 1', note: 'Pills over the cards', node: '324-35734', concept: { picker: 'pills', placement: 'shared', layout: 'columns' } },
@@ -75,12 +83,12 @@ export const FIGMA_FILE = 'https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-
 
 /* Stacked (CNH) is the chosen channel layout (requester, 28 Oct 2026), so a
    link without `?df=` opens on Idea 1.2, the draft drawn in it. */
-const DEFAULT: Concept = { ...IDEAS[1].concept, columns: 'many', mark: 'plus', trigger: 'slash', look: 'tint', erase: 'whole' }
+const DEFAULT: Concept = { ...IDEAS[1].concept, columns: 'many', mark: 'plus', trigger: 'slash', look: 'tint', erase: 'whole', overflow: 'all' }
 
-const keyOf = (c: Concept) => `${c.picker}-${c.placement}-${c.layout}-${c.columns}-${c.mark}-${c.trigger}-${c.look}-${c.erase}`
+const keyOf = (c: Concept) => `${c.picker}-${c.placement}-${c.layout}-${c.columns}-${c.mark}-${c.trigger}-${c.look}-${c.erase}-${c.overflow}`
 
 const parse = (raw: string | null): Concept => {
-  const [picker, placement, layout, columns, mark, trigger, look, erase] = (raw ?? '').split('-')
+  const [picker, placement, layout, columns, mark, trigger, look, erase, overflow] = (raw ?? '').split('-')
   return {
     picker: picker === 'button' || picker === 'dialog' || picker === 'pills' || picker === 'shortcut' ? picker : DEFAULT.picker,
     placement: placement === 'channel' ? 'channel' : placement === 'shared' ? 'shared' : DEFAULT.placement,
@@ -90,6 +98,7 @@ const parse = (raw: string | null): Concept => {
     trigger: trigger === 'at' || trigger === 'braces' || trigger === 'slash' ? trigger : DEFAULT.trigger,
     look: look === 'plain' || look === 'tint' ? look : DEFAULT.look,
     erase: erase === 'whole' || erase === 'select' || erase === 'trigger' ? erase : DEFAULT.erase,
+    overflow: overflow === 'all' || overflow === 'more' || overflow === 'scroll' || overflow === 'search' ? overflow : DEFAULT.overflow,
   }
 }
 
