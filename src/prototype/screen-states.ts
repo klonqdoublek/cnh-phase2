@@ -116,8 +116,9 @@ const CREATE_BROADCAST: Screen = {
   name: 'Create broadcast',
   states: [
     s('#/broadcast/create', 'Default', 'Empty', true),
-    s('#/broadcast/create/cis', 'Data', 'CIS'),
-    s('#/broadcast/create/direct', 'Data', 'Direct'),
+    s('#/broadcast/create/cis', 'Data', 'CIS ID'),
+    s('#/broadcast/create/email', 'Data', 'Email'),
+    s('#/broadcast/create/sms', 'Data', 'SMS'),
     s('#/broadcast/create/step1-filled', 'Data', 'Step 1 filled'),
     s('#/broadcast/create/filled', 'Data', 'Filled'),
     s('#/broadcast/create/quiet', 'Data', 'Start in the quiet period'),
