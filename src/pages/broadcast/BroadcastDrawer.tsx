@@ -59,9 +59,12 @@ const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
       ? `The broadcast ended at ${fmtDateTime(new Date(b.end))}. ${fmtNumber(b.notSent)} recipients were not sent.`
       : 'Every recipient was sent a message.',
   /* Failed and Cancelled (19 Oct 2026): composed, the original build has
-     neither. */
+     neither. The report pointer (UX writer, 28 Oct 2026) only when the footer
+     offers Download report. */
   Failed: (b) =>
-    `A system error stopped the broadcast.${b.notSent ? ` ${fmtNumber(b.notSent)} recipients were not sent.` : ''}`,
+    `A system error stopped the broadcast.${b.notSent ? ` ${fmtNumber(b.notSent)} recipients were not sent.` : ''}${
+      b.notSent && hasDeliveryReport(b) ? ' Download report to see who they are.' : ''
+    }`,
   Cancelled: () => 'Cancelled before it was submitted. Nothing was sent.',
 }
 
