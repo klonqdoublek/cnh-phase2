@@ -65,9 +65,9 @@ export function Dialogs({ f, onBack }: { f: BroadcastForm; onBack: () => void })
             <dt className="text-[var(--color-text-secondary-default)]">Broadcast</dt>
             <dd className="m-0 text-[var(--color-text-primary-default)]">{f.name}</dd>
             <dt className="text-[var(--color-text-secondary-default)]">Recipients</dt>
-            <dd className="m-0 text-[var(--color-text-primary-default)]">
-              {f.file?.name} · by {f.column}
-            </dd>
+            <dd className="m-0 text-[var(--color-text-primary-default)]">{f.file?.name}</dd>
+            <dt className="text-[var(--color-text-secondary-default)]">Recipient column</dt>
+            <dd className="m-0 text-[var(--color-text-primary-default)]">{f.column}</dd>
             <dt className="text-[var(--color-text-secondary-default)]">Channel</dt>
             <dd className="m-0 text-[var(--color-text-primary-default)]">
               {CHANNELS.filter((c) => f.channels.includes(c)).join(', ')}
