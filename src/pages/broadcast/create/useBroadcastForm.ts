@@ -6,6 +6,7 @@ import {
   checkAudience,
   columnHolds,
   fieldsOf,
+  dndNeverSends,
   firstSend,
   idKind,
   TYPE_CHANNEL,
@@ -220,6 +221,8 @@ export function useBroadcastForm({
   const endUsed = mode === 'schedule' ? end : ''
   const first = start ? firstSend(start, dnd) : null
   const waits = !!(start && first && first.getTime() !== start.getTime())
+  /** Do Not Disturb leaves no time to send: a warning only, Submit still goes ahead. */
+  const neverSends = useMemo(() => dndNeverSends(dnd), [dnd])
 
   const setDndEnabled = (enabled: boolean) => {
     setDnd((d) => ({ ...d, enabled }))
@@ -391,6 +394,7 @@ export function useBroadcastForm({
     setStartTime,
     start,
     first,
+    neverSends,
     waits,
     end: endUsed,
     setEnd,

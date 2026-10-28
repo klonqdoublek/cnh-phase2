@@ -1016,6 +1016,9 @@ export function Delivery({ f }: F) {
 /** When sending actually starts, given the quiet period. */
 function Outlook({ f }: F) {
   if (!f.start || !f.first) return null
+  /* Do Not Disturb that never ends has no start to promise; its warning is the
+     Do Not Disturb card's or the confirm dialog's (28 Oct 2026). */
+  if (f.neverSends && !f.end) return null
   return (
     <Alert
       appearance="brand"
@@ -1023,19 +1026,33 @@ function Outlook({ f }: F) {
       /* Title, not Description: the Figma Alert has no switch to hide its Title,
          so the board draws this note as the Title-only Alert. */
       title={<>
-        {f.waits
+        {f.neverSends ? null : f.waits
           ? `${f.mode === 'now' ? 'Now' : 'The start'} is inside the quiet period. Sending starts at ${fmtDateTime(f.first)}.`
           : f.mode === 'now'
             ? 'Sending starts right after you submit.'
             : `Sending starts at ${fmtDateTime(f.start)}.`}
-        {f.dnd.enabled && ' Sending pauses during the quiet period and resumes after it.'}
-        {f.end && ` Sending stops at ${fmtDateTime(new Date(f.end))}; recipients not sent by then are counted as Not sent.`}
+        {f.dnd.enabled && !f.neverSends && ' Sending pauses during the quiet period and resumes after it.'}
+        {f.end && `${f.neverSends ? '' : ' '}Sending stops at ${fmtDateTime(new Date(f.end))}; recipients not sent by then are counted as Not sent.`}
       </>}
     />
   )
 }
 
 /* ── DND (its own card under Delivery Date) ──────────────────────────────── */
+
+/** Do Not Disturb that covers every day, all day (BA / Dev sync, 28 Oct
+ *  2026): a Caution Alert, Title only, as the Delivery card's Outlook. It warns;
+ *  Submit still goes ahead. Shown on the Do Not Disturb card or in the confirm
+ *  dialog, whichever the Prototype control picks, until dev confirms one. */
+export function NeverSendsAlert() {
+  return (
+    <Alert
+      appearance="caution"
+      icon={<Icon slug="caution" size={24} color="var(--color-icon-caution-default)" />}
+      title={BROADCAST_COPY.dndNeverSends}
+    />
+  )
+}
 
 /** One quiet period on one row: its days, its hours or All day, and — when
  *  there is more than one — a trash to remove it (draft 2.2, Figma 89:4665). */
@@ -1141,7 +1158,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
  *  2026; was a Time zone row under the periods). The switch is drawn in the
  *  title rather than through the card's `toggle`, which names the switch only
  *  from a string title. */
-export function DndCard({ f }: F) {
+export function DndCard({ f, warn }: F & { warn: boolean }) {
   const dnd = f.dnd
   return (
     <FormSectionCard
@@ -1164,6 +1181,7 @@ export function DndCard({ f }: F) {
           <DndRuleRow f={f} rule={rule} index={i} />
         </CardSurface>
       ))}
+      {warn && f.neverSends && <NeverSendsAlert />}
       <span className="flex">
         <OutlineButton disabled={!dnd.enabled} onClick={f.addDndRule}>
           Add more period

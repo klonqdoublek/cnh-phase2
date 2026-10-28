@@ -24,6 +24,7 @@ import {
   type Placement,
   type Trigger,
 } from './dynamic-field'
+import { setDndWarning, useDndWarning, type DndWarning } from './dnd-warning'
 import { KINDS, screenOf, stateOf, type Kind } from './screen-states'
 
 /* Prototype runner only — the floating Prototype control, in two groups
@@ -95,6 +96,13 @@ const MARKS: { value: Mark; label: string }[] = [
   { value: 'braces', label: '{ }' },
 ]
 
+/* Where Do Not Disturb that covers every day, all day is warned about: the
+   BA / Dev sync's two options (28 Oct 2026), until dev confirms one. */
+const DND_WARNINGS: { value: DndWarning; label: string }[] = [
+  { value: 'inline', label: 'On the DND card' },
+  { value: 'submit', label: 'After Submit' },
+]
+
 /** A direction's own option: a small label over its control. */
 function Option({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
   return (
@@ -151,6 +159,7 @@ const clamp = (x: number, y: number, el: HTMLElement | null) => {
 export function ConceptPanel() {
   const hash = useHash()
   const concept = useConcept()
+  const dndWarning = useDndWarning()
   const box = useRef<HTMLDivElement>(null)
   const saved = useRef(load()).current
   const [open, setOpen] = useState(saved.open ?? true)
@@ -432,6 +441,15 @@ export function ConceptPanel() {
                       </>
                     )}
                   </p>
+                </div>
+
+                <div className="flex flex-col gap-[var(--space-2)]">
+                  <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">3. DND every day, all day</span>
+                  <SegmentedTab
+                    items={DND_WARNINGS.map((w) => w.label)}
+                    selectedIndex={DND_WARNINGS.findIndex((w) => w.value === dndWarning)}
+                    onSelect={(i) => setDndWarning(DND_WARNINGS[i].value)}
+                  />
                 </div>
               </>
             )}
