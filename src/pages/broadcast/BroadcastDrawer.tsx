@@ -95,11 +95,12 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
       rows: [
         ['Description', b.description],
         ['Audience file', b.audienceFile],
-        ['Recipient type', `${b.recipientType === 'cis' ? 'CIS' : 'Direct recipient'} · by ${b.recipientColumn}`],
+        ['Recipient type', b.recipientType === 'cis' ? 'CIS' : 'Direct recipient'],
+        ['Recipient column', b.recipientColumn],
         [
           'Broadcast start',
           b.startMode === 'now'
-            ? `As soon as possible · ${fmtDateTime(new Date(b.start))}`
+            ? `${fmtDateTime(new Date(b.start))} (as soon as possible)`
             : fmtDateTime(new Date(b.start)),
         ],
         ['Broadcast end', b.end ? fmtDateTime(new Date(b.end)) : ''],

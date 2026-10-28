@@ -19,7 +19,9 @@ export const BROADCAST_COPY = {
   /* The list's load fail: Notification management's copy, reused (20 Oct 2026). */
   loadFail: 'Unable to get information',
   dropTitle: 'Upload audience file',
-  dropHint: 'Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000 recipients',
+  /* Was `Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000
+     recipients` (original build); reworded without the `·` joins, 28 Oct 2026. */
+  dropHint: 'CSV or XLSX, up to 10 MB and 1,000 recipients',
   browse: 'Choose file',
   sample: 'Download sample file',
   noFile: 'Upload an audience file to continue',
