@@ -145,15 +145,22 @@
   {
    "id": "bc-cis",
    "kind": "screen",
-   "label": "CIS — preview, checkboxes",
+   "label": "CIS ID — preview, channel switches",
    "route": "#/broadcast/create/cis",
    "section": "Broadcast"
   },
   {
-   "id": "bc-direct",
+   "id": "bc-email",
    "kind": "screen",
-   "label": "Direct — Email or SMS",
-   "route": "#/broadcast/create/direct",
+   "label": "Email — one Email card",
+   "route": "#/broadcast/create/email",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-sms",
+   "kind": "screen",
+   "label": "SMS — one SMS card",
+   "route": "#/broadcast/create/sms",
    "section": "Broadcast"
   },
   {
@@ -670,13 +677,19 @@
   {
    "from": "bc-type",
    "to": "bc-cis",
-   "label": "CIS",
+   "label": "CIS ID",
    "style": "solid"
   },
   {
    "from": "bc-type",
-   "to": "bc-direct",
-   "label": "Direct recipient",
+   "to": "bc-email",
+   "label": "Email",
+   "style": "solid"
+  },
+  {
+   "from": "bc-type",
+   "to": "bc-sms",
+   "label": "SMS",
    "style": "solid"
   },
   {
@@ -698,7 +711,19 @@
    }
   },
   {
-   "from": "bc-direct",
+   "from": "bc-email",
+   "to": "bc-valid",
+   "label": "Submit",
+   "style": "solid",
+   "touch": {
+    "x": 1423,
+    "y": 1020,
+    "w": 177,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-sms",
    "to": "bc-valid",
    "label": "Submit",
    "style": "solid",
