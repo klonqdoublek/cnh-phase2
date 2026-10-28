@@ -24,7 +24,7 @@ import { SelectList } from '@/patterns/select-list'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { InfoNote } from '@/patterns/info-note'
 import { FormStep } from '@/patterns/console-page'
-import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
+import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, endsNextDay, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import type { Concept, Overflow } from '@/prototype/dynamic-field'
@@ -1134,6 +1134,17 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { to: v })}
           />
+          {/* The end falls on the next day (BA, 2026-10-19). */}
+          {endsNextDay(rule) && (
+            <span
+              className={cn(
+                'pb-[var(--space-4)] type-body-m',
+                off ? 'text-[var(--color-text-disabled-default)]' : 'text-[var(--color-text-secondary-default)]',
+              )}
+            >
+              Next day
+            </span>
+          )}
           <span className="flex h-[56px] items-center">
             <Choice
               kind="checkbox"
