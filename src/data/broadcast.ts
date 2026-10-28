@@ -325,8 +325,13 @@ export const fmtDays = (days: number[]) => {
   return ordered.map((d) => DAYS.find((x) => x.day === d)!.label).join(', ')
 }
 
-/** "Mon – Fri, 18:00–08:00" or "Sat, Sun, All day". */
-export const fmtDndRule = (rule: DndRule) => `${fmtDays(rule.days)}, ${rule.allDay ? 'All day' : `${rule.from}–${rule.to}`}`
+/** The period ends on the day after it starts (BA, 2026-10-19): its end is
+ *  before its start. Never for All day, a same-day period, or From = To. */
+export const endsNextDay = (rule: DndRule) => !rule.allDay && minutes(rule.to) < minutes(rule.from)
+
+/** "Mon – Fri, 18:00–08:00 (Next day)", "Mon, 12:00–15:00" or "Sat, Sun, All day". */
+export const fmtDndRule = (rule: DndRule) =>
+  `${fmtDays(rule.days)}, ${rule.allDay ? 'All day' : `${rule.from}–${rule.to}${endsNextDay(rule) ? ' (Next day)' : ''}`}`
 
 /** Each rule on a line of its own, the time zone once at the end. */
 export const fmtDnd = (dnd: Dnd) =>
