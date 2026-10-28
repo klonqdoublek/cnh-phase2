@@ -30,7 +30,6 @@ export const BROADCAST_COPY = {
   fileEmpty: 'The file has no recipients',
   tooManyRows: 'The file has more than 1,000 recipients',
   checking: 'Checking file…',
-  validated: 'File validated',
   /* Composed (docs/broadcast-gaps.md): the original build has no dialog for a
      file that fails the full read on Submit. */
   fileBlockedTitle: 'The audience file cannot be used',
