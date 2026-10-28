@@ -23,12 +23,13 @@ import {
   type Placement,
   type Trigger,
 } from './dynamic-field'
-import { KINDS, screenOf, stateOf } from './screen-states'
+import { KINDS, screenOf, stateOf, type Kind } from './screen-states'
 
 /* Prototype runner only — the floating Prototype control, in two groups
  * (requester, 28 Oct 2026). Screen state: on every screen with more than one
  * state it lists them, so loading, error, empty and dialog states are one
- * click away (./screen-states.ts); on Create / Edit broadcast the audience
+ * click away (./screen-states.ts), folded by kind so only the kind on show
+ * is open (requester, 28 Oct 2026); on Create / Edit broadcast the audience
  * file's size too. Design direction, on Create / Edit broadcast only: channel
  * layout, then how a field is picked with its own options in one row, and a
  * line naming the draft that combination is (./dynamic-field.ts). Drag it by
@@ -144,6 +145,8 @@ export function ConceptPanel() {
   const saved = useRef(load()).current
   const [open, setOpen] = useState(saved.open ?? true)
   const [group, setGroup] = useState<Group>(saved.group === 'direction' ? 'direction' : 'state')
+  /* Kinds opened or closed by hand; the rest follow the state on show. */
+  const [folds, setFolds] = useState<Partial<Record<Kind, boolean>>>({})
   /* Default: bottom right, above the page's 76 footer. */
   const [pos, setPos] = useState<{ x: number; y: number } | null>(
     saved.x != null && saved.y != null ? { x: saved.x, y: saved.y } : null,
@@ -164,6 +167,10 @@ export function ConceptPanel() {
   useEffect(() => {
     if (pos) save({ ...pos, open, group })
   }, [pos, open, group])
+
+  /* Another screen starts folded again, on its own state's kind. */
+  const screenName = screenOf(hash)?.name
+  useEffect(() => setFolds({}), [screenName])
 
   if (new URLSearchParams(location.search).get('panel') === '0') return null
   const screen = screenOf(hash)
@@ -274,15 +281,27 @@ export function ConceptPanel() {
                       {KINDS.map((kind) => {
                         const states = screen.states.filter((st) => st.kind === kind)
                         if (!states.length) return null
+                        const here = state?.kind === kind
+                        const unfolded = folds[kind] ?? here
                         return (
                           <div key={kind} className="flex flex-col">
-                            <span className="type-label-s px-[var(--space-2)] pt-[var(--space-2)] text-[var(--color-text-secondary-default)]">
-                              {kind}
-                            </span>
-                            {states.map((st) => (
+                            <button
+                              type="button"
+                              aria-expanded={unfolded}
+                              onClick={() => setFolds((f) => ({ ...f, [kind]: !unfolded }))}
+                              className="flex cursor-pointer items-center gap-[var(--space-2)] rounded-[var(--radius-2)] px-[var(--space-2)] py-[var(--space-1)] hover:bg-[var(--color-surface-secondary-default)]"
+                            >
+                              <Icon slug={unfolded ? 'chevron-down' : 'chevron-right'} size={16} />
+                              <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">{kind}</span>
+                              <span className="type-label-m text-[var(--color-text-secondary-default)]">
+                                {states.length}
+                                {!unfolded && here && ` · ${state.label}`}
+                              </span>
+                            </button>
+                            {unfolded && states.map((st) => (
                               <label
                                 key={st.route}
-                                className="flex cursor-pointer items-center gap-[var(--space-2)] rounded-[var(--radius-2)] px-[var(--space-2)] py-[var(--space-1)] hover:bg-[var(--color-surface-secondary-default)]"
+                                className="flex cursor-pointer items-center gap-[var(--space-2)] rounded-[var(--radius-2)] py-[var(--space-1)] pl-[var(--space-8)] pr-[var(--space-2)] hover:bg-[var(--color-surface-secondary-default)]"
                               >
                                 <RadioButton selected={st.route === state?.route} aria-label={st.label} onClick={() => go(st.route.slice(1))} />
                                 <span className="type-body-s text-[var(--color-text-primary-default)]">{st.label}</span>
