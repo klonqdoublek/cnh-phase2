@@ -269,6 +269,29 @@ export const BA_DND: Dnd = {
   ],
   timeZone: 'Asia/Bangkok',
 }
+/** Composed (29 Oct 2026) so the list, drawer and Edit show more than two
+ *  periods: weeknights, Saturday from noon and all of Sunday. */
+export const THREE_PERIOD_DND: Dnd = {
+  enabled: true,
+  rules: [
+    { id: 'dnd-weeknights', days: [1, 2, 3, 4, 5], allDay: false, from: '20:00', to: '08:00' },
+    { id: 'dnd-saturday', days: [6], allDay: false, from: '12:00', to: '08:00' },
+    { id: 'dnd-sunday', days: [0], allDay: true, from: '00:00', to: '00:00' },
+  ],
+  timeZone: 'Asia/Bangkok',
+}
+/** Composed (29 Oct 2026): four periods, a lunch break as well as nights and
+ *  a weekend kept as two days. */
+export const FOUR_PERIOD_DND: Dnd = {
+  enabled: true,
+  rules: [
+    { id: 'dnd-lunch', days: [1, 2, 3, 4, 5], allDay: false, from: '12:00', to: '13:00' },
+    { id: 'dnd-weeknights', days: [1, 2, 3, 4, 5], allDay: false, from: '20:00', to: '08:00' },
+    { id: 'dnd-saturday', days: [6], allDay: true, from: '00:00', to: '00:00' },
+    { id: 'dnd-sunday', days: [0], allDay: true, from: '00:00', to: '00:00' },
+  ],
+  timeZone: 'Asia/Bangkok',
+}
 /** `offset` follows the quiet period's time label (design critique, 27 Oct
  *  2026), in place of a Time zone row under the periods. */
 export const TIME_ZONES = [{ value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)', offset: 'GMT+7' }]
@@ -473,7 +496,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-10-15T08:00',
     end: '2026-10-17T18:00',
-    dnd: DEFAULT_DND,
+    dnd: THREE_PERIOD_DND,
     status: 'Queue',
     success: 0,
     failed: 0,
@@ -514,7 +537,7 @@ export const BROADCASTS: Broadcast[] = [
     recipientColumn: 'EMAIL',
     startMode: 'now',
     start: '2026-10-07T14:00',
-    dnd: DEFAULT_DND,
+    dnd: BA_DND,
     status: 'Failed',
     success: 120,
     failed: 2,
@@ -534,7 +557,7 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-12-01T09:00',
-    dnd: DEFAULT_DND,
+    dnd: FOUR_PERIOD_DND,
     status: 'Cancelled',
     success: 0,
     failed: 0,
@@ -553,7 +576,7 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-11-02T09:00',
-    dnd: DEFAULT_DND,
+    dnd: THREE_PERIOD_DND,
     status: 'Draft',
     success: 0,
     failed: 0,
