@@ -14,9 +14,10 @@ import { JobRow } from './JobRow'
  * each import of this visit with its status, result and Download result /
  * Try again (requester, 29 Oct 2026; after Grok's "Upload documents" split
  * button, Remote's "Create" menu button and Railway's header list; Mobbin,
- * 29 Oct 2026). The indicator replaces the button's chevron: a turning ring
- * while a job is Processing, back to the chevron once it is done (the button
- * keeps opening the menu), a Negative mark while one is in Error. In the menu
+ * 29 Oct 2026). With nothing pending it is the plain Import button and opens
+ * the Import dialog. A turning ring follows the label while a job is
+ * Processing and a Negative mark while one is in Error; only then does the
+ * button open the menu. In the menu
  * a Processing file carries the never-ending loading bar. The menu opens by
  * itself on Import, as Safari shows its list when a download starts.
  *
@@ -60,18 +61,20 @@ export function ImportMenuButton({
 
   const busy = jobs.some((j) => j.status === 'processing')
   const failed = !busy && jobs.some((j) => j.status === 'failed')
+  /* Something still on the server or waiting for Try again: only then is Import a menu. */
+  const pending = busy || failed
 
   return (
     <div ref={box} className="relative flex">
-      {/* The button's trailing mark carries the state (requester, 29 Oct 2026): a
-          turning ring in place of the chevron while a job is Processing, the
-          chevron again once it is done, a Negative mark while one is in Error.
-          Was a badge at the button's bottom right. */}
+      {/* With nothing pending Import is the plain button and opens the Import
+          dialog (requester, 29 Oct 2026; was a chevron and the menu every time).
+          While a job is Processing a turning ring follows the label, while one is
+          in Error a Negative mark, and then the button opens the menu. */}
       <OutlineButton
-        aria-haspopup="menu"
-        aria-expanded={open}
+        aria-haspopup={pending ? 'menu' : undefined}
+        aria-expanded={pending ? open : undefined}
         aria-label={busy ? `Import, ${IMPORT_COPY.statusProcessing}` : failed ? `Import, ${IMPORT_COPY.statusFailed}` : undefined}
-        onClick={() => onOpenChange(!open)}
+        onClick={() => (pending || open ? onOpenChange(!open) : onImportFile())}
       >
         Import
         {busy ? (
@@ -79,10 +82,8 @@ export function ImportMenuButton({
             <circle cx="8" cy="8" r="6.5" fill="none" strokeWidth="1.5" className="stroke-[var(--color-border-primary-default)]" />
             <circle cx="8" cy="8" r="6.5" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="10.2 30.6" className="stroke-[var(--color-border-highlight-default)]" />
           </svg>
-        ) : failed ? (
-          <Icon slug="close-filled" size={16} color="var(--color-icon-negative-default)" />
         ) : (
-          <Icon slug={open ? 'chevron-up' : 'chevron-down'} size={16} color="currentColor" />
+          failed && <Icon slug="close-filled" size={16} color="var(--color-icon-negative-default)" />
         )}
       </OutlineButton>
       {open && (
