@@ -2,22 +2,24 @@ import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
 import { IMPORT_COPY } from '@/data/import-spec'
 import { cn } from '@/lib/cn'
-import type { ImportJob } from './jobs'
+import { downloadResult, resultOf, type ImportJob } from './jobs'
 
 /**
  * One import job as a row, shared by the upload panel (A) and the indicator's
  * popover (C): a document mark, the file name (Body S Emphasized) over its
  * status (Body XS), and the status mark at the end. Importing reads in
  * Text/Secondary with a clock (webds ships no spinner smaller than 48, a gap),
- * imported in Text/Positive with a tick, failed in Text/Negative with a
- * highlight Ghost Try again. Composed from webds parts, as the CMS upload slot is.
+ * Completed in Text/Positive with its result ("4 imported, 1 failed") and a
+ * highlight Ghost Download result (29 Oct 2026; was a tick), Error in
+ * Text/Negative with a highlight Ghost Try again. Composed from webds parts,
+ * as the CMS upload slot is.
  */
 export function JobRow({ job, onRetry }: { job: ImportJob; onRetry: (id: number) => void }) {
   const line =
     job.status === 'processing'
       ? IMPORT_COPY.processingNote
       : job.status === 'done'
-        ? IMPORT_COPY.successBody(job.templates.length)
+        ? IMPORT_COPY.resultLine(resultOf(job).imported, resultOf(job).failed)
         : IMPORT_COPY.failTitle
   return (
     <div className="flex items-center gap-[var(--space-3)] py-[var(--space-3)]">
@@ -43,9 +45,9 @@ export function JobRow({ job, onRetry }: { job: ImportJob; onRetry: (id: number)
         </span>
       )}
       {job.status === 'done' && (
-        <span role="img" aria-label={IMPORT_COPY.statusDone} className="flex">
-          <Icon slug="tick-circle" size={16} color="var(--color-icon-positive-default)" />
-        </span>
+        <GhostButton appearance="highlight" padding="none" onClick={() => downloadResult(job)}>
+          {IMPORT_COPY.downloadResult}
+        </GhostButton>
       )}
       {job.status === 'failed' && (
         <GhostButton appearance="highlight" padding="none" onClick={() => onRetry(job.id)}>

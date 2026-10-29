@@ -1,33 +1,36 @@
-import { Badge, type BadgeType } from '@/bbl/badge'
+import { useState } from 'react'
 import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { IMPORT_COPY } from '@/data/import-spec'
-import { timeOf, type ImportJob, type JobStatus } from './jobs'
-
-const BADGE: Record<JobStatus, { type: BadgeType; label: string }> = {
-  processing: { type: 'accent', label: IMPORT_COPY.statusProcessing },
-  done: { type: 'positive', label: IMPORT_COPY.statusDone },
-  failed: { type: 'negative', label: IMPORT_COPY.statusFailed },
-}
+import { ImportDrawer } from './ImportDrawer'
+import { JobBadge } from './JobBadge'
+import { resultOf, timeOf, type ImportJob } from './jobs'
 
 /**
  * Direction B — a Recent imports strip between the filters and the table
  * (HubSpot, Klaviyo, Pipedrive, Attio, Customer.io import history; Mobbin,
  * 28 Oct 2026). One row per job: the file name, when it was submitted and a
- * webds Badge S for its status (Accent Importing, Positive Imported, Negative
- * Failed), with Try again on a failed row and a close mark on a finished one.
+ * webds Badge S for its status (Accent Processing, Positive Completed, Negative
+ * Error; 29 Oct 2026), with Try again on an Error row and a close mark on a
+ * finished one. A row opens the import's drawer, with its result and Download
+ * result (BA's MoM, 29 Oct 2026: select an import to see its result).
  * The toasts on submit and on done are Dashboard's (ImportStatus).
  */
 export function RecentImports({
   jobs,
   onRetry,
   onDismiss,
+  onOpen,
 }: {
   jobs: ImportJob[]
   onRetry: (id: number) => void
   onDismiss: (id: number) => void
+  /** Opening a drawer closes the list's toast, which would sit over its header. */
+  onOpen: () => void
 }) {
+  const [openId, setOpenId] = useState<number | null>(null)
+  const open = jobs.find((j) => j.id === openId)
   if (!jobs.length) return null
   return (
     <section
@@ -36,22 +39,28 @@ export function RecentImports({
     >
       <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">{IMPORT_COPY.historyTitle}</span>
       {jobs.map((job) => {
-        const badge = BADGE[job.status]
+        const r = resultOf(job)
         return (
           <div key={job.id} className="flex h-[32px] items-center gap-[var(--space-4)]">
             <Icon slug="document" size={16} color="var(--color-icon-secondary-default)" />
-            <span title={job.fileName} className="max-w-[360px] truncate type-body-s-emphasized text-[var(--color-text-primary-default)]">
+            <button
+              type="button"
+              title={job.fileName}
+              onClick={() => {
+                onOpen()
+                setOpenId(job.id)
+              }}
+              className="max-w-[360px] truncate type-body-s-emphasized text-[var(--color-text-highlight-default)] hover:text-[var(--color-text-highlight-hovered)]"
+            >
               {job.fileName}
-            </span>
+            </button>
             <span className="type-body-xs text-[var(--color-text-secondary-default)]">{IMPORT_COPY.submittedAt(timeOf(job.startedAt))}</span>
-            <Badge type={badge.type} size="s" icon={false}>
-              {badge.label}
-            </Badge>
+            <JobBadge status={job.status} />
             <span className="type-body-xs text-[var(--color-text-secondary-default)]">
               {job.status === 'processing'
                 ? IMPORT_COPY.processingNote
                 : job.status === 'done'
-                  ? IMPORT_COPY.successBody(job.templates.length)
+                  ? IMPORT_COPY.resultLine(r.imported, r.failed)
                   : IMPORT_COPY.failTitle}
             </span>
             <span className="flex-1" />
@@ -70,6 +79,7 @@ export function RecentImports({
           </div>
         )
       })}
+      {open && <ImportDrawer job={open} onClose={() => setOpenId(null)} onRetry={onRetry} />}
     </section>
   )
 }

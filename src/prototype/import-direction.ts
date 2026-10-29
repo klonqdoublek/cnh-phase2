@@ -14,25 +14,25 @@ export const IMPORT_DIRECTIONS = [
     id: 'A',
     label: 'A',
     name: 'Upload panel',
-    note: 'A panel at the bottom right lists each file: importing, imported or failed with Try again. After Google Drive, Dropbox, Proton Drive, ElevenLabs.',
+    note: 'A panel at the bottom right lists each file: Processing, Completed with its result and Download result, or Error with Try again. After Google Drive, Dropbox, Proton Drive, ElevenLabs.',
   },
   {
     id: 'B',
     label: 'B',
     name: 'Toast and Recent imports',
-    note: 'A toast says the import is in progress, a Recent imports strip above the list carries each file’s status, and a toast says when it is done. After HubSpot, Klaviyo, Pipedrive, Attio.',
+    note: 'A toast says the import is in progress, a Recent imports strip above the list carries each file’s status and opens its result in a drawer, and a toast says when it is done. After HubSpot, Klaviyo, Pipedrive, Attio.',
   },
   {
     id: 'C',
     label: 'C',
     name: 'Indicator beside Import',
-    note: 'An icon beside Import spins while a file imports and turns to a mark when done; it opens a popover with the files. After Safari downloads and Contractbook.',
+    note: 'An icon beside Import spins while a file imports and turns to a mark when done; it opens a popover with the files, their results and Download result. After Safari downloads and Contractbook.',
   },
   {
     id: 'D',
     label: 'D',
     name: 'Dialog, then a toast',
-    note: 'A dialog says it takes about 10 minutes and the page can be left; a toast says when it is done, and a dialog asks to try again if it fails. After Kit and Zendesk.',
+    note: 'A dialog says it takes about 10 minutes and the page can be left; a toast says when it is done, with the result and Download result, and a dialog asks to try again if it fails. After Kit and Zendesk.',
   },
 ] as const satisfies readonly { id: ImportDirection; label: string; name: string; note: string }[]
 

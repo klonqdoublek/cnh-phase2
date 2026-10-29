@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { IMPORT_PROCESS_FAIL_SENTINEL, PROCESS_MS } from '@/data/import-spec'
+import { IMPORT_PROCESS_FAIL_SENTINEL, PROCESS_MS, resultCsv, resultFileName, serverResult } from '@/data/import-spec'
+import { downloadText } from '@/lib/download'
 import type { Template } from '@/data/templates'
 
 /* Background import jobs (BA / Dev, 28 Oct 2026). Import that passes the dialog's
  * checks sends the file to a server, and its templates reach the list about 10
  * minutes later: a job is that wait. `processing` until the server is done, then
- * `done` (the templates land on the list) or `failed` (PROPOSAL, pending BA: a
- * failure on the server after the upload). App.tsx owns the jobs so they outlive
+ * `done` (Completed: the templates that pass the server's row checks land on the
+ * list, the rest are counted as failed; 29 Oct 2026) or `failed` (Error; PROPOSAL,
+ * pending BA: a failure on the server after the upload). App.tsx owns the jobs so they outlive
  * a visit to another page; the four directions only draw them. */
 
 export type JobStatus = 'processing' | 'done' | 'failed'
@@ -46,7 +48,7 @@ export function useImportJobs(land: (templates: Template[], fileName: string, re
     const t = window.setTimeout(() => {
       timers.current.delete(job.id)
       const fails = job.fileName.toLowerCase().includes(IMPORT_PROCESS_FAIL_SENTINEL)
-      if (!fails) landRef.current(job.templates, job.fileName, job.replace)
+      if (!fails) landRef.current(serverResult(job.templates).imported, job.fileName, job.replace)
       setJobs((list) => list.map((j) => (j.id === job.id ? { ...j, status: fails ? 'failed' : 'done' } : j)))
     }, PROCESS_MS)
     timers.current.set(job.id, t)
@@ -82,6 +84,15 @@ export function useImportJobs(land: (templates: Template[], fileName: string, re
 
   return { jobs, submit, retry, dismiss, seed }
 }
+
+/** Templates in file, Imported and Failed for a Completed job. */
+export const resultOf = (job: ImportJob) => {
+  const { imported, failed } = serverResult(job.templates)
+  return { total: job.templates.length, imported: imported.length, failed }
+}
+
+/** Download result: the server's result file, a stand-in here (its columns are the backend's). */
+export const downloadResult = (job: ImportJob) => downloadText(resultFileName(job.fileName), resultCsv(job.templates))
 
 /** "14:05" — when the job was submitted. */
 export const timeOf = (ms: number) =>

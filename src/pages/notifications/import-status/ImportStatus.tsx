@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/bbl/button'
+import { GhostButton } from '@/bbl/ghost-button'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { IMPORT_COPY } from '@/data/import-spec'
 import type { ImportDirection } from '@/prototype/import-direction'
 import { ListToast } from '../ListToast'
-import type { ImportJob, JobStatus } from './jobs'
+import { downloadResult, resultOf, type ImportJob, type JobStatus } from './jobs'
 import { UploadPanel } from './UploadPanel'
 
 type Event = { kind: 'started' | JobStatus; job: ImportJob }
@@ -14,13 +15,18 @@ type Event = { kind: 'started' | JobStatus; job: ImportJob }
  * 28 Oct 2026; four directions until one is chosen):
  *
  *   A  the upload panel opens on every change; no toast
- *   B  a toast on submit ("Import in progress"), on done ("Templates imported")
- *      and on failure; the Recent imports strip carries the status
+ *   B  a toast on submit ("Import in progress"), on done ("Import completed",
+ *      with the result) and on failure; the Recent imports strip carries the
+ *      status, and a row opens the import's drawer
+ *   (A and C: each job's row carries its result and Download result.)
  *   C  the indicator's popover opens on submit; its mark changes on done/failure
  *   D  a dialog on submit (about 10 minutes, the page can be left), a toast on
- *      done, and a dialog on failure (Close / Try again, the system-fail rule)
+ *      done with the result and Download result, and a dialog on failure
+ *      (Close / Try again, the system-fail rule)
  *
- * Toasts close after 3 s, except on a held route (`#/list/import/<job preset>`).
+ * Toasts close after 3 s, except on a held route (`#/list/import/<job preset>`)
+ * and D's done toast: it is D's only way to the result file, so it stays until
+ * closed (29 Oct 2026).
  */
 export function useImportFeedback(jobs: ImportJob[], direction: ImportDirection) {
   const seen = useRef(new Map<number, JobStatus>())
@@ -68,7 +74,18 @@ export function ImportFeedback({
       ((direction === 'B' || direction === 'D') && kind === 'done' && {
         appearance: 'positive' as const,
         title: IMPORT_COPY.successTitle,
-        description: IMPORT_COPY.successBody(event.job.templates.length),
+        description: (
+          <>
+            {IMPORT_COPY.resultLine(resultOf(event.job).imported, resultOf(event.job).failed)}
+            {direction === 'D' && (
+              <span className="mt-[var(--space-1)] flex">
+                <GhostButton appearance="highlight" padding="none" onClick={() => downloadResult(event.job)}>
+                  {IMPORT_COPY.downloadResult}
+                </GhostButton>
+              </span>
+            )}
+          </>
+        ),
       }) ||
       (direction === 'B' && kind === 'failed' && {
         appearance: 'negative' as const,
@@ -87,7 +104,7 @@ export function ImportFeedback({
         appearance={toast ? toast.appearance : 'positive'}
         title={toast ? toast.title : ''}
         description={toast ? toast.description : ''}
-        autoHideMs={held ? undefined : 3000}
+        autoHideMs={held || (direction === 'D' && kind === 'done') ? undefined : 3000}
         onClose={clearEvent}
       />
 

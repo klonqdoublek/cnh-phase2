@@ -62,11 +62,14 @@ export const IMPORT_COPY = {
   startedDialogBody: 'This takes about 10 minutes. The templates appear in the list as draft when it is done. You can leave this page.',
   ok: 'OK',
   close: 'Close',
-  statusProcessing: 'Importing',
-  statusDone: 'Imported',
-  statusFailed: 'Failed',
+  /* An import's status (requester, 29 Oct 2026, answering the BA's MoM): Processing while
+     the server works (about 10 minutes), then Completed or Error. Was Importing / Imported /
+     Failed (28 Oct). */
+  statusProcessing: 'Processing',
+  statusDone: 'Completed',
+  statusFailed: 'Error',
   panelTitle: (processing: number, failed: number) =>
-    processing ? `Importing ${processing} ${processing === 1 ? 'file' : 'files'}` : failed ? 'Import failed' : 'Import complete',
+    processing ? `Importing ${processing} ${processing === 1 ? 'file' : 'files'}` : failed ? 'Import failed' : 'Import completed',
   historyTitle: 'Recent imports',
   submittedAt: (time: string) => `Submitted ${time}`,
   indicator: 'Imports',
@@ -74,8 +77,21 @@ export const IMPORT_COPY = {
      the list's transcribed download-failure line. */
   failBody: (name: string) => `${name} could not be imported. Please try again.`,
   failToastBody: 'Please try again',
-  successTitle: 'Templates imported',
-  successBody: (n: number) => `${n} ${n === 1 ? 'template was' : 'templates were'} added as draft`,
+  /* An import's result (requester, 29 Oct 2026, answering the BA's MoM: "imported row by
+     row", a result to download). The server checks each template on its own, so a file can
+     import in part. The result file's columns are the backend's (out of scope). Composed. */
+  successTitle: 'Import completed',
+  resultTitle: 'Import result',
+  resultTotal: 'Templates in file',
+  resultImported: 'Imported',
+  resultFailed: 'Failed',
+  resultLine: (imported: number, failed: number) => `${imported} imported, ${failed} failed`,
+  downloadResult: 'Download result',
+  submitted: 'Submitted',
+  resultNote: (failed: number) =>
+    failed
+      ? 'The imported templates are on the list as draft. Download result to see why the others failed.'
+      : 'Every template in the file was imported as draft.',
   /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
      before it imports over that file. Since the design critique (20 Oct 2026) it opens
      after the upload spinner, alone, not over the Import dialog. Reworded 21 Oct 2026
@@ -96,6 +112,23 @@ export const UPLOAD_MS = 1200
 export const PROCESS_MS = 8000
 /** A file name containing this fails on the server after the upload (PROPOSAL, pending BA). */
 export const IMPORT_PROCESS_FAIL_SENTINEL = 'reject'
+
+/** What the server makes of each template (requester, 29 Oct 2026: templates import row by
+ *  row). The prototype's stand-in for the server's checks, a PROPOSAL: a template with no
+ *  name fails. Which checks the server really runs is the backend's. */
+const rowProblem = (t: Template) => (t.name ? null : 'Missing template name')
+export type ImportResult = { imported: Template[]; failed: number }
+export function serverResult(templates: Template[]): ImportResult {
+  const imported = templates.filter((t) => !rowProblem(t))
+  return { imported, failed: templates.length - imported.length }
+}
+
+/** The result file, a stand-in: its real columns are the backend's (out of scope, 29 Oct 2026). */
+export const resultFileName = (fileName: string) => `${fileName.replace(/\.jsonl$/i, '')}-import-result.csv`
+export function resultCsv(templates: Template[]) {
+  const rows = templates.map((t, i) => [String(i + 1), t.name, rowProblem(t) ? 'Failed' : 'Imported', rowProblem(t) ?? ''])
+  return [['Line', 'Template name', 'Result', 'Reason'], ...rows].map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n')
+}
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '')
 
@@ -227,9 +260,22 @@ export function presetFile(preset: ImportPreset): DemoFile | null {
  *  Their templates are not on the seeded list, so importing over one replaces nothing. */
 export const IMPORT_HISTORY: Record<string, string[]> = { [VALID_FILES[2].name]: [] }
 
-/** The templates the success route lands on the list: the one file `selected` picks. */
+/** The job presets' file: five templates, one with no name, so the result shows a part
+ *  import (4 imported, 1 failed; requester, 29 Oct 2026). */
+const JOB_FILE: DemoFile = {
+  name: 'campaign-oct.jsonl',
+  text: toJsonl([
+    demo('Card payment due', 'แจ้งเตือนก่อนถึงวันครบกำหนดชำระบัตรเครดิต', 'M Credit Card', ['Push notification', 'Email'], 'NANOTI'),
+    demo('Login OTP', 'ส่งรหัส OTP เพื่อยืนยันการเข้าสู่ระบบ', 'Bualuang mBanking', ['SMS'], 'NAOTP'),
+    demo('Monthly statement ready', 'แจ้งเมื่อ e-Statement ประจำเดือนพร้อมให้ดาวน์โหลด', 'M Credit Card', ['Email'], 'NABATCH'),
+    demo('', 'โปรโมชันบัตรเครดิตเดือนตุลาคม', 'M Credit Card', ['Push notification'], 'NAMKTBATCH'),
+    demo('Insurance renewal', 'แจ้งเตือนต่ออายุกรมธรรม์ประกันล่วงหน้า 30 วัน', 'AIA', ['Email', 'SMS'], 'NAMKTBATCH'),
+  ]),
+}
+
+/** Every template in the job presets' file; the server's result decides which land. */
 export const presetTemplates = () => {
-  const check = parseTemplates(VALID_FILES[0].text)
+  const check = parseTemplates(JOB_FILE.text)
   return check.ok ? check.templates : []
 }
 
@@ -237,5 +283,5 @@ export const presetTemplates = () => {
 export const JOB_PRESETS = ['processing', 'process-failed', 'success'] as const satisfies readonly ImportPreset[]
 export const isJobPreset = (p: ImportPreset | undefined): p is (typeof JOB_PRESETS)[number] =>
   (JOB_PRESETS as readonly string[]).includes(p ?? '')
-/** The file the job presets show: the one `selected` picks. */
-export const presetFileName = () => VALID_FILES[0].name
+/** The file the job presets show. */
+export const presetFileName = () => JOB_FILE.name

@@ -11,7 +11,7 @@ import { TableHeaderCell } from '@/bbl/table-header-cell'
 import { TablePagination } from '@/bbl/table-pagination'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { PageHeader } from '@/patterns/page-header'
-import { isJobPreset, presetFileName, presetTemplates, type ImportPreset } from '@/data/import-spec'
+import { isJobPreset, presetFileName, presetTemplates, serverResult, type ImportPreset } from '@/data/import-spec'
 import {
   CHANNELS,
   FILE_EXT,
@@ -135,7 +135,7 @@ export function Dashboard({
     seedJob.current({ fileName: presetFileName(), templates, replace: false, status })
     if (status !== 'done' || landed.current) return
     landed.current = true
-    onImportRef.current?.(templates)
+    onImportRef.current?.(serverResult(templates).imported)
   }, [importPreset])
 
   const clearSelection = () => setSelected(new Set())
@@ -351,7 +351,7 @@ export function Dashboard({
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {filters}
-        {direction === 'B' && <RecentImports jobs={importJobs.jobs} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />}
+        {direction === 'B' && <RecentImports jobs={importJobs.jobs} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} onOpen={feedback.clearEvent} />}
         {!isReady ? (
           body
         ) : (
