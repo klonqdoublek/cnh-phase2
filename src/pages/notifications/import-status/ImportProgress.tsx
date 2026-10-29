@@ -5,7 +5,7 @@ import { IMPORT_COPY } from '@/data/import-spec'
 import { cn } from '@/lib/cn'
 import { ImportBar } from './ImportBar'
 import { JobBadge } from './JobBadge'
-import { downloadResult, resultOf, type ImportJob } from './jobs'
+import { resultOf, type ImportJob } from './jobs'
 
 /**
  * Direction E — a loading bar across the page, between the page header and
@@ -15,8 +15,8 @@ import { downloadResult, resultOf, type ImportJob } from './jobs'
  * action at the end. The server reports no percentage, so while a job is
  * Processing the bar is indeterminate: a third-width Surface/Highlight
  * segment runs across a Surface/Highlight/Subtle track (still under reduced
- * motion). Completed fills it with Surface/Positive/Strong, with the result
- * and Download result; Error with Surface/Negative/Strong and Try again. A
+ * motion). Completed fills it with Surface/Positive/Strong, with the result;
+ * Error with Surface/Negative/Strong and Try again. A
  * finished block closes with its close mark. No toast. webds ships no
  * progress bar (it has Stepper only): authored from tokens, a gap.
  *
@@ -71,11 +71,6 @@ export function ImportProgress({
               >
                 {line}
               </span>
-              {job.status === 'done' && (
-                <GhostButton appearance="highlight" padding="none" onClick={() => downloadResult(job)}>
-                  {IMPORT_COPY.downloadResult}
-                </GhostButton>
-              )}
               {job.status === 'failed' && (
                 <GhostButton appearance="highlight" padding="none" onClick={() => onRetry(job.id)}>
                   {IMPORT_COPY.retry}

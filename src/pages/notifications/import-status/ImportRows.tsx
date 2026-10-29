@@ -8,7 +8,7 @@ import { IMPORT_COPY } from '@/data/import-spec'
 import type { Template } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import { JobBadge } from './JobBadge'
-import { downloadResult, resultOf, timeOf, type ImportJob } from './jobs'
+import { resultOf, timeOf, type ImportJob } from './jobs'
 
 const EMPTY = '–'
 
@@ -21,8 +21,8 @@ const EMPTY = '–'
  * 29 Oct 2026).
  *
  * Each job is a group: a file row spanning the table (document mark, file
- * name, its status badge, when it was submitted, a line, and Download result /
- * Try again / close at the end) over one row per template in the file. While
+ * name, its status badge, when it was submitted, a line, and Try again /
+ * close at the end) over one row per template in the file. While
  * Processing the template rows are greyed: Text/Disabled, a disabled
  * checkbox, a Disabled badge "Processing", and they do not open. When the job
  * is Completed its templates are real Drafts under the file row, so the grey
@@ -69,11 +69,6 @@ export function ImportRows({ jobs, columns, rowRule, onRetry, onDismiss }: {
                   >
                     {line}
                   </span>
-                  {job.status === 'done' && (
-                    <GhostButton appearance="highlight" padding="none" onClick={() => downloadResult(job)}>
-                      {IMPORT_COPY.downloadResult}
-                    </GhostButton>
-                  )}
                   {job.status === 'failed' && (
                     <GhostButton appearance="highlight" padding="none" onClick={() => onRetry(job.id)}>
                       {IMPORT_COPY.retry}

@@ -18,25 +18,25 @@ export const IMPORT_DIRECTIONS = [
     id: 'A',
     label: 'A',
     name: 'Upload panel',
-    note: 'A panel at the bottom right lists each file: Processing, Completed with its result and Download result, or Error with Try again. After Google Drive, Dropbox, Proton Drive, ElevenLabs.',
+    note: 'A panel at the bottom right lists each file: Processing, Completed with its result, or Error with Try again. After Google Drive, Dropbox, Proton Drive, ElevenLabs.',
   },
   {
     id: 'C',
     label: 'C',
     name: 'Indicator beside Import',
-    note: 'An icon beside Import spins while a file imports and turns to a mark when done; it opens a popover with the files, their results and Download result. After Safari downloads and Contractbook.',
+    note: 'An icon beside Import spins while a file imports and turns to a mark when done; it opens a popover with the files, their results. After Safari downloads and Contractbook.',
   },
   {
     id: 'D',
     label: 'D',
     name: 'Dialog, then a toast',
-    note: 'A dialog says it takes about 10 minutes and the page can be left; a toast says when it is done, with the result and Download result, and a dialog asks to try again if it fails. After Kit and Zendesk.',
+    note: 'A dialog says it takes about 10 minutes and the page can be left; a toast says when it is done, with the result, and a dialog asks to try again if it fails. After Kit and Zendesk.',
   },
   {
     id: 'E',
     label: 'E',
     name: 'Loading bar',
-    note: 'A block under the page header per file: an indeterminate loading bar while it imports (the server reports no percentage), then a full bar with the result and Download result, or Try again on an error. No toast. After Klaviyo and Cofounder.',
+    note: 'A block under the page header per file: an indeterminate loading bar while it imports (the server reports no percentage), then a full bar with the result, or Try again on an error. No toast. After Klaviyo and Cofounder.',
   },
   {
     id: 'E.2',
@@ -48,13 +48,13 @@ export const IMPORT_DIRECTIONS = [
     id: 'F',
     label: 'F',
     name: 'Grey rows in the list',
-    note: 'The file’s templates go into the table at once, greyed and marked Processing, under a file row at the top of page 1; once Completed they are real Drafts and the file row keeps the result and Download result. After WRITER, Pipedrive, Grain, Motion.',
+    note: 'The file’s templates go into the table at once, greyed and marked Processing, under a file row at the top of page 1; once Completed they are real Drafts and the file row keeps the result. After WRITER, Pipedrive, Grain, Motion.',
   },
   {
     id: 'G',
     label: 'G',
     name: 'Import button menu',
-    note: 'Import opens a menu: Import file, then each import with its status, result and Download result. The indicator hangs at the button’s bottom right. After Grok, Remote, Railway, Safari.',
+    note: 'Import opens a menu: Import file, then each import with its status and result. The indicator hangs at the button’s bottom right. After Grok, Remote, Railway, Safari.',
   },
 ] as const satisfies readonly { id: ImportDirection; label: string; name: string; note: string }[]
 

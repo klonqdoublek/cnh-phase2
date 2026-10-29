@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/bbl/button'
-import { GhostButton } from '@/bbl/ghost-button'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { IMPORT_COPY } from '@/data/import-spec'
 import type { ImportDirection } from '@/prototype/import-direction'
 import { ListToast } from '../ListToast'
-import { downloadResult, resultOf, type ImportJob, type JobStatus } from './jobs'
+import { resultOf, type ImportJob, type JobStatus } from './jobs'
 import { UploadPanel } from './UploadPanel'
 
 type Event = { kind: 'started' | JobStatus; job: ImportJob }
@@ -17,21 +16,21 @@ type Event = { kind: 'started' | JobStatus; job: ImportJob }
  *   A  the upload panel opens on every change; no toast
  *   (B, toast + Recent imports with a drawer, left the code on 29 Oct 2026,
  *   requester; it stays on the Figma playground.)
- *   (A and C: each job's row carries its result and Download result.)
+ *   (A and C: each job's row carries its result.)
  *   C  the indicator's popover opens on submit; its mark changes on done/failure
  *   D  a dialog on submit (about 10 minutes, the page can be left), a toast on
- *      done with the result and Download result, and a dialog on failure
+ *      done with the result, and a dialog on failure
  *      (Close / Try again, the system-fail rule)
  *   E  the loading bar under the page header carries every state; no toast
  *      (ImportProgress, 29 Oct 2026)
  *   F  grey rows under a file row at the top of the table; no toast
  *      (ImportRows, 29 Oct 2026)
- *   G  the Import button's menu opens on submit; the mark at its corner
- *      changes on done/failure (ImportMenuButton, 29 Oct 2026)
+ *   G  the Import button's menu opens on submit; a ring / Negative mark after
+ *      its label carries the state (ImportMenuButton, 29 Oct 2026)
  *
- * Toasts close after 3 s, except on a held route (`#/list/import/<job preset>`)
- * and D's done toast: it is D's only way to the result file, so it stays until
- * closed (29 Oct 2026).
+ * Toasts close after 3 s, except on a held route (`#/list/import/<job preset>`).
+ * (D's done toast stayed until closed while it carried Download result,
+ * 29 Oct 2026; it closes after 3 s again since Download result went.)
  */
 export function useImportFeedback(jobs: ImportJob[], direction: ImportDirection) {
   const seen = useRef(new Map<number, JobStatus>())
@@ -74,16 +73,7 @@ export function ImportFeedback({
     ((direction === 'D' && kind === 'done' && {
         appearance: 'positive' as const,
         title: IMPORT_COPY.successTitle,
-        description: (
-          <>
-            {IMPORT_COPY.resultLine(resultOf(event.job).imported, resultOf(event.job).failed)}
-            <span className="mt-[var(--space-1)] flex">
-              <GhostButton appearance="highlight" padding="none" onClick={() => downloadResult(event.job)}>
-                {IMPORT_COPY.downloadResult}
-              </GhostButton>
-            </span>
-          </>
-        ),
+        description: IMPORT_COPY.resultLine(resultOf(event.job).imported, resultOf(event.job).failed),
       }))
 
   return (
@@ -97,7 +87,7 @@ export function ImportFeedback({
         appearance={toast ? toast.appearance : 'positive'}
         title={toast ? toast.title : ''}
         description={toast ? toast.description : ''}
-        autoHideMs={held || (direction === 'D' && kind === 'done') ? undefined : 3000}
+        autoHideMs={held ? undefined : 3000}
         onClose={clearEvent}
       />
 

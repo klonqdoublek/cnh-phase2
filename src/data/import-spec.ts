@@ -89,11 +89,10 @@ export const IMPORT_COPY = {
   resultImported: 'Imported',
   resultFailed: 'Failed',
   resultLine: (imported: number, failed: number) => `${imported} imported, ${failed} failed`,
-  downloadResult: 'Download result',
   submitted: 'Submitted',
   resultNote: (failed: number) =>
     failed
-      ? 'The imported templates are on the list as draft. Download result to see why the others failed.'
+      ? 'The imported templates are on the list as draft. The others could not be imported.'
       : 'Every template in the file was imported as draft.',
   /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
      before it imports over that file. Since the design critique (20 Oct 2026) it opens
@@ -124,13 +123,6 @@ export type ImportResult = { imported: Template[]; failed: number }
 export function serverResult(templates: Template[]): ImportResult {
   const imported = templates.filter((t) => !rowProblem(t))
   return { imported, failed: templates.length - imported.length }
-}
-
-/** The result file, a stand-in: its real columns are the backend's (out of scope, 29 Oct 2026). */
-export const resultFileName = (fileName: string) => `${fileName.replace(/\.jsonl$/i, '')}-import-result.csv`
-export function resultCsv(templates: Template[]) {
-  const rows = templates.map((t, i) => [String(i + 1), t.name, rowProblem(t) ? 'Failed' : 'Imported', rowProblem(t) ?? ''])
-  return [['Line', 'Template name', 'Result', 'Reason'], ...rows].map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n')
 }
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '')

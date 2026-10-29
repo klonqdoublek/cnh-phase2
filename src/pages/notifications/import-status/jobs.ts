@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { IMPORT_PROCESS_FAIL_SENTINEL, PROCESS_MS, resultCsv, resultFileName, serverResult } from '@/data/import-spec'
-import { downloadText } from '@/lib/download'
+import { IMPORT_PROCESS_FAIL_SENTINEL, PROCESS_MS, serverResult } from '@/data/import-spec'
 import type { Template } from '@/data/templates'
 
 /* Background import jobs (BA / Dev, 28 Oct 2026). Import that passes the dialog's
@@ -90,9 +89,6 @@ export const resultOf = (job: ImportJob) => {
   const { imported, failed } = serverResult(job.templates)
   return { total: job.templates.length, imported: imported.length, failed }
 }
-
-/** Download result: the server's result file, a stand-in here (its columns are the backend's). */
-export const downloadResult = (job: ImportJob) => downloadText(resultFileName(job.fileName), resultCsv(job.templates))
 
 /** "14:05" — when the job was submitted. */
 export const timeOf = (ms: number) =>

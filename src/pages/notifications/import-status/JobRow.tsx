@@ -3,15 +3,15 @@ import { Icon } from '@/bbl/icon'
 import { IMPORT_COPY } from '@/data/import-spec'
 import { cn } from '@/lib/cn'
 import { ImportBar } from './ImportBar'
-import { downloadResult, resultOf, type ImportJob } from './jobs'
+import { resultOf, type ImportJob } from './jobs'
 
 /**
  * One import job as a row, shared by the upload panel (A) and the indicator's
  * popover (C): a document mark, the file name (Body S Emphasized) over its
  * status (Body XS), and the status mark at the end. Importing reads in
  * Text/Secondary with a clock (webds ships no spinner smaller than 48, a gap),
- * Completed in Text/Positive with its result ("4 imported, 1 failed") and a
- * highlight Ghost Download result (29 Oct 2026; was a tick), Error in
+ * Completed in Text/Positive with its result ("4 imported, 1 failed"; it had
+ * Download result 29 Oct 2026, removed the same day), Error in
  * Text/Negative with a highlight Ghost Try again. Composed from webds parts,
  * as the CMS upload slot is.
  *
@@ -21,13 +21,10 @@ import { downloadResult, resultOf, type ImportJob } from './jobs'
 export function JobRow({
   job,
   bar = false,
-  download = true,
   onRetry,
 }: {
   job: ImportJob
   bar?: boolean
-  /** Download result on a Completed row; off in G's menu (requester, 29 Oct 2026). */
-  download?: boolean
   onRetry: (id: number) => void
 }) {
   const line =
@@ -59,11 +56,6 @@ export function JobRow({
         <span role="img" aria-label={IMPORT_COPY.statusProcessing} className="flex">
           <Icon slug="time" size={16} color="var(--color-icon-secondary-default)" />
         </span>
-      )}
-      {job.status === 'done' && download && (
-        <GhostButton appearance="highlight" padding="none" onClick={() => downloadResult(job)}>
-          {IMPORT_COPY.downloadResult}
-        </GhostButton>
       )}
       {job.status === 'failed' && (
         <GhostButton appearance="highlight" padding="none" onClick={() => onRetry(job.id)}>

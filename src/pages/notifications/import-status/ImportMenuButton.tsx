@@ -12,8 +12,7 @@ import { JobRow } from './JobRow'
 
 /**
  * Direction G — the Import button opens a menu: Import file at the top, then
- * each import of this visit with its status, result and Try again; no
- * Download result since 29 Oct 2026 (requester, 29 Oct 2026; after Grok's
+ * each import of this visit with its status, result and Try again (requester, 29 Oct 2026; after Grok's
  * "Upload documents" split button, Remote's "Create" menu button and
  * Railway's header list; Mobbin,
  * 29 Oct 2026). With no import in the menu it is the plain Import button and
@@ -142,7 +141,7 @@ export function ImportMenuButton({
                   </div>
                   <div className="flex max-h-[320px] flex-col overflow-y-auto">
                     {jobs.map((job) => (
-                      <JobRow key={job.id} job={job} bar download={false} onRetry={onRetry} />
+                      <JobRow key={job.id} job={job} bar onRetry={onRetry} />
                     ))}
                   </div>
                 </div>
