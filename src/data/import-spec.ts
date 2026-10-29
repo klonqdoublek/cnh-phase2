@@ -32,8 +32,11 @@ export const IMPORT_COPY = {
   /* One file per import (requester, 15 Oct 2026): the hint is singular and carries
      CMS's size hint, "Max file size: 10 MB", on the same line so the zone stays 84 tall.
      The original's second hint line, "You can import one or more template files at
-     a time", is gone: the CMS drop zone carries one hint line (12 Oct 2026). */
-  dropTitle: 'Drag and drop a .jsonl file here · Max file size: 10 MB',
+     a time", is gone: the CMS drop zone carries one hint line (12 Oct 2026).
+     It says "1 .jsonl file only" up front so the one-file rule shows before a drag,
+     and drops the "·" join (requester, 29 Oct 2026; was "Drag and drop a .jsonl
+     file here · Max file size: 10 MB"). */
+  dropTitle: 'Drag and drop 1 .jsonl file only. Max file size: 10 MB',
   browse: 'Browse file',
   /* CMS's slot hint (ASSET_COPY.sizeHint). Since 22 Oct 2026 (requester) it reads in the
      file's slot, CMS's upload-failed slot without Try again, when Import finds the file over
