@@ -258,7 +258,7 @@ The BA's minutes of the Phase 2 flow review, received 29 Oct 2026, checked again
 - **No separate list page of imports.** The requester counts the Notification management list as that list. The MoM's Import Template tab is not built as its own page.
 - **An import's status:** **Processing** (about 10 minutes on the server), **Completed** or **Error**.
 - **An import's result:** **Templates in file**, **Imported** and **Failed**, with the download of the result file. The result file's columns are out of scope: the backend owns them.
-- **Open:** where the status and the result show on the Notification management page. The four wait directions (`?imp=A…D`) are the candidates.
+- **Where they show:** in each of the four wait directions (`?imp=A…D`), mocked on `add/import-background-directions` (requester, 29 Oct 2026): A and C in the job row, B in a drawer from the Recent imports row, D in the done toast. Picking one direction is still open.
 
 ### Broadcast
 
@@ -307,7 +307,7 @@ Answered by the requester on 29 Oct 2026: Download report in Published only, onc
 - **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12, Q15 (wrong recipient column, PROPOSAL), Q19 (time zone), Q16 (a file Submit cannot use, PROPOSAL), Q17 and Q18. Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
 - **Broadcast status lifecycle:** answered on 29 Oct 2026 (*Broadcast job lifecycle* above). Not built yet. Still open: what Published shows while its report is generating.
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy). Since 15 Oct the prototype answers three of them for demo, pending the BA: one file, 10 MB, and import over a file with the same name. Still to ask: duplicates by name or by content, and what happens to replaced templates that were edited or Published.
-- **From the BA's MoM (29 Oct 2026):** the dynamic field, pills or a text editor (BA); **where an import's status and result show** (requester to pick, see below). Answered 29 Oct: the 1,000-recipient limit stays (hint only); Submit is never disabled. Status per item: [BA MoM, 29 Oct 2026](#ba-mom-29-oct-2026-what-is-built).
+- **From the BA's MoM (29 Oct 2026):** the dynamic field, pills or a text editor (BA); which Import wait direction (A–D) carries an import's status and result (all four are mocked). Answered 29 Oct: the 1,000-recipient limit stays (hint only); Submit is never disabled. Status per item: [BA MoM, 29 Oct 2026](#ba-mom-29-oct-2026-what-is-built).
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.
 
