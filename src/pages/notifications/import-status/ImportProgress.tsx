@@ -38,7 +38,7 @@ export function ImportProgress({
   if (!jobs.length) return null
   return (
     <section
-      aria-label={IMPORT_COPY.historyTitle}
+      aria-label={IMPORT_COPY.indicator}
       className={cn(
         'flex shrink-0 flex-col gap-[var(--space-4)] bg-[var(--color-surface-primary-default)] px-[var(--space-4)] py-[var(--space-4)]',
         placement === 'top'

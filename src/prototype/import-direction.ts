@@ -5,11 +5,12 @@ import { useSyncExternalStore } from 'react'
  * reach the list about 10 minutes later), so the requester can compare them
  * in one build. A–D come from the Mobbin research of 28 Oct 2026, and E / E.2
  * (a loading bar on top or at the bottom) from the requester (29 Oct 2026).
- * A–D have their own section on the Import file's UX Playground page. Kept
+ * A–D have their own section on the Import file's UX Playground page; B
+ * (toast + Recent imports) left the code on 29 Oct 2026 and stays there. Kept
  * in `?imp=` so a link opens a direction. Not product UI: the chosen
  * direction stays, this file goes. */
 
-export type ImportDirection = 'A' | 'B' | 'C' | 'D' | 'E' | 'E.2'
+export type ImportDirection = 'A' | 'C' | 'D' | 'E' | 'E.2'
 
 export const IMPORT_DIRECTIONS = [
   {
@@ -17,12 +18,6 @@ export const IMPORT_DIRECTIONS = [
     label: 'A',
     name: 'Upload panel',
     note: 'A panel at the bottom right lists each file: Processing, Completed with its result and Download result, or Error with Try again. After Google Drive, Dropbox, Proton Drive, ElevenLabs.',
-  },
-  {
-    id: 'B',
-    label: 'B',
-    name: 'Toast and Recent imports',
-    note: 'A toast says the import is in progress, a Recent imports strip above the list carries each file’s status and opens its result in a drawer, and a toast says when it is done. After HubSpot, Klaviyo, Pipedrive, Attio.',
   },
   {
     id: 'C',

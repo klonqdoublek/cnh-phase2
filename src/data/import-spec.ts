@@ -60,7 +60,6 @@ export const IMPORT_COPY = {
   /* Direction E's line under a Processing file (composed, 29 Oct 2026; after Klaviyo's "You can stay on this page, or navigate away"). */
   progressNote: 'Takes about 10 minutes. You can stay on this page or leave it; the templates appear in the list as draft.',
   startedTitle: 'Import in progress',
-  startedBody: 'The templates appear in the list as draft in about 10 minutes.',
   startedDialogBody: 'This takes about 10 minutes. The templates appear in the list as draft when it is done. You can leave this page.',
   ok: 'OK',
   close: 'Close',
@@ -72,13 +71,10 @@ export const IMPORT_COPY = {
   statusFailed: 'Error',
   panelTitle: (processing: number, failed: number) =>
     processing ? `Importing ${processing} ${processing === 1 ? 'file' : 'files'}` : failed ? 'Import failed' : 'Import completed',
-  historyTitle: 'Recent imports',
-  submittedAt: (time: string) => `Submitted ${time}`,
   indicator: 'Imports',
   /* PROPOSAL, pending BA: a failure on the server after the upload. "Please try again" is
      the list's transcribed download-failure line. */
   failBody: (name: string) => `${name} could not be imported. Please try again.`,
-  failToastBody: 'Please try again',
   /* An import's result (requester, 29 Oct 2026, answering the BA's MoM: "imported row by
      row", a result to download). The server checks each template on its own, so a file can
      import in part. The result file's columns are the backend's (out of scope). Composed. */

@@ -15,9 +15,8 @@ type Event = { kind: 'started' | JobStatus; job: ImportJob }
  * 28 Oct 2026; four directions until one is chosen):
  *
  *   A  the upload panel opens on every change; no toast
- *   B  a toast on submit ("Import in progress"), on done ("Import completed",
- *      with the result) and on failure; the Recent imports strip carries the
- *      status, and a row opens the import's drawer
+ *   (B, toast + Recent imports with a drawer, left the code on 29 Oct 2026,
+ *   requester; it stays on the Figma playground.)
  *   (A and C: each job's row carries its result and Download result.)
  *   C  the indicator's popover opens on submit; its mark changes on done/failure
  *   D  a dialog on submit (about 10 minutes, the page can be left), a toast on
@@ -68,31 +67,19 @@ export function ImportFeedback({
   const kind = event?.kind
   const toast =
     event &&
-    ((direction === 'B' && kind === 'started' && {
-      appearance: 'positive' as const,
-      title: IMPORT_COPY.startedTitle,
-      description: IMPORT_COPY.startedBody,
-    }) ||
-      ((direction === 'B' || direction === 'D') && kind === 'done' && {
+    ((direction === 'D' && kind === 'done' && {
         appearance: 'positive' as const,
         title: IMPORT_COPY.successTitle,
         description: (
           <>
             {IMPORT_COPY.resultLine(resultOf(event.job).imported, resultOf(event.job).failed)}
-            {direction === 'D' && (
-              <span className="mt-[var(--space-1)] flex">
-                <GhostButton appearance="highlight" padding="none" onClick={() => downloadResult(event.job)}>
-                  {IMPORT_COPY.downloadResult}
-                </GhostButton>
-              </span>
-            )}
+            <span className="mt-[var(--space-1)] flex">
+              <GhostButton appearance="highlight" padding="none" onClick={() => downloadResult(event.job)}>
+                {IMPORT_COPY.downloadResult}
+              </GhostButton>
+            </span>
           </>
         ),
-      }) ||
-      (direction === 'B' && kind === 'failed' && {
-        appearance: 'negative' as const,
-        title: IMPORT_COPY.failTitle,
-        description: IMPORT_COPY.failToastBody,
       }))
 
   return (
