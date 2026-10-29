@@ -12,9 +12,10 @@ import { JobRow } from './JobRow'
 
 /**
  * Direction G — the Import button opens a menu: Import file at the top, then
- * each import of this visit with its status, result and Try again (no
- * Download result since 29 Oct 2026) (requester, 29 Oct 2026; after Grok's "Upload documents" split
- * button, Remote's "Create" menu button and Railway's header list; Mobbin,
+ * each import of this visit with its status, result and Try again; no
+ * Download result since 29 Oct 2026 (requester, 29 Oct 2026; after Grok's
+ * "Upload documents" split button, Remote's "Create" menu button and
+ * Railway's header list; Mobbin,
  * 29 Oct 2026). With no import in the menu it is the plain Import button and
  * opens the Import dialog. While one is there, Processing, in Error or
  * Completed, it opens the menu: a turning ring follows the label while a job
