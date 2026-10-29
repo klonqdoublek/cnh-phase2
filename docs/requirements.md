@@ -259,12 +259,12 @@ The BA's minutes of the Phase 2 flow review, received 29 Oct 2026, checked again
 |---|---|---|---|
 | 2a | **[TBC from design]** How the drawer shows Do Not Disturb when it has several rules. | **Code has an answer:** one rule per line, the time zone once at the end (`fmtDnd`), for example BC-0006 *October Customer Campaign*. Figma draws one line. | Design confirms the layout, then Figma. |
 | 2b-i | **[Update]** Direct recipient becomes SMS and Email. | **Done:** CIS ID / Email / SMS (PR #62, 28 Oct). | Figma. |
-| 2b-ii | **[Update]** Upload one file at a time; more than one at once is not allowed. Remove "and 1,000 recipients" from the hint. | **Not done.** The audience zone silently keeps the first of several files (`pick` reads `list[0]`). The hint still reads *CSV or XLSX, up to 10 MB and 1,000 recipients*. | Same one-file rule and inline error as Import (1a). Hint: *CSV or XLSX, up to 10 MB*. Ask the BA whether the 1,000-recipient limit goes too: Submit still blocks a file over 1,000 rows (`MAX_RECIPIENTS`, Q16, PROPOSAL). |
+| 2b-ii | **[Update]** Upload one file at a time; more than one at once is not allowed. Remove "and 1,000 recipients" from the hint. | **Not done.** The audience zone silently keeps the first of several files (`pick` reads `list[0]`). The hint still reads *CSV or XLSX, up to 10 MB and 1,000 recipients*. | Same one-file rule and inline error as Import (1a). Hint: *CSV or XLSX, up to 10 MB*. Only the hint changes: the 1,000-recipient limit stays, and Submit still blocks a file over 1,000 rows (`MAX_RECIPIENTS`; requester, 29 Oct 2026). |
 | 2b-iii | **[Update]** The message field titles carry no language. | **Done:** *(TH)* dropped (PR #63, 28 Oct). | Figma. |
 | 2b-iv | **[TBC from BA]** Dynamic field, three options. | **Open.** The requester (29 Oct) narrows the choice to **pills** or a **text editor**. The Concept panel (`?df=`) holds every draft: pills (Idea 1 / 1.2, overflow options PR #57), button and menu (Idea 2 / 2.2, search pop-up PR #53), dialog (Idea 3 / 3.2), shortcut (Idea 4). | Wait for the BA. Then keep one concept, delete the others and `src/prototype/dynamic-field.ts`, and draw it in Figma. |
 | 2c-i | **[Update]** Remove the End date section from Step 3. | **Not done.** End date and time is still on Schedule delivery. Broadcast End also runs through the confirm dialog, the drawer (*Broadcast end* row, the ended note), the Not sent reason *Broadcast ended*, preset `#/broadcast/create/end` and Delivery rules. | Remove End everywhere. Reverses the BA's Q2 answer (14 Oct). |
 | 2c-ii | **[ADD]** A quiet period that crosses midnight (20:00–08:00) shows *Next day* after the end time. | **Done** (PR #61, 28 Oct). | Figma. |
-| 2c-iii | When the rules together leave no time to send: the user cannot Submit (the BA asks design: disable Submit, or let it be pressed and warn each time); a warning says the rules stop the broadcast and must be fixed; once fixed, Submit works as normal. | **Partly.** Do Not Disturb that covers every day, all day warns, on the DND card or in the confirm dialog (`?dndw=`, PR #64), but Submit still goes ahead (requester, 28 Oct). | Block the submit. Recommended: Submit stays enabled, and pressing it is a form error like every other Create error: the page scrolls to the DND card and the alert turns Negative. A disabled Submit gives no reason. The Caution alert can stay while editing. Then drop the `?dndw=` switch. With End removed, Do Not Disturb is the only rule that can stop a send. |
+| 2c-iii | When the rules together leave no time to send: the user cannot Submit (the BA asks design: disable Submit, or let it be pressed and warn each time); a warning says the rules stop the broadcast and must be fixed; once fixed, Submit works as normal. | **Partly.** Do Not Disturb that covers every day, all day warns, on the DND card or in the confirm dialog (`?dndw=`, PR #64), but Submit still goes ahead (requester, 28 Oct). | Block the submit. **Submit is never disabled** (requester, 29 Oct 2026): pressing it shows the errors, like every other Create error; the page scrolls to the DND card and the alert turns Negative. The Caution alert can stay while editing. Then drop the `?dndw=` switch. With End removed, Do Not Disturb is the only rule that can stop a send. |
 
 ### Broadcast job lifecycle (BA, 29 Oct 2026)
 
@@ -273,9 +273,10 @@ Sent by the BA after the MoM as a one-page diagram, *Broadcast Job Lifecycle*. I
 | Status | BA, 29 Oct | Prototype on `main` (28 Oct reading) |
 |---|---|---|
 | DRAFT | Saved as a draft. Nothing is processed. | Same. |
-| QUEUED | The system has taken the job into its queue. It waits to start. | Same meaning, but the value reads **Queue**. |
+| QUEUED | The system has taken the job into its queue. It waits to start. The value is **QUEUED** (requester, 29 Oct 2026). | Same meaning, but the value reads **Queue** (list of values, 16 Oct). |
 | PROCESSING | The system reads the file, validates it and processes each row. The Delivery result shows Success / Failed / Waiting to send while it runs, and refreshes when the user opens the broadcast or presses refresh. | Validating only. Nothing is sent, no Delivery result, no report. |
-| PUBLISHED | The job has finished processing. The report is created. **Published does not mean every message row was sent successfully.** | Validated; sending, the quiet-period pause and finished all sit here. |
+| ERROR | Validation fails in Processing, or an error stops the job in Processing. The status reads **Error**, renamed from Failed (requester, 29 Oct 2026). | The value is FAILED; the badge and the Status filter already read **Error** (28 Oct). Not reached from a failed validation. |
+| PUBLISHED | The job has finished processing. **Published does not mean every message row was sent successfully.** The report is generated only now: **Download report** is offered in Published only, and only once the report is ready, not as soon as the status turns Published (requester, 29 Oct 2026). | Validated; sending, the quiet-period pause and finished all sit here. Download report is offered at once. |
 
 How each message row goes out while the job is Processing:
 
@@ -288,16 +289,18 @@ To change in the prototype (not built yet):
 
 - Processing gets the Delivery result back, with a refresh. Sending and the quiet-period pause move from Published to Processing: BC-0004 (inside the quiet period) and the sending fixtures go back to Processing. Published is the finished job, with its report.
 - The Queue drawer gets **Cancel broadcast** with the same confirm dialog as the Draft. Cancelled then means a draft or a queued broadcast, cancelled before processing.
-- The status value reads **QUEUED** on the diagram and **Queue** in the prototype's list of values (16 Oct). Check which one is right before renaming the badge.
+- The status value becomes **QUEUED** (was Queue): badge, Status filter, fixtures and docs. FAILED becomes **ERROR** as a value too, if the rename covers more than the label (the badge already reads Error).
+- Published gets a report-generating state: no Download report (list row and drawer) until the report is ready. Copy for that state is not given yet.
+- A failed validation in Processing ends in Error.
 
-Still to ask: whether Download report is offered during Processing or only once Published ("the report is created" at Published); what status a broadcast gets when validation fails in Processing; whether an error during Processing turns it FAILED.
+Answered by the requester on 29 Oct 2026: Download report in Published only, once the report is generated; a failed validation and an error in Processing are both **Error**; the value is **QUEUED**. Still open: what Published shows while the report is generating, and how long it takes.
 
 ## Open items
 
 - **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12, Q15 (wrong recipient column, PROPOSAL), Q19 (time zone), Q16 (a file Submit cannot use, PROPOSAL), Q17 and Q18. Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
-- **Broadcast status lifecycle:** answered by the BA on 29 Oct 2026 (*Broadcast job lifecycle* above): PROCESSING reads, validates and sends; PUBLISHED is the finished job. Still to ask: Download report during Processing; the status when validation fails; whether an error in Processing is FAILED; QUEUED or Queue.
+- **Broadcast status lifecycle:** answered on 29 Oct 2026 (*Broadcast job lifecycle* above). Not built yet. Still open: what Published shows while its report is generating.
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy). Since 15 Oct the prototype answers three of them for demo, pending the BA: one file, 10 MB, and import over a file with the same name. Still to ask: duplicates by name or by content, and what happens to replaced templates that were edited or Published.
-- **From the BA's MoM (29 Oct 2026):** the dynamic field, pills or a text editor (BA); the Import Template page's columns, statuses and report (BA); whether the 1,000-recipient limit goes with its hint (BA); disabled Submit or a Submit error when the rules leave no time to send (design). The new status lifecycle and Cancel on Queue are not built yet. Status per item: [BA MoM, 29 Oct 2026](#ba-mom-29-oct-2026-what-is-built).
+- **From the BA's MoM (29 Oct 2026):** the dynamic field, pills or a text editor (BA); what the Import Template page shows, which the MoM's mock-up copies from Broadcast (its list columns, an import's statuses, the result counts in the drawer and the downloaded file's columns; the requester was unsure what this asks, so it needs a proposal to react to). Answered 29 Oct: the 1,000-recipient limit stays (hint only); Submit is never disabled. Status per item: [BA MoM, 29 Oct 2026](#ba-mom-29-oct-2026-what-is-built).
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.
 
