@@ -15,11 +15,13 @@ import { cn } from '@/lib/cn'
  *               `errorHint` replaces the hint in Text/Negative, as CMS's
  *               "1 File Only" does
  *   refused     with `maxFiles`, a drag carrying more files than that shows
- *               the error look and `tooManyHint` while it is over the zone,
- *               and the drop is refused (dropEffect none): the files fly back
- *               and nothing is taken (design critique, 20 Oct 2026). The
- *               error is back by the BA's MoM (29 Oct 2026); 27–29 Oct the
- *               zone kept its empty look (requester)
+ *               the error look and `tooManyHint` while it is over the zone.
+ *               Released outside, the zone goes back to its own look.
+ *               Released on it, the drop still reaches `onFiles`, so the
+ *               consumer can hold the error (Korarit's comment and the
+ *               requester, 29 Oct 2026; was: the drop was refused with
+ *               dropEffect none and the files flew back, design critique,
+ *               20 Oct 2026)
  *
  * The whole zone opens the file chooser, not only its button (CMS v4.48);
  * the Ghost Button stays as the focusable control and its click bubbles up.
@@ -41,7 +43,7 @@ export function UploadZone({
   hint?: React.ReactNode | React.ReactNode[]
   accept?: string
   multiple?: boolean
-  /** A drag carrying more files than this is refused before the drop. */
+  /** A drag carrying more files than this shows the error look while it is over the zone. */
   maxFiles?: number
   /** Shown in Text/Negative while a refused drag is over the zone. */
   tooManyHint?: React.ReactNode
@@ -69,7 +71,7 @@ export function UploadZone({
       onDragOver={(event) => {
         event.preventDefault()
         const refuse = tooMany(event.dataTransfer)
-        event.dataTransfer.dropEffect = refuse ? 'none' : 'copy'
+        event.dataTransfer.dropEffect = 'copy'
         if (refused !== refuse) setRefused(refuse)
         if (!over) setOver(true)
       }}
@@ -83,7 +85,6 @@ export function UploadZone({
         event.preventDefault()
         setOver(false)
         setRefused(false)
-        if (tooMany(event.dataTransfer)) return
         onFiles(event.dataTransfer.files)
       }}
       className={cn(
