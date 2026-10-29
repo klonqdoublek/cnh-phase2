@@ -105,6 +105,7 @@ export function ImportDialog({
 
   const failed = phase === 'failed'
   const problem = picked?.problem ?? null
+  const noFile = message === IMPORT_COPY.noFile
 
   const reset = () => {
     setPicked(null)
@@ -218,14 +219,15 @@ export function ImportDialog({
               accept=".jsonl"
               maxFiles={1}
               tooManyHint={IMPORT_COPY.oneFile}
-              error={tooMany || message === IMPORT_COPY.noFile}
-              errorHint={tooMany ? IMPORT_COPY.oneFile : undefined}
+              error={tooMany || noFile}
+              /* Inside the zone, as "1 File Only" reads (requester, 29 Oct 2026; was an Inline Message under it). */
+              errorHint={tooMany ? IMPORT_COPY.oneFile : noFile ? IMPORT_COPY.noFile : undefined}
               onFiles={add}
             />
           )}
 
           {/* webds Inline Message under the matrix, inset to the zone's text as CMS's required message is. */}
-          {message && (
+          {message && !noFile && (
             <InlineMessage appearance="negative" size="xs" className="pl-[var(--space-4)]">
               {message}
             </InlineMessage>
