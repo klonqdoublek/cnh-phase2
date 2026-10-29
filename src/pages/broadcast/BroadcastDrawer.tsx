@@ -14,6 +14,7 @@ import {
   fmtDnd,
   fmtNumber,
   hasDeliveryReport,
+  isCancellable,
   quietUntil,
   RECIPIENT_TYPE_LABEL,
   waitingOf,
@@ -75,7 +76,8 @@ const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
     `A system error stopped the broadcast.${b.notSent ? ` ${fmtNumber(b.notSent)} recipients were not sent.` : ''}${
       b.notSent && hasDeliveryReport(b) ? ' Download report for details.' : ''
     }`,
-  Cancelled: () => 'Cancelled before it was submitted. Nothing was sent.',
+  /* "before sending started" since a Queue broadcast can be cancelled too (29 Oct 2026; was "before it was submitted"). */
+  Cancelled: () => 'Cancelled before sending started. Nothing was sent.',
 }
 
 function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
@@ -157,10 +159,12 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
  * pattern leaves to its consumer: fixed to the right edge over the list with
  * no scrim (as the original), the 225ms slide-in, the `sidebar-collapse`
  * close, Escape, a click outside, and a focus trap. A Draft's footer has
- * Cancel broadcast (behind a confirm dialog) and Edit. Once submitted, a
- * broadcast cannot be cancelled (a system limit, 19 Oct 2026); its footer has
+ * Cancel broadcast (behind a confirm dialog) and Edit. A Queue broadcast can
+ * be cancelled too but not edited (BA MoM, 29 Oct 2026; was Draft only), so
+ * its footer has Cancel broadcast alone (Figma `Footer · Queued`). Once
+ * processing starts it cannot be cancelled; the footer has
  * Download report once anything was attempted (Published or Failed), where the CNH template drawer keeps its Download — behind the same
- * confirm as the list row's download. Queue, Processing and Cancelled keep an empty
+ * confirm as the list row's download. Processing and Cancelled keep an empty
  * footer, so every drawer ends on the same rule (Figma `Footer · Empty`).
  */
 export function BroadcastDrawer({
@@ -175,9 +179,10 @@ export function BroadcastDrawer({
 }: BroadcastDrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
-  const [cancelOpen, setCancelOpen] = useState(!!confirmingCancel && broadcast.status === 'Draft')
-  /* The status could not be updated: the broadcast stays a Draft. */
-  const [cancelFailed, setCancelFailed] = useState(!!openFailed && broadcast.status === 'Draft')
+  const cancellable = isCancellable(broadcast)
+  const [cancelOpen, setCancelOpen] = useState(!!confirmingCancel && cancellable)
+  /* The status could not be updated: the broadcast keeps its status. */
+  const [cancelFailed, setCancelFailed] = useState(!!openFailed && cancellable)
   const [reporting, setReporting] = useState(!!confirmingDownload && hasDeliveryReport(broadcast))
   /* The dialog owns Escape and clicks while it is up. */
   const dialogUp = useRef(cancelOpen || cancelFailed)
@@ -276,6 +281,10 @@ export function BroadcastDrawer({
                 Edit
               </Button>
             </>
+          ) : cancellable ? (
+            <OutlineButton appearance="negative" onClick={() => setCancelOpen(true)} className="mr-auto h-[44px]">
+              {BROADCAST_COPY.cancel}
+            </OutlineButton>
           ) : attempted ? (
             <OutlineButton onClick={() => setReporting(true)} className="h-[44px]">
               Download report
@@ -301,7 +310,7 @@ export function BroadcastDrawer({
             width={600}
             destructive
             title={BROADCAST_COPY.cancelTitle}
-            cancelLabel={BROADCAST_COPY.cancelKeep}
+            cancelLabel={draft ? BROADCAST_COPY.cancelKeep : BROADCAST_COPY.cancelKeepQueued}
             confirmLabel={BROADCAST_COPY.cancel}
             onCancel={() => setCancelOpen(false)}
             onConfirm={onCancel}

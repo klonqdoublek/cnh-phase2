@@ -60,11 +60,13 @@ export const BROADCAST_COPY = {
   draftTitle: 'Draft saved',
   draftBody: (name: string) => `${name} is saved as a draft`,
   draftNeedsName: 'Enter a broadcast name to save a draft',
-  /* Cancel a draft (19 Oct 2026). Composed: the original build has no cancel. */
+  /* Cancel a draft (19 Oct 2026), or a Queue broadcast (BA MoM, 29 Oct 2026). Composed: the original build has no cancel. */
   cancel: 'Cancel broadcast',
   cancelTitle: 'Cancel this broadcast?',
   cancelBody: (name: string) => `${name} will not be sent, and it cannot be edited again.`,
   cancelKeep: 'Keep draft',
+  /* A Queue broadcast is no draft (29 Oct 2026). Composed. */
+  cancelKeepQueued: 'Keep broadcast',
   cancelledTitle: 'Broadcast cancelled',
   cancelledBody: (name: string) => `${name} is cancelled`,
   /* Download report from a list row or the drawer (22 Oct 2026), through
@@ -729,6 +731,9 @@ export const STATUS_LABEL: Record<BroadcastStatus, string> = {
   Failed: 'Error',
   Cancelled: 'Cancelled',
 }
+
+/** Draft and Queue can be cancelled; once processing starts, not (BA MoM, 29 Oct 2026). */
+export const isCancellable = (b: Broadcast) => b.status === 'Draft' || b.status === 'Queue'
 
 /** Recipients not yet attempted: not sent, not failed, not cut off by the end. */
 export const waitingOf = (b: Broadcast) => Math.max(0, b.recipients - b.success - b.failed - (b.notSent ?? 0))

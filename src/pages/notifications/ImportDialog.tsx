@@ -39,10 +39,12 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * takes one: the 84-tall drop zone until a file is picked, then the file's
  * slot in its place, with no Preview: the users are not technical and will
  * not open the file to read it (BA, 22 Oct 2026). A drag of two or more files turns the
- * zone Negative with CMS's "1 File Only" while it is over the zone, and the
- * drop is refused, so the files fly back (design critique, 20 Oct 2026; the
- * error is back by the BA's MoM, 29 Oct 2026, after 27–29 Oct without it; was:
- * the drop landed and took none). The control takes .jsonl only: the chooser
+ * zone Negative with CMS's "1 File Only" while it is over the zone. Released
+ * outside the zone, the zone goes back to default. Released on it, nothing is
+ * taken and the error stays until the dialog is cancelled or one valid file
+ * is dropped or chosen (Korarit's comment and the requester, 29 Oct 2026; was:
+ * the drop was refused and the files flew back, design critique, 20 Oct 2026,
+ * error back by the BA's MoM, 29 Oct 2026). The control takes .jsonl only: the chooser
  * filters by it and a dropped file of another type is not taken, so there is
  * no Invalid file format state (requester, 22 Oct 2026).
  *
@@ -82,7 +84,7 @@ export function ImportDialog({
   const [picked, setPicked] = useState<Picked | null>(null)
   const [phase, setPhase] = useState<Phase>('idle')
   const [message, setMessage] = useState<string | null>(null)
-  /* Only the `too-many` route sets this: it draws the refused drag, which a live drop never leaves behind. */
+  /* A drop of two or more files on the zone, or the `too-many` route. Cleared by Cancel or one valid file. */
   const [tooMany, setTooMany] = useState(false)
   const nextKey = useRef(0)
   /* Whether the last upload was an import over: Try again repeats it without asking again. */
@@ -121,8 +123,12 @@ export function ImportDialog({
 
   const add = (list: FileList | null) => {
     if (!list?.length) return
-    /* The zone refuses a drop of two or more (maxFiles); the chooser takes one. */
-    if (list.length > 1) return
+    /* Two or more dropped on the zone: take none and hold "1 File Only". The chooser takes one. */
+    if (list.length > 1) {
+      setMessage(null)
+      setTooMany(true)
+      return
+    }
     const file = list[0]
     /* The chooser offers .jsonl only; a dropped file of another type is not taken. */
     if (!isJsonl(file.name)) return
