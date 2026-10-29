@@ -253,6 +253,13 @@ The BA's minutes of the Phase 2 flow review, received 29 Oct 2026, checked again
 | 1b-i | **[ADD]** A new side-nav tab, **Import Template**: one row per imported file. Selecting a row shows that import's result, and its file can be downloaded to read the result. The mock-up reuses Broadcast's list and drawer (Delivery result, Download report). | **Not built.** The four directions for the 10-minute server job (`?imp=A…D`, branch `add/import-background-directions`, not merged) have no import history page. Direction B's Recent imports strip comes closest. | Build the page as Broadcast's list and drawer. Decide whether it replaces the four directions or pairs with one of them, for example a toast that links to the page. The MoM does not give the columns, statuses, result counts or report columns: ask the BA. |
 | 1b-B | Templates imported successfully, row by row, show on the notification template list, ordered by updated at, newest first. | **Order done:** the list sorts by Last updated, newest first, and imported templates land as Drafts on page 1. **Row by row not built:** a file can import in part, with the failed rows in its result. Today an import succeeds or fails whole, and no template field is checked (27 Oct). | Build with 1b-i. Ask the BA which checks the server runs on each row. |
 
+**Import status and result (requester, 29 Oct 2026), answering 1b-i:**
+
+- **No separate list page of imports.** The requester counts the Notification management list as that list. The MoM's Import Template tab is not built as its own page.
+- **An import's status:** **Processing** (about 10 minutes on the server), **Completed** or **Error**.
+- **An import's result:** **Templates in file**, **Imported** and **Failed**, with the download of the result file. The result file's columns are out of scope: the backend owns them.
+- **Open:** where the status and the result show on the Notification management page. The four wait directions (`?imp=A…D`) are the candidates.
+
 ### Broadcast
 
 | # | MoM | On `main` (29 Oct) | Next |
@@ -300,7 +307,7 @@ Answered by the requester on 29 Oct 2026: Download report in Published only, onc
 - **Broadcast:** Q3, Q4, Q6, Q7, Q8, Q9, Q10, Q11 (TBC), Q12, Q15 (wrong recipient column, PROPOSAL), Q19 (time zone), Q16 (a file Submit cannot use, PROPOSAL), Q17 and Q18. Q13 is answered; its composed copy waits for the BA. See [broadcast-gaps.md](broadcast-gaps.md).
 - **Broadcast status lifecycle:** answered on 29 Oct 2026 (*Broadcast job lifecycle* above). Not built yet. Still open: what Published shows while its report is generating.
 - **Import:** P2-1…P2-9 (schema, size limits, duplicates, copy). Since 15 Oct the prototype answers three of them for demo, pending the BA: one file, 10 MB, and import over a file with the same name. Still to ask: duplicates by name or by content, and what happens to replaced templates that were edited or Published.
-- **From the BA's MoM (29 Oct 2026):** the dynamic field, pills or a text editor (BA); what the Import Template page shows, which the MoM's mock-up copies from Broadcast (its list columns, an import's statuses, and the result counts in the drawer; the requester was unsure what this asks, so it needs a proposal to react to). The downloaded result file's columns are out of scope: the backend owns them (requester, 29 Oct 2026). Answered 29 Oct: the 1,000-recipient limit stays (hint only); Submit is never disabled. Status per item: [BA MoM, 29 Oct 2026](#ba-mom-29-oct-2026-what-is-built).
+- **From the BA's MoM (29 Oct 2026):** the dynamic field, pills or a text editor (BA); **where an import's status and result show** (requester to pick, see below). Answered 29 Oct: the 1,000-recipient limit stays (hint only); Submit is never disabled. Status per item: [BA MoM, 29 Oct 2026](#ba-mom-29-oct-2026-what-is-built).
 - **Broadcast edit after Draft:** P2-20.
 - **Phase 1 fields vs the kick-off deck:** Template Ref Code, Notification Source Code, status names.
 
