@@ -30,8 +30,11 @@ export function DrawerSection({ section, first }: { section: DrawerSectionSpec; 
         <span className="type-label-xl-emphasized text-[var(--color-text-primary-default)]">{section.title}</span>
       </div>
       {section.rows.map(([label, value]) => (
-        <div key={label} className="flex items-center gap-[var(--space-4)] py-[var(--space-1)]">
-          <span className="w-[200px] shrink-0 pt-[var(--space-0-5)] type-body-m text-[var(--color-text-secondary-default)]">
+        // Top-aligned (requester, 29 Oct 2026): a multi-line value such as
+        // several DND periods keeps its label on the first line. The pattern
+        // centres the pair.
+        <div key={label} className="flex items-start gap-[var(--space-4)] py-[var(--space-1)]">
+          <span className="w-[200px] shrink-0 type-body-m text-[var(--color-text-secondary-default)]">
             {label}
           </span>
           {/* `–` for a value the record does not carry; pre-line keeps a
