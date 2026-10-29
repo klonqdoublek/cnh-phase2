@@ -18,7 +18,18 @@ import { downloadResult, resultOf, type ImportJob } from './jobs'
  * `bar` adds the never-ending loading bar under the file's lines while it is
  * Processing (requester, 29 Oct 2026: A's panel and G's menu).
  */
-export function JobRow({ job, bar = false, onRetry }: { job: ImportJob; bar?: boolean; onRetry: (id: number) => void }) {
+export function JobRow({
+  job,
+  bar = false,
+  download = true,
+  onRetry,
+}: {
+  job: ImportJob
+  bar?: boolean
+  /** Download result on a Completed row; off in G's menu (requester, 29 Oct 2026). */
+  download?: boolean
+  onRetry: (id: number) => void
+}) {
   const line =
     job.status === 'processing'
       ? IMPORT_COPY.processingNote
@@ -49,7 +60,7 @@ export function JobRow({ job, bar = false, onRetry }: { job: ImportJob; bar?: bo
           <Icon slug="time" size={16} color="var(--color-icon-secondary-default)" />
         </span>
       )}
-      {job.status === 'done' && (
+      {job.status === 'done' && download && (
         <GhostButton appearance="highlight" padding="none" onClick={() => downloadResult(job)}>
           {IMPORT_COPY.downloadResult}
         </GhostButton>
