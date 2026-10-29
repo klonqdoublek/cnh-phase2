@@ -4,13 +4,14 @@ import { useSyncExternalStore } from 'react'
  * (BA / Dev, 28 Oct 2026: Import sends the file to a server and the templates
  * reach the list about 10 minutes later), so the requester can compare them
  * in one build. A–D come from the Mobbin research of 28 Oct 2026, and E / E.2
- * (a loading bar on top or at the bottom) from the requester (29 Oct 2026).
+ * (a loading bar on top or at the bottom), F (grey rows in the list) and G
+ * (an Import button menu) from the requester (29 Oct 2026).
  * A–D have their own section on the Import file's UX Playground page; B
  * (toast + Recent imports) left the code on 29 Oct 2026 and stays there. Kept
  * in `?imp=` so a link opens a direction. Not product UI: the chosen
  * direction stays, this file goes. */
 
-export type ImportDirection = 'A' | 'C' | 'D' | 'E' | 'E.2'
+export type ImportDirection = 'A' | 'C' | 'D' | 'E' | 'E.2' | 'F' | 'G'
 
 export const IMPORT_DIRECTIONS = [
   {
@@ -42,6 +43,18 @@ export const IMPORT_DIRECTIONS = [
     label: 'E.2',
     name: 'Loading bar at the bottom',
     note: 'E’s blocks docked above the pagination footer instead of under the page header, so the filters and the top of the list stay where they are.',
+  },
+  {
+    id: 'F',
+    label: 'F',
+    name: 'Grey rows in the list',
+    note: 'The file’s templates go into the table at once, greyed and marked Processing, under a file row at the top of page 1; once Completed they are real Drafts and the file row keeps the result and Download result. After WRITER, Pipedrive, Grain, Motion.',
+  },
+  {
+    id: 'G',
+    label: 'G',
+    name: 'Import button menu',
+    note: 'Import opens a menu: Import file, then each import with its status, result and Download result. The indicator hangs at the button’s bottom right. After Grok, Remote, Railway, Safari.',
   },
 ] as const satisfies readonly { id: ImportDirection; label: string; name: string; note: string }[]
 

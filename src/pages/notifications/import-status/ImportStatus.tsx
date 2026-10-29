@@ -24,6 +24,10 @@ type Event = { kind: 'started' | JobStatus; job: ImportJob }
  *      (Close / Try again, the system-fail rule)
  *   E  the loading bar under the page header carries every state; no toast
  *      (ImportProgress, 29 Oct 2026)
+ *   F  grey rows under a file row at the top of the table; no toast
+ *      (ImportRows, 29 Oct 2026)
+ *   G  the Import button's menu opens on submit; the mark at its corner
+ *      changes on done/failure (ImportMenuButton, 29 Oct 2026)
  *
  * Toasts close after 3 s, except on a held route (`#/list/import/<job preset>`)
  * and D's done toast: it is D's only way to the result file, so it stays until

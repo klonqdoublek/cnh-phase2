@@ -31,6 +31,8 @@ import { useImportDirection } from '@/prototype/import-direction'
 import { ImportFeedback, useImportFeedback } from './import-status/ImportStatus'
 import { ImportIndicator } from './import-status/ImportIndicator'
 import { ImportProgress } from './import-status/ImportProgress'
+import { ImportRows } from './import-status/ImportRows'
+import { ImportMenuButton } from './import-status/ImportMenuButton'
 import type { ImportJobs } from './import-status/jobs'
 
 export type ListState = 'loading' | 'error' | 'empty' | 'ready'
@@ -344,7 +346,17 @@ export function Dashboard({
                 onRetry={importJobs.retry}
               />
             )}
-            <OutlineButton onClick={() => setImportOpen(true)}>Import</OutlineButton>
+            {direction === 'G' ? (
+              <ImportMenuButton
+                jobs={importJobs.jobs}
+                open={feedback.popoverOpen}
+                onOpenChange={feedback.setPopoverOpen}
+                onImportFile={() => setImportOpen(true)}
+                onRetry={importJobs.retry}
+              />
+            ) : (
+              <OutlineButton onClick={() => setImportOpen(true)}>Import</OutlineButton>
+            )}
             <Button onClick={onCreate}>
               Create notification
               <Icon slug="plus" size={16} color="currentColor" />
@@ -429,6 +441,16 @@ export function Dashboard({
                       </tr>
                     </thead>
                     <tbody>
+                      {/* Direction F: the imports' rows on top of page 1, where newest-first puts them. */}
+                      {direction === 'F' && current === 0 && (
+                        <ImportRows
+                          jobs={importJobs.jobs}
+                          columns={COLUMNS.length + 1}
+                          rowRule={ROW_RULE}
+                          onRetry={importJobs.retry}
+                          onDismiss={importJobs.dismiss}
+                        />
+                      )}
                       {rows.map((t) => {
                         const isSelected = selected.has(t.id)
                         const cellState = isSelected ? 'selected' : hovered === t.id ? 'hovered' : 'default'
