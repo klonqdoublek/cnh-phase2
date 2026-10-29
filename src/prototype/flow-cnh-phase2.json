@@ -32,7 +32,7 @@
   {
    "id": "too-many",
    "kind": "screen",
-   "label": "More than one file dragged over — drop refused, the zone stays as it is",
+   "label": "More than one file dragged over — drop refused",
    "route": "#/list/import/too-many",
    "section": "Import"
   },

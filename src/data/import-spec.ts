@@ -39,6 +39,8 @@ export const IMPORT_COPY = {
      file's slot, CMS's upload-failed slot without Try again, when Import finds the file over
      the limit. 20–22 Oct it was the empty zone's hint and the file was not taken. */
   size: 'Max file size: 10 MB',
+  /* CMS's two-files message in the drop zone (ASSET_COPY.tooMany). */
+  oneFile: '1 File Only',
   noFile: 'Select a .jsonl file to import',
   hasErrors: 'Remove the file and choose another to continue',
   uploading: 'Importing templates…',
@@ -183,7 +185,6 @@ const VALID_FILES: DemoFile[] = [
 
 /** One file per import (15 Oct 2026); `duplicate` picks a file the history already holds. */
 export function presetFile(preset: ImportPreset): DemoFile | null {
-  /* `too-many` draws the refused drag, which looks the same as the empty zone (27 Oct 2026). */
   if (preset === 'initial' || preset === 'no-file' || preset === 'too-many') return null
   /* A stand-in size: the route cannot carry a file over 10 MB. */
   if (preset === 'too-large') return { ...VALID_FILES[0], size: 14.2 * 1024 * 1024 }
