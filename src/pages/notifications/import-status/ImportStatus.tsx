@@ -23,6 +23,8 @@ type Event = { kind: 'started' | JobStatus; job: ImportJob }
  *   D  a dialog on submit (about 10 minutes, the page can be left), a toast on
  *      done with the result and Download result, and a dialog on failure
  *      (Close / Try again, the system-fail rule)
+ *   E  the loading bar under the page header carries every state; no toast
+ *      (ImportProgress, 29 Oct 2026)
  *
  * Toasts close after 3 s, except on a held route (`#/list/import/<job preset>`)
  * and D's done toast: it is D's only way to the result file, so it stays until

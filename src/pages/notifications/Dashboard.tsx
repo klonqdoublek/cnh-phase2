@@ -31,6 +31,7 @@ import { useImportDirection } from '@/prototype/import-direction'
 import { ImportFeedback, useImportFeedback } from './import-status/ImportStatus'
 import { ImportIndicator } from './import-status/ImportIndicator'
 import { RecentImports } from './import-status/RecentImports'
+import { ImportProgress } from './import-status/ImportProgress'
 import type { ImportJobs } from './import-status/jobs'
 
 export type ListState = 'loading' | 'error' | 'empty' | 'ready'
@@ -350,6 +351,7 @@ export function Dashboard({
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {direction === 'E' && <ImportProgress jobs={importJobs.jobs} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />}
         {filters}
         {direction === 'B' && <RecentImports jobs={importJobs.jobs} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} onOpen={feedback.clearEvent} />}
         {!isReady ? (

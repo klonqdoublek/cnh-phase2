@@ -2,12 +2,13 @@ import { useSyncExternalStore } from 'react'
 
 /* Prototype runner only — which direction draws Import's background processing
  * (BA / Dev, 28 Oct 2026: Import sends the file to a server and the templates
- * reach the list about 10 minutes later), so the requester can compare the four
- * in one build. Each comes from the Mobbin research of 28 Oct 2026 and has its
- * own section on the Import file's UX Playground page. Kept in `?imp=` so a link
- * opens a direction. Not product UI: the chosen direction stays, this file goes. */
+ * reach the list about 10 minutes later), so the requester can compare them
+ * in one build. A–D come from the Mobbin research of 28 Oct 2026 and E, a
+ * loading bar, from the requester (29 Oct 2026); A–D have their own section
+ * on the Import file's UX Playground page. Kept in `?imp=` so a link opens a
+ * direction. Not product UI: the chosen direction stays, this file goes. */
 
-export type ImportDirection = 'A' | 'B' | 'C' | 'D'
+export type ImportDirection = 'A' | 'B' | 'C' | 'D' | 'E'
 
 export const IMPORT_DIRECTIONS = [
   {
@@ -33,6 +34,12 @@ export const IMPORT_DIRECTIONS = [
     label: 'D',
     name: 'Dialog, then a toast',
     note: 'A dialog says it takes about 10 minutes and the page can be left; a toast says when it is done, with the result and Download result, and a dialog asks to try again if it fails. After Kit and Zendesk.',
+  },
+  {
+    id: 'E',
+    label: 'E',
+    name: 'Loading bar',
+    note: 'A block under the page header per file: an indeterminate loading bar while it imports (the server reports no percentage), then a full bar with the result and Download result, or Try again on an error. No toast. After Klaviyo and Cofounder.',
   },
 ] as const satisfies readonly { id: ImportDirection; label: string; name: string; note: string }[]
 

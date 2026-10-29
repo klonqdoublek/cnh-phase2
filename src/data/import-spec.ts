@@ -57,6 +57,8 @@ export const IMPORT_COPY = {
      strings below are composed for the four directions (Prototype control, Design
      direction) and are a proposal until one is chosen. */
   processingNote: 'Takes about 10 minutes',
+  /* Direction E's line under a Processing file (composed, 29 Oct 2026; after Klaviyo's "You can stay on this page, or navigate away"). */
+  progressNote: 'Takes about 10 minutes. You can stay on this page or leave it; the templates appear in the list as draft.',
   startedTitle: 'Import in progress',
   startedBody: 'The templates appear in the list as draft in about 10 minutes.',
   startedDialogBody: 'This takes about 10 minutes. The templates appear in the list as draft when it is done. You can leave this page.',
