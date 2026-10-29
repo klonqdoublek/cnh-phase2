@@ -3,6 +3,7 @@ import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { IMPORT_COPY } from '@/data/import-spec'
 import { cn } from '@/lib/cn'
+import { ImportBar } from './ImportBar'
 import { JobBadge } from './JobBadge'
 import { downloadResult, resultOf, type ImportJob } from './jobs'
 
@@ -88,23 +89,7 @@ export function ImportProgress({
                 />
               )}
             </div>
-            <div
-              role="progressbar"
-              aria-label={job.fileName}
-              aria-valuetext={job.status === 'processing' ? IMPORT_COPY.statusProcessing : job.status === 'done' ? IMPORT_COPY.statusDone : IMPORT_COPY.statusFailed}
-              className="relative h-[var(--space-1)] overflow-hidden rounded-[var(--radius-full)] bg-[var(--color-surface-highlight-subtle-default)]"
-            >
-              {job.status === 'processing' ? (
-                <span className="absolute inset-y-0 left-0 w-1/3 rounded-[var(--radius-full)] bg-[var(--color-surface-highlight-default)] animate-[import-bar_1.6s_ease-in-out_infinite]" />
-              ) : (
-                <span
-                  className={cn(
-                    'absolute inset-0 rounded-[var(--radius-full)]',
-                    job.status === 'done' ? 'bg-[var(--color-surface-positive-strong-default)]' : 'bg-[var(--color-surface-negative-strong-default)]',
-                  )}
-                />
-              )}
-            </div>
+            <ImportBar status={job.status} label={job.fileName} />
           </div>
         )
       })}

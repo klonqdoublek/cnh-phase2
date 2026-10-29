@@ -49,7 +49,7 @@ export function UploadPanel({
           <Divider />
           <div className="flex max-h-[320px] flex-col overflow-y-auto px-[var(--space-4)]">
             {jobs.map((job) => (
-              <JobRow key={job.id} job={job} onRetry={onRetry} />
+              <JobRow key={job.id} job={job} bar onRetry={onRetry} />
             ))}
           </div>
         </>

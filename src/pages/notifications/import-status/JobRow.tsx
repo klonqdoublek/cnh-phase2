@@ -2,6 +2,7 @@ import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
 import { IMPORT_COPY } from '@/data/import-spec'
 import { cn } from '@/lib/cn'
+import { ImportBar } from './ImportBar'
 import { downloadResult, resultOf, type ImportJob } from './jobs'
 
 /**
@@ -13,8 +14,11 @@ import { downloadResult, resultOf, type ImportJob } from './jobs'
  * highlight Ghost Download result (29 Oct 2026; was a tick), Error in
  * Text/Negative with a highlight Ghost Try again. Composed from webds parts,
  * as the CMS upload slot is.
+ *
+ * `bar` adds the never-ending loading bar under the file's lines while it is
+ * Processing (requester, 29 Oct 2026: A's panel and G's menu).
  */
-export function JobRow({ job, onRetry }: { job: ImportJob; onRetry: (id: number) => void }) {
+export function JobRow({ job, bar = false, onRetry }: { job: ImportJob; bar?: boolean; onRetry: (id: number) => void }) {
   const line =
     job.status === 'processing'
       ? IMPORT_COPY.processingNote
@@ -38,6 +42,7 @@ export function JobRow({ job, onRetry }: { job: ImportJob; onRetry: (id: number)
         >
           {line}
         </span>
+        {bar && job.status === 'processing' && <ImportBar status={job.status} label={job.fileName} className="mt-[var(--space-2)]" />}
       </div>
       {job.status === 'processing' && (
         <span role="img" aria-label={IMPORT_COPY.statusProcessing} className="flex">
