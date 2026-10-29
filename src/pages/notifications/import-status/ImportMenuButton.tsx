@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { Divider } from '@/bbl/divider'
+import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
 import { Chevron } from '@/bbl/icons'
 import { ListItem } from '@/bbl/list-item'
@@ -14,10 +15,12 @@ import { JobRow } from './JobRow'
  * each import of this visit with its status, result and Download result /
  * Try again (requester, 29 Oct 2026; after Grok's "Upload documents" split
  * button, Remote's "Create" menu button and Railway's header list; Mobbin,
- * 29 Oct 2026). With nothing pending it is the plain Import button and opens
- * the Import dialog. A turning ring follows the label while a job is
- * Processing and a Negative mark while one is in Error; only then does the
- * button open the menu. In the menu
+ * 29 Oct 2026). With no import in the menu it is the plain Import button and
+ * opens the Import dialog. While one is there, Processing, in Error or
+ * Completed, it opens the menu: a turning ring follows the label while a job
+ * is Processing, a Negative mark while one is in Error. Finished imports stay
+ * until Clear all, beside the Import Status heading, takes them all; a
+ * Processing one stays until it finishes. In the menu
  * a Processing file carries the never-ending loading bar. The menu opens by
  * itself on Import, as Safari shows its list when a download starts.
  *
@@ -36,12 +39,15 @@ export function ImportMenuButton({
   onOpenChange,
   onImportFile,
   onRetry,
+  onClear,
 }: {
   jobs: ImportJob[]
   open: boolean
   onOpenChange: (open: boolean) => void
   onImportFile: () => void
   onRetry: (id: number) => void
+  /** Clear all: drops every finished import (Completed or Error) from the menu. */
+  onClear: () => void
 }) {
   const box = useRef<HTMLDivElement>(null)
   const [hover, setHover] = useState<{ pressed: boolean } | null>(null)
@@ -61,15 +67,18 @@ export function ImportMenuButton({
 
   const busy = jobs.some((j) => j.status === 'processing')
   const failed = !busy && jobs.some((j) => j.status === 'failed')
-  /* Something still on the server or waiting for Try again: only then is Import a menu. */
-  const pending = busy || failed
+  /* Any import not cleared yet — Processing, in Error, or Completed with its
+     result still to read: while there is one, Import is a menu. */
+  const pending = jobs.length > 0
+  const finished = jobs.some((j) => j.status !== 'processing')
 
   return (
     <div ref={box} className="relative flex">
-      {/* With nothing pending Import is the plain button and opens the Import
-          dialog (requester, 29 Oct 2026; was a chevron and the menu every time).
-          While a job is Processing a turning ring follows the label, while one is
-          in Error a Negative mark, and then the button opens the menu. */}
+      {/* With no import in the menu Import is the plain button and opens the
+          Import dialog (requester, 29 Oct 2026; was a chevron and the menu every
+          time). While one is there it opens the menu: a turning ring follows the
+          label while a job is Processing, a Negative mark while one is in Error,
+          the plain label once all are Completed, until Clear all. */}
       <OutlineButton
         aria-haspopup={pending ? 'menu' : undefined}
         aria-expanded={pending ? open : undefined}
@@ -115,7 +124,21 @@ export function ImportMenuButton({
               <>
                 <Divider />
                 <div className="flex flex-col">
-                  <span className="type-label-m-emphasized text-[var(--color-text-secondary-default)]">{IMPORT_COPY.indicator}</span>
+                  <div className="flex items-center justify-between gap-[var(--space-3)]">
+                    <span className="type-label-m-emphasized text-[var(--color-text-secondary-default)]">{IMPORT_COPY.indicator}</span>
+                    {finished && (
+                      <GhostButton
+                        appearance="highlight"
+                        padding="none"
+                        onClick={() => {
+                          onClear()
+                          if (!busy) onOpenChange(false)
+                        }}
+                      >
+                        {IMPORT_COPY.clearAll}
+                      </GhostButton>
+                    )}
+                  </div>
                   <div className="flex max-h-[320px] flex-col overflow-y-auto">
                     {jobs.map((job) => (
                       <JobRow key={job.id} job={job} bar onRetry={onRetry} />

@@ -71,7 +71,10 @@ export const IMPORT_COPY = {
   statusFailed: 'Error',
   panelTitle: (processing: number, failed: number) =>
     processing ? `Importing ${processing} ${processing === 1 ? 'file' : 'files'}` : failed ? 'Import failed' : 'Import completed',
-  indicator: 'Imports',
+  /* "Import Status" since 29 Oct 2026 (requester; was "Imports"). */
+  indicator: 'Import Status',
+  /* G's menu: clears every finished import (composed, 29 Oct 2026). */
+  clearAll: 'Clear all',
   /* Direction G's first menu item (composed, 29 Oct 2026). */
   importFile: 'Import file',
   /* PROPOSAL, pending BA: a failure on the server after the upload. "Please try again" is

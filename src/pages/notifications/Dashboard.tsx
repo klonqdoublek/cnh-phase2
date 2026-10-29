@@ -353,6 +353,7 @@ export function Dashboard({
                 onOpenChange={feedback.setPopoverOpen}
                 onImportFile={() => setImportOpen(true)}
                 onRetry={importJobs.retry}
+                onClear={() => importJobs.jobs.filter((j) => j.status !== 'processing').forEach((j) => importJobs.dismiss(j.id))}
               />
             ) : (
               <OutlineButton onClick={() => setImportOpen(true)}>Import</OutlineButton>
