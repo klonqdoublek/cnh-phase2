@@ -25,7 +25,7 @@ Headless Chrome on this machine needs `--no-proxy-server`, or every request to t
 
 Hash routes, one per state, the same as the original build — the flow archive and the Task flow button point at them. `src/App.tsx` owns them all.
 
-- Notification management: `#/list`, `#/list/{loading,error,empty}`, `#/list/import[/<state>]` (job states `processing`, `process-failed`, `success` draw on the list in the Import direction of `?imp=A…E`), `#/create[/loading|/fail]`, `#/edit/<id>`
+- Notification management: `#/list`, `#/list/{loading,error,empty}`, `#/list/import[/<state>]` (job states `processing`, `process-failed`, `success` draw on the list in the Import direction of `?imp=A…E.2`), `#/create[/loading|/fail]`, `#/edit/<id>`
 - Broadcast: `#/broadcast`, `#/broadcast/{loading,error,empty,submitted,draft-saved,cancelled,download-success,download-failed}`, `#/broadcast/download[/fail]`, `#/broadcast/create[/<preset>|/loading|/fail]`, `#/broadcast/view/<id>[/cancel|/cancel-fail|/download[/fail]]`, `#/broadcast/edit/<id>[/loading|/fail]`
 - `#/login`
 

@@ -324,6 +324,10 @@ export function Dashboard({
     )
 
   const isReady = !failing && state === 'ready'
+  /* Direction E.2: E's loading bar docked above the pagination footer (requester, 29 Oct 2026). */
+  const bottomProgress = direction === 'E.2' && (
+    <ImportProgress jobs={importJobs.jobs} placement="bottom" onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />
+  )
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--color-surface-primary-default)]">
@@ -355,7 +359,10 @@ export function Dashboard({
         {filters}
         {direction === 'B' && <RecentImports jobs={importJobs.jobs} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} onOpen={feedback.clearEvent} />}
         {!isReady ? (
-          body
+          <>
+            {body}
+            {bottomProgress}
+          </>
         ) : (
           <>
             <div className="min-h-0 flex-1 overflow-auto bg-[var(--color-surface-primary-default)]">
@@ -493,6 +500,7 @@ export function Dashboard({
                 </>
               )}
             </div>
+            {bottomProgress}
             {rows.length > 0 && (
               <div className="flex h-[68px] w-full shrink-0 items-center justify-end bg-[var(--color-surface-primary-default)] px-[var(--space-4)] shadow-[inset_0_1px_0_0_var(--color-border-primary-default)]">
                 <TablePagination

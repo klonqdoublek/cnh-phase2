@@ -18,13 +18,20 @@ import { downloadResult, resultOf, type ImportJob } from './jobs'
  * and Download result; Error with Surface/Negative/Strong and Try again. A
  * finished block closes with its close mark. No toast. webds ships no
  * progress bar (it has Stepper only): authored from tokens, a gap.
+ *
+ * `placement="bottom"` is direction E.2 (requester, 29 Oct 2026): the same
+ * blocks docked above the list's pagination footer, its rule on top instead
+ * of underneath.
  */
 export function ImportProgress({
   jobs,
+  placement = 'top',
   onRetry,
   onDismiss,
 }: {
   jobs: ImportJob[]
+  /** `top` under the page header (E), `bottom` above the pagination footer (E.2). */
+  placement?: 'top' | 'bottom'
   onRetry: (id: number) => void
   onDismiss: (id: number) => void
 }) {
@@ -32,7 +39,12 @@ export function ImportProgress({
   return (
     <section
       aria-label={IMPORT_COPY.historyTitle}
-      className="flex shrink-0 flex-col gap-[var(--space-4)] bg-[var(--color-surface-primary-default)] px-[var(--space-4)] py-[var(--space-4)] shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]"
+      className={cn(
+        'flex shrink-0 flex-col gap-[var(--space-4)] bg-[var(--color-surface-primary-default)] px-[var(--space-4)] py-[var(--space-4)]',
+        placement === 'top'
+          ? 'shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]'
+          : 'shadow-[inset_0_1px_0_0_var(--color-border-primary-default)]',
+      )}
     >
       {jobs.map((job) => {
         const r = resultOf(job)

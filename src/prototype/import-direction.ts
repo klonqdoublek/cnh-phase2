@@ -3,12 +3,13 @@ import { useSyncExternalStore } from 'react'
 /* Prototype runner only — which direction draws Import's background processing
  * (BA / Dev, 28 Oct 2026: Import sends the file to a server and the templates
  * reach the list about 10 minutes later), so the requester can compare them
- * in one build. A–D come from the Mobbin research of 28 Oct 2026 and E, a
- * loading bar, from the requester (29 Oct 2026); A–D have their own section
- * on the Import file's UX Playground page. Kept in `?imp=` so a link opens a
- * direction. Not product UI: the chosen direction stays, this file goes. */
+ * in one build. A–D come from the Mobbin research of 28 Oct 2026, and E / E.2
+ * (a loading bar on top or at the bottom) from the requester (29 Oct 2026).
+ * A–D have their own section on the Import file's UX Playground page. Kept
+ * in `?imp=` so a link opens a direction. Not product UI: the chosen
+ * direction stays, this file goes. */
 
-export type ImportDirection = 'A' | 'B' | 'C' | 'D' | 'E'
+export type ImportDirection = 'A' | 'B' | 'C' | 'D' | 'E' | 'E.2'
 
 export const IMPORT_DIRECTIONS = [
   {
@@ -40,6 +41,12 @@ export const IMPORT_DIRECTIONS = [
     label: 'E',
     name: 'Loading bar',
     note: 'A block under the page header per file: an indeterminate loading bar while it imports (the server reports no percentage), then a full bar with the result and Download result, or Try again on an error. No toast. After Klaviyo and Cofounder.',
+  },
+  {
+    id: 'E.2',
+    label: 'E.2',
+    name: 'Loading bar at the bottom',
+    note: 'E’s blocks docked above the pagination footer instead of under the page header, so the filters and the top of the list stay where they are.',
   },
 ] as const satisfies readonly { id: ImportDirection; label: string; name: string; note: string }[]
 
