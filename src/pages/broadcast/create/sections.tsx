@@ -134,7 +134,12 @@ export function AudienceFile({ f }: F) {
             buttonLabel={BROADCAST_COPY.browse}
             hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
             accept=".csv,.xlsx,text/csv"
-            error={!!f.errors.file}
+            /* One file at a time (BA MoM, 29 Oct 2026): a drag of two or more turns the
+               zone Negative with "1 File Only", held after the drop, as Import's zone. */
+            maxFiles={1}
+            tooManyHint={BROADCAST_COPY.oneFile}
+            error={f.tooMany || !!f.errors.file}
+            errorHint={f.tooMany ? BROADCAST_COPY.oneFile : undefined}
             onFiles={f.pick}
             className="min-h-[164px]"
           />

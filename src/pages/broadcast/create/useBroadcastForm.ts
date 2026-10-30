@@ -183,9 +183,16 @@ export function useBroadcastForm({
     })
   const setC = (key: keyof BroadcastContent) => (v: string) => setContent((c) => ({ ...c, [key]: v }))
 
+  /** Two or more files dropped at once: none is taken and the zone holds
+   *  "1 File Only" until one file is dropped or chosen (BA MoM, 29 Oct 2026, as
+   *  Import; was: the first file was taken and the rest dropped silently). */
+  const [tooMany, setTooMany] = useState(false)
+
   const pick = (list: FileList | null | undefined) => {
+    if (list && list.length > 1) return setTooMany(true)
     const f = list?.[0]
     if (!f) return
+    setTooMany(false)
     setFile(f)
     setRead(null)
     setFileText('')
@@ -374,6 +381,7 @@ export function useBroadcastForm({
     check,
     checking,
     pick,
+    tooMany,
     clearFile,
     recipientType,
     setRecipientType,
