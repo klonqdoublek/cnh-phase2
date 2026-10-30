@@ -46,7 +46,7 @@ export function Text({
   disabled?: boolean
   /** Helper text under the box, where an error is not. */
   hint?: string
-  /** The file's columns: their `{{COLUMN}}` tokens are drawn as tinted chips
+  /** The file's columns: their `${COLUMN}` tokens are drawn as tinted chips
    *  and erased whole (./highlight.tsx). The box's own text goes transparent
    *  under the layer. */
   tint?: Tint

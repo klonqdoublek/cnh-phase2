@@ -12,13 +12,12 @@ import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
 import { OutlineButton } from '@/bbl/outline-button'
-import { PillChip } from '@/bbl/pill-chip'
 import { ScrollBar } from '@/bbl/scroll-bar'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
 import { ToggleSwitch } from '@/bbl/toggle-switch'
 import { FormField } from '@/patterns/form-field'
-import { PICKER_DIALOG_COPY_EN, PickerDialog } from '@/patterns/picker-dialog'
+import { PICKER_DIALOG_COPY_EN } from '@/patterns/picker-dialog'
 import { SelectList } from '@/patterns/select-list'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { InfoNote } from '@/patterns/info-note'
@@ -38,19 +37,18 @@ import {
 } from '@/data/broadcast'
 import { SERVICE_CODE_LOV, type Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import type { Concept, Overflow } from '@/prototype/dynamic-field'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
 import type { Tint } from './highlight'
-import { triggerMark, useFieldShortcut } from './shortcut'
+import { TRIGGER, useFieldShortcut } from './shortcut'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
 /* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
  * 85:19401, 15 Oct 2026): the audience step carries the message content —
- * the file's fields and the channel cards, drawn as the dynamic field draft
- * the Concept panel picks — and channels are switched on their own cards. */
+ * the channel cards, each with its `+` for a dynamic field — and channels are
+ * switched on their own cards. */
 
 type F = { f: BroadcastForm }
-/** The message box the cursor was last in, so a field chip knows where to insert. */
+/** The message box the cursor was last in, so a card's `+` knows where to insert. */
 export type FocusRef = React.MutableRefObject<{ key: string; el: HTMLInputElement | HTMLTextAreaElement } | null>
 
 const sizeLabel = (bytes: number) =>
@@ -429,30 +427,29 @@ function ColumnSelect({ f }: F) {
 
 /* ── Message content (under the audience step) ─────────────────────────── */
 
-/** Each channel's message boxes, in order — where a per-channel picker
- *  inserts when the cursor is not in one of that channel's boxes. */
+/** Each channel's message boxes, in order — where the card's `+` inserts
+ *  when the cursor is not in one of that channel's boxes. */
 const CHANNEL_BOXES: Record<Channel, (keyof BroadcastContent)[]> = {
   'Push notification': ['pushTitle', 'pushBody'],
   Email: ['emailSubject', 'emailBody'],
   SMS: ['smsMessage'],
 }
 
-/** Inserts `{{COLUMN}}` at the caret of the message box the cursor was last
- *  in. Scoped to a channel, it falls back to that channel's first box. False
- *  when there is no box to insert into. */
+/** Inserts `${COLUMN}` at the caret of the channel's message box the cursor
+ *  was last in, or into the channel's first box. */
 function useInsertField(f: BroadcastForm, focus: FocusRef) {
-  return (token: string, channel?: Channel) => {
+  return (token: string, channel: Channel) => {
     type Target = NonNullable<FocusRef['current']>
     const usable = (t: Target | null): t is Target => !!t && !t.el.disabled && t.el.isConnected
     let target = focus.current
-    if (channel && !(usable(target) && CHANNEL_BOXES[channel].includes(target.key as keyof BroadcastContent))) {
+    if (!(usable(target) && CHANNEL_BOXES[channel].includes(target.key as keyof BroadcastContent))) {
       const key = CHANNEL_BOXES[channel][0]
       const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
         `[data-field="${key}"] input, [data-field="${key}"] textarea`,
       )
       target = el ? { key, el } : null
     }
-    if (!usable(target)) return false
+    if (!usable(target)) return
     const { el, key } = target
     const from = el.selectionStart ?? el.value.length
     const to = el.selectionEnd ?? el.value.length
@@ -462,18 +459,8 @@ function useInsertField(f: BroadcastForm, focus: FocusRef) {
       el.focus()
       el.setSelectionRange(from + token.length, from + token.length)
     })
-    return true
   }
 }
-
-type Insert = (token: string) => void
-
-type Field = BroadcastForm['fields'][number]
-
-/** Pills on show before `+N more` or the search takes over: one row on a
- *  stacked card. The most columns an audience file may have would set it
- *  (open, for the BA). */
-const PILLS_SHOWN = 8
 
 /** Closes a pop-up on a click outside `root` or on Esc. */
 function useDismiss(open: boolean, setOpen: (open: boolean) => void, root: React.RefObject<HTMLElement | null>) {
@@ -490,204 +477,21 @@ function useDismiss(open: boolean, setOpen: (open: boolean) => void, root: React
   }, [open, setOpen, root])
 }
 
-/** One field as a Pill Chip (highlight). */
-function Pill({ field, disabled, onInsert }: { field: Field; disabled?: boolean; onInsert: Insert }) {
-  return (
-    /* mousedown would blur the message box and lose the caret first */
-    <span className="shrink-0 whitespace-nowrap" onMouseDown={(e) => e.preventDefault()}>
-      <PillChip
-        appearance="highlight"
-        state={disabled ? 'disabled' : 'default'}
-        aria-label={`Insert ${field.token}`}
-        onClick={() => onInsert(field.token)}
-      >
-        {field.column}
-      </PillChip>
-    </span>
-  )
-}
-
-/** A Pill Chip (default) that opens `fields` in `FieldMenu`: `+N more` after
- *  the first pills, or `All fields (N)` at the end of the scrolling row. The
- *  menu opens under the chip, toward the side of the pills' area with room
- *  for its 240.
- *  Composed: webds has no chip group with an overflow chip (gap). */
-function FieldListChip({
-  label,
-  fields,
-  disabled,
-  onInsert,
-}: {
-  label: string
-  fields: Field[]
-  disabled?: boolean
-  onInsert: Insert
-}) {
-  const [open, setOpen] = useState(false)
-  const [align, setAlign] = useState<'left' | 'right'>('left')
-  const root = useRef<HTMLSpanElement>(null)
-  useDismiss(open, setOpen, root)
-  const toggle = () => {
-    const left = root.current?.getBoundingClientRect().left ?? 0
-    const right = root.current?.closest('[data-pills]')?.getBoundingClientRect().right ?? innerWidth
-    setAlign(left + 240 > right ? 'right' : 'left')
-    setOpen(!open)
-  }
-  return (
-    <span ref={root} className="relative inline-flex shrink-0 whitespace-nowrap">
-      <span className="inline-flex" onMouseDown={(e) => e.preventDefault()}>
-        <PillChip state={disabled ? 'disabled' : open ? 'selected' : 'default'} aria-expanded={open} onClick={toggle}>
-          {label}
-        </PillChip>
-      </span>
-      {open && (
-        <FieldMenu
-          align={align}
-          options={fields.map((field) => ({ value: field.token, label: field.column }))}
-          onSelect={(token) => {
-            onInsert(token)
-            setOpen(false)
-          }}
-        />
-      )}
-    </span>
-  )
-}
-
-/** The scrolling row (Magnific's filter bar, Mobbin 28 Oct 2026): one line of
- *  pills, an edge fade and a chevron only on a side that still hides some,
- *  each click moving most of a row's width. Tab into a hidden pill scrolls it
- *  into view on its own. */
-function PillRow({ children }: { children: React.ReactNode }) {
-  const row = useRef<HTMLDivElement>(null)
-  const [edge, setEdge] = useState({ start: false, end: false })
-  const measure = useCallback(() => {
-    const el = row.current
-    if (el) setEdge({ start: el.scrollLeft > 1, end: el.scrollLeft + el.clientWidth < el.scrollWidth - 1 })
-  }, [])
-  useLayoutEffect(() => {
-    measure()
-    const ro = new ResizeObserver(measure)
-    if (row.current) ro.observe(row.current)
-    return () => ro.disconnect()
-  }, [measure])
-  const page = (dir: 1 | -1) => {
-    const el = row.current
-    el?.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' })
-  }
-  const side = (dir: 1 | -1) => (
-    <span
-      className={cn(
-        'pointer-events-none absolute inset-y-0 flex w-[64px] items-center from-[var(--color-surface-primary-default)] from-40% to-transparent',
-        dir < 0 ? 'left-0 justify-start bg-gradient-to-r' : 'right-0 justify-end bg-gradient-to-l',
-      )}
-    >
-      <span className="pointer-events-auto inline-flex" onMouseDown={(e) => e.preventDefault()}>
-        <IconButton
-          label={dir < 0 ? 'Show earlier fields' : 'Show more fields'}
-          size={24}
-          icon={<Icon slug={dir < 0 ? 'chevron-left' : 'chevron-right'} size={24} />}
-          onClick={() => page(dir)}
-        />
-      </span>
-    </span>
-  )
-  return (
-    <div className="relative min-w-0 flex-1">
-      <div
-        ref={row}
-        onScroll={measure}
-        className="flex gap-[var(--space-2)] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {children}
-      </div>
-      {edge.start && side(-1)}
-      {edge.end && side(1)}
-    </div>
-  )
-}
-
-/** Idea 1 / 1.2: the file's columns as chips. Past `PILLS_SHOWN` fields the
- *  Prototype control's *When many fields* decides what shows (requester,
- *  28 Oct 2026); a smaller file shows them all whichever is picked. */
-function FieldPills({ f, onInsert, disabled, overflow }: F & { onInsert: Insert; disabled?: boolean; overflow: Overflow }) {
-  const [query, setQuery] = useState('')
-  const all = f.fields
-  const mode = all.length > PILLS_SHOWN ? overflow : 'all'
-  const pill = (field: Field) => <Pill key={field.column} field={field} disabled={disabled} onInsert={onInsert} />
-
-  if (mode === 'scroll')
-    return (
-      <div data-pills className="flex min-w-0 flex-col gap-[var(--space-2)]">
-        <span className={LABEL}>Available fields</span>
-        <div className="flex min-w-0 items-center gap-[var(--space-2)]">
-          <PillRow>{all.map(pill)}</PillRow>
-          <FieldListChip label={`All fields (${all.length})`} fields={all} disabled={disabled} onInsert={onInsert} />
-        </div>
-      </div>
-    )
-
-  if (mode === 'search') {
-    const q = query.trim().toLowerCase()
-    const shown = q ? all.filter((field) => field.column.toLowerCase().includes(q)) : all.slice(0, PILLS_SHOWN)
-    return (
-      <div data-pills className="flex min-w-0 flex-col gap-[var(--space-2)]">
-        <span className={LABEL}>Available fields</span>
-        <div className="w-[320px] max-w-full">
-          <FormField spec={{ label: PICKER_DIALOG_COPY_EN.search, kind: 'search' }} value={query} disabled={disabled} onChange={setQuery} />
-        </div>
-        {shown.length > 0 && <div className="flex flex-wrap gap-[var(--space-2)]">{shown.map(pill)}</div>}
-        <span className={NOTE}>
-          {!q
-            ? `Showing ${PILLS_SHOWN} of ${all.length} fields. Search to find the rest.`
-            : shown.length
-              ? `${shown.length} of ${all.length} fields`
-              : PICKER_DIALOG_COPY_EN.noResult[0]}
-        </span>
-      </div>
-    )
-  }
-
-  const rest = all.slice(PILLS_SHOWN)
-  return (
-    <div data-pills className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <span className={LABEL}>Available fields</span>
-      <div className="flex flex-wrap gap-[var(--space-2)]">
-        {mode === 'more' ? all.slice(0, PILLS_SHOWN).map(pill) : all.map(pill)}
-        {mode === 'more' && (
-          <FieldListChip label={`+${rest.length} more`} fields={rest} disabled={disabled} onInsert={onInsert} />
-        )}
-      </div>
-    </div>
-  )
-}
-
-/** The pop-up under Idea 2 / 2.2's button: webds `select-list`, the pattern
- *  that puts the library's Search Field above a single-pick list (requester,
- *  28 Oct 2026; was Dropdown Menu, which has no search). The columns go in as
- *  one unlabelled group and only that group scrolls: scrolling the root moved
- *  the pattern's `::after` stroke with the rows and let them show above a
- *  sticky search. A search that matches nothing reads Picker Dialog's own
- *  line, as a disabled row. */
-function FieldMenu({
-  options,
-  onSelect,
-  align = 'right',
-}: {
-  options: { value: string; label: string }[]
-  onSelect: (token: string) => void
-  align?: 'left' | 'right'
-}) {
+/** The pop-up under a card's `+`: webds `select-list`, the pattern that puts
+ *  the library's Search Field above a single-pick list (requester, 28 Oct
+ *  2026; was Dropdown Menu, which has no search). The columns go in as one
+ *  unlabelled group and only that group scrolls: scrolling the root moved the
+ *  pattern's `::after` stroke with the rows and let them show above a sticky
+ *  search. A search that matches nothing reads Picker Dialog's own line, as a
+ *  disabled row. */
+function FieldMenu({ options, onSelect }: { options: { value: string; label: string }[]; onSelect: (token: string) => void }) {
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
   const shown = options.filter((o) => !q || o.label.toLowerCase().includes(q))
   return (
     <SelectList
       width={240}
-      className={cn(
-        'absolute top-full z-[10] mt-[var(--space-2)] max-h-[360px] [&>.webds-pattern-select-list-3]:min-h-0 [&>.webds-pattern-select-list-3]:overflow-y-auto',
-        align === 'right' ? 'right-0' : 'left-0',
-      )}
+      className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[360px] [&>.webds-pattern-select-list-3]:min-h-0 [&>.webds-pattern-select-list-3]:overflow-y-auto"
       search={<FormField spec={{ label: PICKER_DIALOG_COPY_EN.search, kind: 'search', autoFocus: true }} value={query} onChange={setQuery} />}
       groups={[
         {
@@ -701,74 +505,34 @@ function FieldMenu({
   )
 }
 
-/** Idea 2 / 2.2: a button that opens the file's columns in `FieldMenu`.
- *  The drafts draw the button only; the pop-up is composed (gap).
- *  Idea 3 / 3.2 (`dialog`): the same button opens webds `picker-dialog`
- *  instead, single pick, as CMS's Link Document Type (requester, 20 Oct 2026). */
-function FieldMenuButton({
-  f,
-  onInsert,
-  icon,
-  dialog,
-  braces,
-  disabled,
-  label,
-}: F & { onInsert: Insert; icon?: boolean; dialog?: boolean; braces?: boolean; disabled?: boolean; label: string }) {
+/** Idea 2.2's `+` on a card's title row (Figma 359:112101), which opens the
+ *  file's columns in `FieldMenu`. The draft draws the button only; the
+ *  pop-up is composed (gap). */
+function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (token: string) => void; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
-  useDismiss(open && !dialog, setOpen, root)
+  useDismiss(open, setOpen, root)
   const off = disabled || !f.fields.length
-  const options = f.fields.map((field) => ({ value: field.token, label: field.column }))
-  const color = icon && off ? 'var(--color-icon-disabled-default)' : icon ? 'var(--color-icon-highlight-default)' : 'currentColor'
-  /* `{ }` — webds ships no brace icon (gap), so it is the label face, at the
-     16 box the plus takes. */
-  const mark = braces ? (
-    <span aria-hidden className="inline-flex h-[16px] items-center type-label-l-emphasized" style={{ color }}>
-      {'{ }'}
-    </span>
-  ) : (
-    <Icon slug="plus" size={16} color={color} />
-  )
   return (
     <span ref={root} className="relative inline-flex">
       {/* mousedown would blur the message box and lose the caret first */}
       <span className="inline-flex" onMouseDown={(e) => e.preventDefault()}>
-        {icon ? (
-          <ContainedIconButton
-            label={label}
-            aria-expanded={open}
-            disabled={off}
-            icon={mark}
-            onClick={() => setOpen(!open)}
-          />
-        ) : (
-          <OutlineButton aria-expanded={open} disabled={off} onClick={() => setOpen(!open)}>
-            {label}
-            {mark}
-          </OutlineButton>
-        )}
+        <ContainedIconButton
+          label={label}
+          aria-expanded={open}
+          disabled={off}
+          icon={<Icon slug="plus" size={16} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />}
+          onClick={() => setOpen(!open)}
+        />
       </span>
       {/* The search box takes the focus; the message box keeps its caret
           (`useInsertField` reads the last box's selection). */}
-      {open && !dialog && (
+      {open && (
         <FieldMenu
-          options={options}
+          options={f.fields.map((field) => ({ value: field.token, label: field.column }))}
           onSelect={(token) => {
             onInsert(token)
             setOpen(false)
-          }}
-        />
-      )}
-      {open && dialog && (
-        <PickerDialog
-          title="Dynamic field"
-          single
-          options={options}
-          empty={['No fields in the audience file.', 'Upload a file with more columns.']}
-          onClose={() => setOpen(false)}
-          onConfirm={([token]) => {
-            setOpen(false)
-            if (token) onInsert(token)
           }}
         />
       )}
@@ -789,101 +553,48 @@ function ChannelAlert({ f }: F) {
   )
 }
 
-/** The message area under the audience file, drawn as one of the dynamic
- *  field drafts (Figma 324:35732, 20 Oct 2026) — the Concept panel picks:
- *
- *    picker     pills always on show (Idea 1, 1.2) · a button and its menu (2, 2.2)
- *               · a button and a picker dialog (3, 3.2 — CMS's)
- *               · a character typed in the box, menu at the caret (4, ./shortcut.tsx)
- *    placement  one for every channel (1, 2) · one on each card (1.2, 2.2);
- *               a shortcut is in every box, so it has none
- *    layout     cards three across (1, 2, 2.2) · stacked full width as CNH (1.2)
+/** The message area under the audience file. A dynamic field goes in two
+ *  ways (BA & Dev feedback, 30 Oct 2026, "Option 2 + 3"): the `+` on each
+ *  channel card's title row opens the file's columns (Idea 2.2), and typing
+ *  `$` in a message box opens them at the caret (Idea 4, ./shortcut.tsx). A
+ *  picked field reads `${COLUMN}`, tinted as a chip (./highlight.tsx). The
+ *  cards are stacked full width, as the CNH Template form (requester, 27 Oct
+ *  2026).
  *
  *  Each card is switched on its own title row (webds `form-section-card`):
  *  off keeps what was typed and disables it. An Email or SMS broadcast has
  *  that one card, always on, with no switch (BA / Dev sync, 28 Oct 2026). */
-export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; concept: Concept }) {
+export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   const invalid = !!f.errors.channels
   const insert = useInsertField(f, focus)
-  const [needsField, setNeedsField] = useState(false)
-  const shared = concept.placement === 'shared'
   const single = f.recipientType !== 'cis'
   const hasFields = f.fields.length > 0
-  const insertShared: Insert = (token) => setNeedsField(!insert(token))
-  const typed = concept.picker === 'shortcut'
-  const shortcut = useFieldShortcut(f, concept.trigger, typed)
+  const shortcut = useFieldShortcut(f)
   const columns = f.fields.map((field) => field.column).join('\n')
-  const mark = triggerMark(concept.trigger)
-  /* Composed (21 Oct 2026), after Clay's "Type '/' to …". Said once, on the
-     right of the card title where Idea 2 puts its button (requester, 28 Oct
-     2026), not under every box. webds `info-note`: icon and text, no surface. */
-  const shortcutNote = typed && hasFields && <InfoNote>Type {mark} to add a dynamic field</InfoNote>
-  const tint = useMemo<Tint>(() => ({ columns: new Set(columns.split('\n')), erase: concept.erase, mark }), [columns, concept.erase, mark])
-
-  /* Every idea titles the card "Create broadcast message" (requester, 21 Oct
-     2026), over the drafts' "Broadcast Message", "Select" or no title. */
-  const menu = concept.picker === 'button' || concept.picker === 'dialog'
-  const sharedButton = shared && menu && (
-    <FieldMenuButton
-      f={f}
-      label="Add dynamic field"
-      dialog={concept.picker === 'dialog'}
-      braces={concept.mark === 'braces'}
-      onInsert={insertShared}
-    />
-  )
+  const tint = useMemo<Tint>(() => ({ columns: new Set(columns.split('\n')) }), [columns])
 
   const cards = (
     <div
       data-error={invalid ? 'true' : undefined}
-      className={cn(
-        'grid items-stretch',
-        concept.layout === 'stacked'
-          ? 'grid-cols-1 gap-[var(--space-8)]'
-          : 'grid-cols-3 gap-[var(--space-8)]',
-      )}
+      className="grid grid-cols-1 items-stretch gap-[var(--space-8)]"
       {...shortcut.handlers}
       onFocusCapture={(e) => {
         const el = e.target as HTMLInputElement | HTMLTextAreaElement
         const key = el.closest('[data-field]')?.getAttribute('data-field')
-        if (key && isMessageBox(key)) {
-          focus.current = { key, el }
-          setNeedsField(false)
-        }
+        if (key && isMessageBox(key)) focus.current = { key, el }
       }}
     >
       {f.offered.map((c) => {
         const on = f.channels.includes(c)
-        const editable = on
-        const perCard = !shared && hasFields
-        const cardButton = perCard && menu && (
-          <FieldMenuButton
-            f={f}
-            icon
-            dialog={concept.picker === 'dialog'}
-            braces={concept.mark === 'braces'}
-            label={`Add dynamic field to ${c}`}
-            disabled={!editable}
-            onInsert={(t) => insert(t, c)}
-          />
-        )
-        const body = (
-          <>
-            {perCard && concept.picker === 'pills' && (
-              <FieldPills f={f} disabled={!editable} overflow={concept.overflow} onInsert={(t) => insert(t, c)} />
-            )}
-            <ChannelFields f={f} channel={c} on={editable} tint={typed && concept.look === 'tint' ? tint : undefined} />
-          </>
-        )
         return (
           <FormSectionCard
             key={c}
             className="min-w-0 border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
             title={
-              cardButton ? (
+              hasFields ? (
                 <span className="flex items-center justify-between gap-[var(--space-4)]">
                   {c}
-                  {cardButton}
+                  <FieldMenuButton f={f} label={`Add dynamic field to ${c}`} disabled={!on} onInsert={(t) => insert(t, c)} />
                 </span>
               ) : (
                 c
@@ -893,46 +604,30 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
             invalid={invalid}
             rowGap={4}
           >
-            {body}
+            <ChannelFields f={f} channel={c} on={on} tint={tint} />
           </FormSectionCard>
         )
       })}
     </div>
   )
 
-  const top = (
-    <>
-      {shared && concept.picker === 'pills' && hasFields && <FieldPills f={f} overflow={concept.overflow} onInsert={insertShared} />}
-      {!hasFields && (
-        <p className={NOTE}>
-          {typed
-            ? 'Dynamic fields can be added once the audience file is uploaded.'
-            : 'Available fields appear here once the audience file is uploaded.'}
-        </p>
-      )}
-      {needsField && (
-        <InlineMessage appearance="negative" size="xs">
-          {BROADCAST_COPY.pickField}
-        </InlineMessage>
-      )}
-      <ChannelAlert f={f} />
-      {shortcut.menu}
-    </>
-  )
-
   return (
     <FormSectionCard
       className="[&_.webds-pattern-form-section-card-3]:flex-1"
       title={
+        /* Every idea titled the card "Create broadcast message" (requester, 21
+           Oct 2026). The `$` note sits on the right of the title (requester,
+           28 Oct 2026): webds `info-note`, icon and text, no surface. */
         <span className="flex min-h-[44px] items-center justify-between gap-[var(--space-4)]">
           Create broadcast message
-          {sharedButton}
-          {shortcutNote}
+          {hasFields && <InfoNote>Type {TRIGGER} to add a dynamic field</InfoNote>}
         </span>
       }
       rowGap={6}
     >
-      {top}
+      {!hasFields && <p className={NOTE}>Dynamic fields can be added once the audience file is uploaded.</p>}
+      <ChannelAlert f={f} />
+      {shortcut.menu}
       {cards}
     </FormSectionCard>
   )

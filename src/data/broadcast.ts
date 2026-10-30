@@ -50,7 +50,6 @@ export const BROADCAST_COPY = {
   },
   noChannel: 'Please enable at least 1 notification channel',
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
-  pickField: 'Click in a message field first, then choose a field to insert',
   startPast: 'Start must be later than the current time',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
@@ -223,7 +222,7 @@ export function checkAudience(audience: Audience, column: string, kind: IdKind):
 /* ── message content ───────────────────────────────────────────────────── */
 
 export const fieldsOf = (audience: Audience | null | undefined, idColumn: string) =>
-  (audience?.headers ?? []).filter((h) => h && h !== idColumn).map((column) => ({ column, token: `{{${column}}}` }))
+  (audience?.headers ?? []).filter((h) => h && h !== idColumn).map((column) => ({ column, token: `\${${column}}` }))
 
 export function smsInfo(text: string) {
   const unicode = /[^\x00-\x7F]/.test(text)
@@ -516,7 +515,7 @@ export const BROADCASTS: Broadcast[] = [
     status: 'Draft',
     success: 0,
     failed: 0,
-    content: content('Dear {{CUSTOMER_NAME}}, your new debit card will be delivered within 7 days.'),
+    content: content('Dear ${CUSTOMER_NAME}, your new debit card will be delivered within 7 days.'),
     createdBy: 'Naree R.',
     createdAt: '2026-10-09T11:20',
   },
@@ -600,7 +599,7 @@ export const BROADCASTS: Broadcast[] = [
     status: 'Cancelled',
     success: 0,
     failed: 0,
-    content: content('Dear {{CUSTOMER_NAME}}, use code {{PROMOTION_CODE}} for our year-end promotion.'),
+    content: content('Dear ${CUSTOMER_NAME}, use code ${PROMOTION_CODE} for our year-end promotion.'),
     createdBy: 'Panisa R.',
     createdAt: '2026-10-08T15:20',
   },
@@ -640,8 +639,8 @@ export const BROADCASTS: Broadcast[] = [
     success: 0,
     failed: 0,
     content: content(
-      'Dear {{CUSTOMER_NAME}}, your payment of THB {{AMOUNT}} was successful.',
-      'Special offer for {{CUSTOMER_NAME}}',
+      'Dear ${CUSTOMER_NAME}, your payment of THB ${AMOUNT} was successful.',
+      'Special offer for ${CUSTOMER_NAME}',
     ),
     createdBy: 'Panisa R.',
     createdAt: '2026-10-05T10:12',
