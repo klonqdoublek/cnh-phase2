@@ -58,6 +58,7 @@ export type FormErrors = Partial<
     | 'file'
     | 'channels'
     | 'column'
+    | 'dnd'
     | keyof BroadcastContent
     | 'startDate'
     | 'startTime'
@@ -210,6 +211,10 @@ export function useBroadcastForm({
   const waits = !!(start && first && first.getTime() !== start.getTime())
   /** Do Not Disturb leaves no time to send: a warning only, Submit still goes ahead. */
   const neverSends = useMemo(() => dndNeverSends(dnd), [dnd])
+  /* Fixed: the blocking error goes with the Alert. */
+  useEffect(() => {
+    if (!neverSends) clear('dnd')
+  }, [neverSends])
 
   const setDndEnabled = (enabled: boolean) => {
     setDnd((d) => ({ ...d, enabled }))
@@ -243,6 +248,9 @@ export function useBroadcastForm({
       if (!startTime) e.startTime = BROADCAST_COPY.required
       if (start && start <= new Date()) e.startDate = BROADCAST_COPY.startPast
     }
+    /* Quiet periods that leave no time to send block the submit (BA MoM, 29 Oct
+       2026; 28–29 Oct a warning only, Submit went ahead). */
+    if (neverSends) e.dnd = BROADCAST_COPY.dndNeverSends
     if (dnd.enabled)
       for (const rule of dnd.rules) {
         if (!rule.days.length) e[`dndDays:${rule.id}`] = BROADCAST_COPY.dndNoDay

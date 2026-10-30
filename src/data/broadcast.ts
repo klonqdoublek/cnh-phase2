@@ -50,7 +50,8 @@ export const BROADCAST_COPY = {
   startPast: 'Start must be later than the current time',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
-  /** Composed (BA / Dev sync, 28 Oct 2026): a warning, not an error; Submit still works. */
+  /** Composed (BA / Dev sync, 28 Oct 2026). A Caution while editing; on Submit an
+   *  error that blocks it (BA MoM, 29 Oct 2026; was a warning only). */
   dndNeverSends: 'Do Not Disturb covers every day, all day. No message will be sent.',
   submitTitle: 'Submit this broadcast?',
   submitFailTitle: 'Unable to submit the broadcast',

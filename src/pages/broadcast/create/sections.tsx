@@ -1026,11 +1026,20 @@ function Outlook({ f }: F) {
 /* ── DND (its own card under Delivery Date) ──────────────────────────────── */
 
 /** Do Not Disturb that covers every day, all day (BA / Dev sync, 28 Oct
- *  2026): a Caution Alert, Title only, as the Delivery card's Outlook. It warns;
- *  Submit still goes ahead. Shown on the Do Not Disturb card or in the confirm
- *  dialog, whichever the Prototype control picks, until dev confirms one. */
-export function NeverSendsAlert() {
-  return (
+ *  2026): an Alert, Title only, as the Delivery card's Outlook, on the Do Not
+ *  Disturb card as soon as the periods add up. Caution while editing; once
+ *  Submit is pressed it is the error that blocks it and turns Negative, as the
+ *  channel cards' Alert does (BA MoM and requester, 29 Oct 2026: Submit is
+ *  never disabled; 28–29 Oct a warning only, on the card or in the confirm
+ *  dialog, switched by a `?dndw=` Prototype control option). */
+function NeverSendsAlert({ error }: { error: boolean }) {
+  return error ? (
+    <Alert
+      appearance="negative"
+      icon={<Icon slug="close-circle" size={24} color="var(--color-icon-negative-default)" />}
+      title={BROADCAST_COPY.dndNeverSends}
+    />
+  ) : (
     <Alert
       appearance="caution"
       icon={<Icon slug="caution" size={24} color="var(--color-icon-caution-default)" />}
@@ -1143,7 +1152,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
  *  2026; was a Time zone row under the periods). The switch is drawn in the
  *  title rather than through the card's `toggle`, which names the switch only
  *  from a string title. */
-export function DndCard({ f, warn }: F & { warn: boolean }) {
+export function DndCard({ f }: F) {
   const dnd = f.dnd
   return (
     <FormSectionCard
@@ -1166,7 +1175,11 @@ export function DndCard({ f, warn }: F & { warn: boolean }) {
           <DndRuleRow f={f} rule={rule} index={i} />
         </CardSurface>
       ))}
-      {warn && f.neverSends && <NeverSendsAlert />}
+      {f.neverSends && (
+        <div data-error={f.errors.dnd ? 'true' : undefined}>
+          <NeverSendsAlert error={!!f.errors.dnd} />
+        </div>
+      )}
       <span className="flex">
         <OutlineButton disabled={!dnd.enabled} onClick={f.addDndRule}>
           Add more period
