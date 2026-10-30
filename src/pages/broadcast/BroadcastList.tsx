@@ -10,11 +10,9 @@ import {
   BROADCAST_STATUSES,
   STATUS_LABEL,
   fmtDateTime,
-  fmtDndRule,
   hasDeliveryReport,
   type Broadcast,
   type BroadcastStatus as BroadcastStatusValue,
-  type Dnd,
   type ListToast as ListToastValue,
 } from '@/data/broadcast'
 import { CHANNELS } from '@/data/templates'
@@ -48,22 +46,6 @@ export type BroadcastListProps = {
 
 const PAGE_SIZE = 50
 
-/** A rule a line, two lines at most; the rest are counted on the second. */
-function DndCell({ dnd }: { dnd: Dnd }) {
-  const lines = dnd.enabled ? dnd.rules.map(fmtDndRule) : ['Off']
-  const more = lines.length - 2
-  return (
-    <span className="flex min-w-px flex-col type-body-m text-[var(--color-text-primary-default)]">
-      {lines.slice(0, 2).map((line, i) => (
-        <span key={i} className="truncate">
-          {line}
-          {i === 1 && more > 0 && ` +${more} more`}
-        </span>
-      ))}
-    </span>
-  )
-}
-
 /** The status, and on the row's hover its Download report — one broadcast, one
  *  file. The mark sits at one position on every row, 20 clear of the widest
  *  badge (Processing, 74.3 at size M), as Notification management places its
@@ -94,13 +76,6 @@ const columnsOf = (onDownload: (b: Broadcast) => void): ListColumn<Broadcast>[] 
   { key: 'name', label: 'Broadcast name', width: 500, cell: (b) => b.name },
   { key: 'channel', label: 'Channel', width: 360, wrap: true, cell: (b) => b.channels.join(', ') },
   { key: 'start', label: 'Broadcast start', width: 220, cell: (b) => fmtDateTime(new Date(b.start)) },
-  {
-    key: 'dnd',
-    label: 'Do Not Disturb',
-    width: 320,
-    slot: true,
-    cell: (b) => <DndCell dnd={b.dnd} />,
-  },
   {
     key: 'status',
     label: 'Status',
