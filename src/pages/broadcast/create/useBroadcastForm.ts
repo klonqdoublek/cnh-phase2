@@ -61,7 +61,6 @@ export type FormErrors = Partial<
     | keyof BroadcastContent
     | 'startDate'
     | 'startTime'
-    | 'end'
     | `dndDays:${string}`
     | `dndTime:${string}`,
     string
@@ -141,14 +140,6 @@ export function useBroadcastForm({
   const [startTime, setStartTime] = useState(() =>
     draftStart ? `${pad(draftStart.getHours())}:${pad(draftStart.getMinutes())}` : (seed.start?.time ?? ''),
   )
-  /** Broadcast End, `YYYY-MM-DDTHH:mm` or '' for none. */
-  const [end, setEnd] = useState(() => {
-    if (initial) return initial.end ?? ''
-    if (!seed.end) return ''
-    const d = new Date()
-    d.setDate(d.getDate() + seed.end.inDays)
-    return `${ymd(d)}T${seed.end.time}`
-  })
   // New broadcasts start with Do Not Disturb off; its default period waits, disabled, under the switch (requester, 22 Oct 2026).
   const [dnd, setDnd] = useState<Dnd>(seed.dnd ?? { ...DEFAULT_DND, enabled: false })
   const [leaveOpen, setLeaveOpen] = useState(seed.open === 'leave')
@@ -215,10 +206,6 @@ export function useBroadcastForm({
   const setChannel = toggleChannel
 
   const start = mode === 'now' ? new Date() : combine(startDate, startTime)
-  /** Broadcast End belongs to Schedule delivery only (requester, 15 Oct 2026):
-   *  Send as soon as possible has no end. The typed value is kept, so
-   *  switching back to Schedule delivery brings it back. */
-  const endUsed = mode === 'schedule' ? end : ''
   const first = start ? firstSend(start, dnd) : null
   const waits = !!(start && first && first.getTime() !== start.getTime())
   /** Do Not Disturb leaves no time to send: a warning only, Submit still goes ahead. */
@@ -256,7 +243,6 @@ export function useBroadcastForm({
       if (!startTime) e.startTime = BROADCAST_COPY.required
       if (start && start <= new Date()) e.startDate = BROADCAST_COPY.startPast
     }
-    if (endUsed && start && new Date(endUsed) <= start) e.end = BROADCAST_COPY.endBeforeStart
     if (dnd.enabled)
       for (const rule of dnd.rules) {
         if (!rule.days.length) e[`dndDays:${rule.id}`] = BROADCAST_COPY.dndNoDay
@@ -318,7 +304,6 @@ export function useBroadcastForm({
     recipientColumn: column,
     startMode: mode,
     start: iso(start ?? new Date()),
-    end: endUsed || undefined,
     dnd,
     status,
     success: 0,
@@ -396,8 +381,6 @@ export function useBroadcastForm({
     first,
     neverSends,
     waits,
-    end: endUsed,
-    setEnd,
     dnd,
     setDndEnabled,
     setDndTimeZone,
