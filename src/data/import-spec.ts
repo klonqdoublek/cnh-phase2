@@ -58,47 +58,28 @@ export const IMPORT_COPY = {
   failTitle: 'Unable to import templates',
   retry: 'Try again',
   /* Background processing (BA / Dev, 28 Oct 2026): Import that passes the dialog's checks
-     sends the file to a server; its templates reach the list about 10 minutes later. The
-     strings below are composed for the four directions (Prototype control, Design
-     direction) and are a proposal until one is chosen. */
+     sends the file to a server; its templates reach the list about 10 minutes later.
+     Direction A's upload panel (design critique, 29 Oct 2026). Composed. */
   processingNote: 'Takes about 10 minutes',
-  /* Direction E's line under a Processing file (composed, 29 Oct 2026; after Klaviyo's "You can stay on this page, or navigate away"). */
-  progressNote: 'Takes about 10 minutes. You can stay on this page or leave it; the templates appear in the list as draft.',
-  startedTitle: 'Import in progress',
-  startedDialogBody: 'This takes about 10 minutes. The templates appear in the list as draft when it is done. You can leave this page.',
-  ok: 'OK',
+  /* A job waiting for the server to start it (composed, 30 Oct 2026). */
+  queuedNote: 'Waiting to start',
   close: 'Close',
-  /* An import's status (requester, 29 Oct 2026, answering the BA's MoM): Processing while
-     the server works (about 10 minutes), then Completed or Error. Was Importing / Imported /
-     Failed (28 Oct). */
+  /* Opens the import on the Import Template page (composed, 30 Oct 2026). */
+  view: 'View',
+  /* An import's status, as Broadcast's (BA & Dev feedback deck Post MMP 2, 30 Oct 2026:
+     "Status – เหมือน Broadcast Message"): Queue, Processing, Published, Error. Was
+     Processing / Completed / Error (requester, 29 Oct 2026). */
+  statusQueued: 'Queue',
   statusProcessing: 'Processing',
-  statusDone: 'Completed',
+  statusDone: 'Published',
   statusFailed: 'Error',
   panelTitle: (processing: number, failed: number) =>
     processing ? `Importing ${processing} ${processing === 1 ? 'file' : 'files'}` : failed ? 'Import failed' : 'Import completed',
   /* "Import Status" since 29 Oct 2026 (requester; was "Imports"). */
   indicator: 'Import Status',
-  /* G's menu: clears every finished import (composed, 29 Oct 2026). */
-  clearAll: 'Clear all',
-  /* Direction G's first menu item (composed, 29 Oct 2026). */
-  importFile: 'Import file',
-  /* PROPOSAL, pending BA: a failure on the server after the upload. "Please try again" is
-     the list's transcribed download-failure line. */
-  failBody: (name: string) => `${name} could not be imported. Please try again.`,
   /* An import's result (requester, 29 Oct 2026, answering the BA's MoM: "imported row by
-     row", a result to download). The server checks each template on its own, so a file can
-     import in part. The result file's columns are the backend's (out of scope). Composed. */
-  successTitle: 'Import completed',
-  resultTitle: 'Import result',
-  resultTotal: 'Templates in file',
-  resultImported: 'Imported',
-  resultFailed: 'Failed',
+     row"). The server checks each template on its own, so a file can import in part. */
   resultLine: (imported: number, failed: number) => `${imported} imported, ${failed} failed`,
-  submitted: 'Submitted',
-  resultNote: (failed: number) =>
-    failed
-      ? 'The imported templates are on the list as draft. The others could not be imported.'
-      : 'Every template in the file was imported as draft.',
   /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
      before it imports over that file. Since the design critique (20 Oct 2026) it opens
      after the upload spinner, alone, not over the Import dialog. Reworded 21 Oct 2026
@@ -117,6 +98,10 @@ export const MAX_IMPORT_BYTES = 10 * 1024 * 1024
 export const UPLOAD_MS = 1200
 /** The server's ~10 minutes, shortened so a demo can watch a job finish. */
 export const PROCESS_MS = 8000
+/** In the queue before the server starts the job (Queue, 30 Oct 2026), shortened likewise. */
+export const QUEUE_MS = 2000
+/** The report is generated after the job turns Published (BA & Dev deck, 30 Oct 2026). */
+export const REPORT_MS = 6000
 /** A file name containing this fails on the server after the upload (PROPOSAL, pending BA). */
 export const IMPORT_PROCESS_FAIL_SENTINEL = 'reject'
 

@@ -54,6 +54,24 @@ const IMPORT: Screen = {
   ],
 }
 
+/** Import Template (BA & Dev deck, 30 Oct 2026): the list and one drawer per status. */
+const IMPORT_TEMPLATE: Screen = {
+  name: 'Import Template',
+  states: [
+    s('#/import-template', 'Default', 'Import Template list', true),
+    s('#/import-template/view/IMP-0012', 'Data', 'Drawer: Queue', true),
+    s('#/import-template/view/IMP-0011', 'Data', 'Drawer: Processing', true),
+    s('#/import-template/view/IMP-0010', 'Data', 'Drawer: Published, report being generated', true),
+    s('#/import-template/view/IMP-0009', 'Data', 'Drawer: Published, report ready', true),
+    s('#/import-template/view/IMP-0007', 'Data', 'Drawer: Published, nothing failed', true),
+    s('#/import-template/loading', 'Loading', 'Loading', true),
+    s('#/import-template/empty', 'Empty', 'No files imported', true),
+    s('#/import-template/error', 'Error', 'Unable to get information', true),
+    s('#/import-template/view/IMP-0008', 'Error', 'Drawer: Error', true),
+    s('#/import-template/view/IMP-0009/download', 'Dialog', 'Download the import report?', true),
+  ],
+}
+
 const CREATE_NOTIFICATION: Screen = {
   name: 'Create notification',
   states: [
@@ -153,6 +171,7 @@ const CREATE_BROADCAST: Screen = {
 export function screenOf(hash: string): Screen | null {
   if (hash === '' || hash === '#/' || /^#\/list(\/(loading|error|empty))?$/.test(hash)) return NOTIFICATION_LIST
   if (/^#\/list\/import(\/[a-z-]+)?$/.test(hash)) return IMPORT
+  if (/^#\/import-template(\/(loading|error|empty|view\/[A-Z]+-[A-Z]?\d+(\/download)?))?$/.test(hash)) return IMPORT_TEMPLATE
   if (/^#\/create(\/[a-z]+)?$/.test(hash)) return CREATE_NOTIFICATION
   const edit = hash.match(/^#\/edit\/([^/]+)/)
   if (edit) return editNotification(edit[1])

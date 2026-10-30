@@ -33,7 +33,7 @@ export function UploadPanel({
   onClose: () => void
 }) {
   const [folded, setFolded] = useState(false)
-  const processing = jobs.filter((j) => j.status === 'processing').length
+  const processing = jobs.filter((j) => j.status === 'queued' || j.status === 'processing').length
   const failed = jobs.filter((j) => j.status === 'failed').length
   return (
     <section
