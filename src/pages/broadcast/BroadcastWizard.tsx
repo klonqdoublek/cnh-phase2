@@ -9,7 +9,7 @@ import type { FormPreset } from '@/data/broadcast-presets'
 import { Dialogs } from './create/Dialogs'
 import { AudienceFile, BasicInfo, Delivery, DndCard, MessageContent, Section, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
-import { seedWithColumns, useConcept } from '@/prototype/dynamic-field'
+import { seedWithColumns, useColumns } from '@/prototype/audience-fields'
 
 export type SaveKind = 'draft' | 'submit'
 
@@ -36,19 +36,15 @@ export type BroadcastWizardProps = {
  */
 export function BroadcastWizard(props: BroadcastWizardProps) {
   /* The Prototype control's file size reseeds the form, so it remounts. */
-  const { columns } = useConcept()
+  const columns = useColumns()
   return <Wizard key={columns} {...props} />
 }
 
 function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: BroadcastWizardProps) {
-  const { columns } = useConcept()
+  const columns = useColumns()
   const f = useBroadcastForm({ onCreate, failNext, preset, initial, adaptSeed: seedWithColumns(columns) })
   const body = useRef<HTMLDivElement>(null)
   const focus: FocusRef = useRef(null)
-  /* Which dynamic-field draft the message area draws — the prototype's
-     Concept panel switches it (src/prototype/ConceptPanel.tsx). */
-  const concept = useConcept()
-  /* Where Do Not Disturb that never ends is warned about (28 Oct 2026). */
 
   return (
     <div className="relative h-full bg-[var(--color-surface-secondary-default)]">
@@ -90,7 +86,7 @@ function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: Broadc
             <Section title="Step 2: Validate Audience file">
               <div className="flex flex-col gap-[var(--space-8)]">
                 <AudienceFile f={f} />
-                <MessageContent f={f} focus={focus} concept={concept} />
+                <MessageContent f={f} focus={focus} />
               </div>
             </Section>
             <Section title="Step 3: Delivery Date">

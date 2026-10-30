@@ -149,11 +149,11 @@ export const NO_VALID_CSV = `CIS_ID,CUSTOMER_NAME,ACCOUNT_NO,AMOUNT,PROMOTION_CO
 ,Nattapong Wongsa,4567891230,2100.00,OCT24
 `
 
-export const MESSAGE = `Dear {{CUSTOMER_NAME}},
-Your payment of THB {{AMOUNT}} was successful.
-Reference: {{ACCOUNT_NO}}.`
+export const MESSAGE = `Dear \${CUSTOMER_NAME},
+Your payment of THB \${AMOUNT} was successful.
+Reference: \${ACCOUNT_NO}.`
 
-export const SUBJECT = 'Special offer for {{CUSTOMER_NAME}}'
+export const SUBJECT = 'Special offer for ${CUSTOMER_NAME}'
 
 /** What a preset (or a reopened Draft) puts into the form before it renders. */
 export type FormSeed = {

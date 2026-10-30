@@ -2,30 +2,28 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ListItem } from '@/bbl/list-item'
 import { isMessageBox, type BroadcastContent } from '@/data/broadcast'
-import type { Trigger } from '@/prototype/dynamic-field'
 import type { BroadcastForm } from './useBroadcastForm'
 
-/* Idea 4 (requester, 21 Oct 2026): a message box as a text editor — typing the
- * trigger opens the file's columns at the caret, as Wrangle's `/` and
- * AutoSend's `{{` (Mobbin, 21 Oct 2026). Typing after the trigger filters;
- * ↑ ↓ move, Enter or Tab inserts `{{COLUMN}}` in place of what was typed, Esc
- * closes. The boxes stay webds Text Field / Text Area, so the token is plain
- * text: an inline chip needs a rich-text box webds does not ship (gap).
+/* Idea 4 (requester, 21 Oct 2026): a message box as a text editor — typing
+ * `$` opens the file's columns at the caret, as Wrangle's `/` and AutoSend's
+ * `{{` (Mobbin, 21 Oct 2026). `$` and the `${dynamicField}` token are the BA &
+ * Dev feedback's (30 Oct 2026; were `/` and `{{COLUMN}}`). Typing after the
+ * `$`, with or without its `{`, filters; ↑ ↓ move, Enter or Tab inserts
+ * `${COLUMN}` in place of what was typed, Esc closes. The boxes stay webds
+ * Text Field / Text Area, so the token is plain text: an inline chip needs a
+ * rich-text box webds does not ship (gap).
  *
  * The trigger fires anywhere, not only after a space: Thai runs words
- * together (`เรียนคุณ/`). So `/` also opens inside a URL or a date and `@`
- * inside an email address; the menu stays shut while nothing matches. */
+ * together (`เรียนคุณ$`). A price such as `$100` opens nothing: the menu
+ * stays shut while no column matches. A finished token ends in `}`, which
+ * the filter never takes, so the caret after one opens nothing either. */
 
 type Box = HTMLInputElement | HTMLTextAreaElement
 
-/** What each trigger matches right before the caret; group 1 is the filter. */
-const TRIGGERS: Record<Trigger, { mark: string; re: RegExp }> = {
-  slash: { mark: '/', re: /\/([^\s/]*)$/ },
-  at: { mark: '@', re: /@([^\s@]*)$/ },
-  braces: { mark: '{{', re: /\{\{([^\s{}]*)$/ },
-}
-
-export const triggerMark = (t: Trigger) => TRIGGERS[t].mark
+/** The trigger, typed in a message box. */
+export const TRIGGER = '$'
+/** `$` or `${`, then the filter (group 1), right before the caret. */
+const TRIGGER_RE = /\$\{?([^\s${}]*)$/
 
 /* The box styles that decide where a character lands. */
 export const MIRRORED = [
@@ -79,8 +77,8 @@ const MENU_MAX = 320
 const ROW = 36
 
 /** Handlers for the element around the message boxes, and the menu to render
- *  beside it. Off: no handlers, no menu. */
-export function useFieldShortcut(f: BroadcastForm, trigger: Trigger, on: boolean) {
+ *  beside it. A file with no fields: no handlers, no menu. */
+export function useFieldShortcut(f: BroadcastForm) {
   const [open, setOpen] = useState<Open | null>(null)
   const [active, setActive] = useState(0)
   /* Esc shuts the menu for this trigger until another one is typed. */
@@ -103,7 +101,7 @@ export function useFieldShortcut(f: BroadcastForm, trigger: Trigger, on: boolean
     if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return
     const key = el.closest('[data-field]')?.getAttribute('data-field')
     const caret = el.selectionStart ?? 0
-    const hit = el.selectionEnd === caret ? TRIGGERS[trigger].re.exec(el.value.slice(0, caret)) : null
+    const hit = el.selectionEnd === caret ? TRIGGER_RE.exec(el.value.slice(0, caret)) : null
     if (!key || !isMessageBox(key) || el.disabled || !hit) {
       dismissed.current = ''
       return setOpen(null)
@@ -148,7 +146,7 @@ export function useFieldShortcut(f: BroadcastForm, trigger: Trigger, on: boolean
     list.current?.querySelector(`[data-i="${active}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [active])
 
-  if (!on || !f.fields.length) return { handlers: {}, menu: null }
+  if (!f.fields.length) return { handlers: {}, menu: null }
 
   /* Bubble phase, not capture: React flushes a capture-phase update before the
      box's own onChange runs, and the controlled box snaps back a character. */
