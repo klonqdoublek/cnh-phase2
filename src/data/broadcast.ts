@@ -392,7 +392,30 @@ export type BroadcastContent = {
   emailBody: string
   pushTitle: string
   pushBody: string
+  /** Optional, as the Template form's Deep link (BA & Dev feedback, 30 Oct 2026). */
+  pushDeeplink: string
+  /** Required; one language, so one name (BA & Dev feedback, 30 Oct 2026). */
+  emailSenderName: string
+  /** Optional. */
+  emailSenderAddress: string
 }
+
+export const EMPTY_CONTENT: BroadcastContent = {
+  smsMessage: '',
+  emailSubject: '',
+  emailBody: '',
+  pushTitle: '',
+  pushBody: '',
+  pushDeeplink: '',
+  emailSenderName: '',
+  emailSenderAddress: '',
+}
+
+/** The message boxes a dynamic field goes into; the deep link and the sender
+ *  take none. */
+export const MESSAGE_BOXES = ['pushTitle', 'pushBody', 'emailSubject', 'emailBody', 'smsMessage'] as const
+export const isMessageBox = (key: string): key is (typeof MESSAGE_BOXES)[number] =>
+  (MESSAGE_BOXES as readonly string[]).includes(key)
 
 /** The status list of values (16 Oct 2026; meanings 19 Oct 2026):
  *  DRAFT — saved as a draft · QUEUE — submitted, accepted by the system ·
@@ -438,12 +461,17 @@ export type Broadcast = {
   createdAt: string
 }
 
+/* The deep link is the Template fixture's; the sender name is composed
+   (30 Oct 2026). */
 const content = (message: string, subject = '', body = message): BroadcastContent => ({
   smsMessage: message,
   emailSubject: subject,
   emailBody: body,
   pushTitle: subject,
   pushBody: message,
+  pushDeeplink: 'bualuang://notification/detail',
+  emailSenderName: 'Bangkok Bank',
+  emailSenderAddress: '',
 })
 
 const cis = { recipientType: 'cis' as const, recipientColumn: 'CIS_ID' }

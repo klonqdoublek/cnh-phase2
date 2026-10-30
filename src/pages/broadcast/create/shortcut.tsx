@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ListItem } from '@/bbl/list-item'
-import type { BroadcastContent } from '@/data/broadcast'
+import { isMessageBox, type BroadcastContent } from '@/data/broadcast'
 import type { Trigger } from '@/prototype/dynamic-field'
 import type { BroadcastForm } from './useBroadcastForm'
 
@@ -104,7 +104,7 @@ export function useFieldShortcut(f: BroadcastForm, trigger: Trigger, on: boolean
     const key = el.closest('[data-field]')?.getAttribute('data-field')
     const caret = el.selectionStart ?? 0
     const hit = el.selectionEnd === caret ? TRIGGERS[trigger].re.exec(el.value.slice(0, caret)) : null
-    if (!key || !(key in f.content) || el.disabled || !hit) {
+    if (!key || !isMessageBox(key) || el.disabled || !hit) {
       dismissed.current = ''
       return setOpen(null)
     }

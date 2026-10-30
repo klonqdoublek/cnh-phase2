@@ -127,6 +127,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
             rows: [
               ['Push title', c.pushTitle],
               ['Push message', c.pushBody],
+              ['Deep link', c.pushDeeplink],
             ] as [string, string][],
           },
         ]
@@ -139,6 +140,8 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
             rows: [
               ['Email subject', c.emailSubject],
               ['Email body', c.emailBody],
+              ['Sender name', c.emailSenderName],
+              ['Sender email address', c.emailSenderAddress],
             ] as [string, string][],
           },
         ]
