@@ -20,8 +20,12 @@ export const BROADCAST_COPY = {
   loadFail: 'Unable to get information',
   dropTitle: 'Upload audience file',
   /* Was `Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000
-     recipients` (original build); reworded without the `·` joins, 28 Oct 2026. */
-  dropHint: 'CSV or XLSX, up to 10 MB and 1,000 recipients',
+     recipients` (original build); reworded without the `·` joins, 28 Oct 2026;
+     "and 1,000 recipients" dropped by the BA's MoM, 29 Oct 2026. The 1,000
+     limit stays (`MAX_RECIPIENTS`, checked on Submit). */
+  dropHint: 'CSV or XLSX, up to 10 MB',
+  /* Two or more files dropped at once (BA MoM, 29 Oct 2026): CMS's copy, as Import reads. */
+  oneFile: '1 File Only',
   browse: 'Choose file',
   sample: 'Download sample file',
   noFile: 'Upload an audience file to continue',
