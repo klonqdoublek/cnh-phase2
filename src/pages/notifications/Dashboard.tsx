@@ -27,12 +27,7 @@ import { FilterSelect } from './FilterSelect'
 import { ImportDialog } from './ImportDialog'
 import { ListSearch } from './ListSearch'
 import { ListToast } from './ListToast'
-import { useImportDirection } from '@/prototype/import-direction'
 import { ImportFeedback, useImportFeedback } from './import-status/ImportStatus'
-import { ImportIndicator } from './import-status/ImportIndicator'
-import { ImportProgress } from './import-status/ImportProgress'
-import { ImportRows } from './import-status/ImportRows'
-import { ImportMenuButton } from './import-status/ImportMenuButton'
 import type { ImportJobs } from './import-status/jobs'
 
 export type ListState = 'loading' | 'error' | 'empty' | 'ready'
@@ -122,8 +117,7 @@ export function Dashboard({
   onImportRef.current = onImport
   const seedJob = useRef(importJobs.seed)
   seedJob.current = importJobs.seed
-  const direction = useImportDirection()
-  const feedback = useImportFeedback(importJobs.jobs, direction)
+  const feedback = useImportFeedback(importJobs.jobs)
 
   /* `#/list/import/<preset>` opens the dialog in that state. A job preset
      (`processing`, `process-failed`, `success`) is on the list with the dialog
@@ -325,10 +319,6 @@ export function Dashboard({
     )
 
   const isReady = !failing && state === 'ready'
-  /* Direction E.2: E's loading bar docked above the pagination footer (requester, 29 Oct 2026). */
-  const bottomProgress = direction === 'E.2' && (
-    <ImportProgress jobs={importJobs.jobs} placement="bottom" onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />
-  )
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[var(--color-surface-primary-default)]">
@@ -338,26 +328,7 @@ export function Dashboard({
         title="Notification management"
         actions={[
           <div key="actions" className="flex items-center gap-[var(--space-4)]">
-            {direction === 'C' && (
-              <ImportIndicator
-                jobs={importJobs.jobs}
-                open={feedback.popoverOpen}
-                onOpenChange={feedback.setPopoverOpen}
-                onRetry={importJobs.retry}
-              />
-            )}
-            {direction === 'G' ? (
-              <ImportMenuButton
-                jobs={importJobs.jobs}
-                open={feedback.popoverOpen}
-                onOpenChange={feedback.setPopoverOpen}
-                onImportFile={() => setImportOpen(true)}
-                onRetry={importJobs.retry}
-                onClear={() => importJobs.jobs.filter((j) => j.status !== 'processing').forEach((j) => importJobs.dismiss(j.id))}
-              />
-            ) : (
-              <OutlineButton onClick={() => setImportOpen(true)}>Import</OutlineButton>
-            )}
+            <OutlineButton onClick={() => setImportOpen(true)}>Import</OutlineButton>
             <Button onClick={onCreate}>
               Create notification
               <Icon slug="plus" size={16} color="currentColor" />
@@ -367,12 +338,10 @@ export function Dashboard({
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {direction === 'E' && <ImportProgress jobs={importJobs.jobs} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />}
         {filters}
         {!isReady ? (
           <>
             {body}
-            {bottomProgress}
           </>
         ) : (
           <>
@@ -442,16 +411,6 @@ export function Dashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Direction F: the imports' rows on top of page 1, where newest-first puts them. */}
-                      {direction === 'F' && current === 0 && (
-                        <ImportRows
-                          jobs={importJobs.jobs}
-                          columns={COLUMNS.length + 1}
-                          rowRule={ROW_RULE}
-                          onRetry={importJobs.retry}
-                          onDismiss={importJobs.dismiss}
-                        />
-                      )}
                       {rows.map((t) => {
                         const isSelected = selected.has(t.id)
                         const cellState = isSelected ? 'selected' : hovered === t.id ? 'hovered' : 'default'
@@ -521,7 +480,6 @@ export function Dashboard({
                 </>
               )}
             </div>
-            {bottomProgress}
             {rows.length > 0 && (
               <div className="flex h-[68px] w-full shrink-0 items-center justify-end bg-[var(--color-surface-primary-default)] px-[var(--space-4)] shadow-[inset_0_1px_0_0_var(--color-border-primary-default)]">
                 <TablePagination
@@ -581,7 +539,7 @@ export function Dashboard({
           importJobs.submit(list, fileName, replace)
         }}
       />
-      <ImportFeedback feedback={feedback} jobs={importJobs.jobs} held={isJobPreset(importPreset)} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />
+      <ImportFeedback feedback={feedback} jobs={importJobs.jobs} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />
       <ListToast
         open={downloadFailed}
         appearance="negative"
