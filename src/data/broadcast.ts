@@ -52,7 +52,6 @@ export const BROADCAST_COPY = {
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
   pickField: 'Click in a message field first, then choose a field to insert',
   startPast: 'Start must be later than the current time',
-  endBeforeStart: 'End must be later than the start',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
   /** Composed (BA / Dev sync, 28 Oct 2026): a warning, not an error; Submit still works. */
@@ -419,15 +418,13 @@ export type Broadcast = {
   startMode: 'now' | 'schedule'
   /** `YYYY-MM-DDTHH:mm`, local time. */
   start: string
-  /** Broadcast End (optional, BA 2026-10-14): sending stops here, and whoever
-   *  is still waiting is counted as Not sent. `YYYY-MM-DDTHH:mm`. */
-  end?: string
   dnd: Dnd
   status: BroadcastStatus
   success: number
   failed: number
-  /** Recipients still unsent when the end was reached, or when a system
-   *  error stopped the broadcast (Failed). */
+  /** Recipients still unsent when a system error stopped the broadcast
+   *  (Failed). The Broadcast End that also cut recipients off is gone (BA MoM,
+   *  29 Oct 2026). */
   notSent?: number
   /** Published and still sending, but inside a quiet period (was the Paused
    *  status, then Processing until 28 Oct 2026). */
@@ -501,7 +498,6 @@ export const BROADCASTS: Broadcast[] = [
     recipientColumn: 'EMAIL',
     startMode: 'schedule',
     start: '2026-10-15T08:00',
-    end: '2026-10-17T18:00',
     dnd: THREE_PERIOD_DND,
     status: 'Queue',
     success: 0,
@@ -600,7 +596,6 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-10-12T09:00',
-    end: '2026-10-16T18:00',
     dnd: BA_DND,
     status: 'Queue',
     success: 0,
@@ -690,8 +685,9 @@ export const BROADCASTS: Broadcast[] = [
     createdBy: 'Naree R.',
     createdAt: '2026-09-19T14:30',
   },
-  /* The deck's scenario F (composed, 2026-10-14): the end came before every
-     recipient was sent, so 174 are Not sent and the broadcast is Published. */
+  /* Composed, 2026-10-14. Was the deck's scenario F: the end came before every
+     recipient was sent, 174 Not sent; with no Broadcast End (BA MoM, 29 Oct
+     2026) every recipient was attempted. */
   {
     id: 'BC-0001',
     name: 'Savings interest rate update',
@@ -702,12 +698,10 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-09-15T10:00',
-    end: '2026-09-15T12:00',
     dnd: DEFAULT_DND,
     status: 'Published',
-    success: 820,
+    success: 994,
     failed: 6,
-    notSent: 174,
     content: content('Dear Customer, effective 1 October 2026, our savings account interest rate will be updated. Thank you.'),
     createdBy: 'Panisa R.',
     createdAt: '2026-09-12T09:30',
@@ -739,7 +733,7 @@ export const STATUS_LABEL: Record<BroadcastStatus, string> = {
 /** Draft and Queue can be cancelled; once processing starts, not (BA MoM, 29 Oct 2026). */
 export const isCancellable = (b: Broadcast) => b.status === 'Draft' || b.status === 'Queue'
 
-/** Recipients not yet attempted: not sent, not failed, not cut off by the end. */
+/** Recipients not yet attempted: not sent, not failed, not stopped by a system error. */
 export const waitingOf = (b: Broadcast) => Math.max(0, b.recipients - b.success - b.failed - (b.notSent ?? 0))
 
 export const EMPTY = '–'
@@ -787,7 +781,7 @@ export function deliveryReportCsv(b: Broadcast): string {
   }
   add(b.success, 'Success', () => '')
   add(b.failed, 'Failed', (i) => reasons[i % reasons.length])
-  add(b.notSent ?? 0, 'Not sent', () => (b.status === 'Failed' ? 'System error' : 'Broadcast ended'))
+  add(b.notSent ?? 0, 'Not sent', () => 'System error')
   add(waiting, 'Waiting to send', () => '')
   return rows.map((row) => row.map(csvCell).join(',')).join('\n') + '\n'
 }

@@ -966,7 +966,7 @@ export function Delivery({ f }: F) {
           description="Start sending after you submit this broadcast."
           onSelect={() => {
             f.setMode('now')
-            f.clear('startDate', 'startTime', 'end')
+            f.clear('startDate', 'startTime')
           }}
         />
         <ModeOption
@@ -976,9 +976,9 @@ export function Delivery({ f }: F) {
           onSelect={() => f.setMode('schedule')}
         />
       </div>
-      {/* Schedule delivery only: Start on the left, End on the right
-          (requester, 20 Oct 2026; draft 2.2 drew End first). Send as soon
-          as possible has no end (requester, 15 Oct 2026). */}
+      {/* Schedule delivery only: Start, in the left half (requester, 20 Oct
+          2026). No End date (BA MoM, 29 Oct 2026; 14–29 Oct an optional End
+          sat on the right, BA's Q2 answer). */}
       {f.mode === 'schedule' && (
         <div className="grid grid-cols-2 items-start gap-[var(--space-6)]">
           {/* One field, as CMS's Effective date: webds' Date Time Picker. The
@@ -997,20 +997,6 @@ export function Delivery({ f }: F) {
               f.setStartTime(v.slice(11, 16))
             }}
           />
-          {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
-              Expiry date. Sending stops here; whoever is left is Not sent. */}
-          <DateTimeInput
-            label="End date and time"
-            optional
-            clearable
-            className="w-full"
-            value={f.end}
-            min={f.startDate || ymd(new Date())}
-            minuteStep={5}
-            error={!!f.errors.end}
-            message={f.errors.end}
-            onChange={f.setEnd}
-          />
         </div>
       )}
       <Outlook f={f} />
@@ -1023,7 +1009,7 @@ function Outlook({ f }: F) {
   if (!f.start || !f.first) return null
   /* Do Not Disturb that never ends has no start to promise; its warning is the
      Do Not Disturb card's or the confirm dialog's (28 Oct 2026). */
-  if (f.neverSends && !f.end) return null
+  if (f.neverSends) return null
   return (
     <Alert
       appearance="brand"
@@ -1031,13 +1017,12 @@ function Outlook({ f }: F) {
       /* Title, not Description: the Figma Alert has no switch to hide its Title,
          so the board draws this note as the Title-only Alert. */
       title={<>
-        {f.neverSends ? null : f.waits
+        {f.waits
           ? `${f.mode === 'now' ? 'Now' : 'The start'} is inside the quiet period. Sending starts at ${fmtDateTime(f.first)}.`
           : f.mode === 'now'
             ? 'Sending starts right after you submit.'
             : `Sending starts at ${fmtDateTime(f.start)}.`}
-        {f.dnd.enabled && !f.neverSends && ' Sending pauses during the quiet period and resumes after it.'}
-        {f.end && `${f.neverSends ? '' : ' '}Sending stops at ${fmtDateTime(new Date(f.end))}; recipients not sent by then are counted as Not sent.`}
+        {f.dnd.enabled && ' Sending pauses during the quiet period and resumes after it.'}
       </>}
     />
   )

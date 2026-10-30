@@ -66,8 +66,6 @@ const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
       ? b.quiet
         ? `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`
         : 'Messages are being sent.'
-      : b.notSent && b.end
-      ? `The broadcast ended at ${fmtDateTime(new Date(b.end))}. ${fmtNumber(b.notSent)} recipients were not sent.`
       : 'Every recipient was sent a message.',
   /* Failed and Cancelled (19 Oct 2026): composed, the original build has
      neither. No report pointer (BA MoM, 29 Oct 2026: Download report only in
@@ -116,7 +114,6 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
             ? `${fmtDateTime(new Date(b.start))} (as soon as possible)`
             : fmtDateTime(new Date(b.start)),
         ],
-        ['Broadcast end', b.end ? fmtDateTime(new Date(b.end)) : ''],
         ['Do Not Disturb', fmtDnd(b.dnd)],
       ],
       note: unsent ? STATUS_LINE[b.status](b) : undefined,

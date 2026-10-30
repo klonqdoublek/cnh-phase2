@@ -22,7 +22,6 @@ export const FORM_PRESETS = [
   'dnd-rules',
   'dnd-all-week',
   'dnd-all-week-confirm',
-  'end',
   'large-file',
   'checking',
   'confirm',
@@ -168,8 +167,6 @@ export type FormSeed = {
   mode?: 'now' | 'schedule'
   /** Days from today, and HH:mm. */
   start?: { inDays: number; time: string }
-  /** Broadcast End: days from today, and HH:mm. */
-  end?: { inDays: number; time: string }
   dnd?: Dnd
   /** A dialog open on arrival. `checking` is Submit's full read of the file,
    *  held; `blocked` is its result when the file cannot be used. */
@@ -277,13 +274,6 @@ export function formSeed(preset: FormPreset): FormSeed {
       return { ...filled, dnd: ALL_WEEK_DND }
     case 'dnd-all-week-confirm':
       return { ...filled, dnd: ALL_WEEK_DND, open: 'confirm' }
-    case 'end':
-      return {
-        ...filled,
-        mode: 'schedule',
-        start: { inDays: nextWeekday(), time: '10:00' },
-        end: { inDays: nextWeekday(), time: '12:00' },
-      }
     case 'large-file':
       return { ...filled, file: { name: 'audience-cis-large.csv', text: LARGE_CSV } }
     case 'checking':
