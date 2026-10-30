@@ -21,7 +21,7 @@ export const FORM_PRESETS = [
   'quiet',
   'dnd-rules',
   'dnd-all-week',
-  'dnd-all-week-confirm',
+  'dnd-all-week-submit',
   'large-file',
   'checking',
   'confirm',
@@ -272,8 +272,9 @@ export function formSeed(preset: FormPreset): FormSeed {
       return { ...filled, mode: 'schedule', start: { inDays: nextSaturday(), time: '10:00' }, dnd: BA_DND }
     case 'dnd-all-week':
       return { ...filled, dnd: ALL_WEEK_DND }
-    case 'dnd-all-week-confirm':
-      return { ...filled, dnd: ALL_WEEK_DND, open: 'confirm' }
+    /* Submit pressed: the Alert turns Negative and blocks it (BA MoM, 29 Oct 2026). */
+    case 'dnd-all-week-submit':
+      return { ...filled, dnd: ALL_WEEK_DND, errors: { dnd: BROADCAST_COPY.dndNeverSends } }
     case 'large-file':
       return { ...filled, file: { name: 'audience-cis-large.csv', text: LARGE_CSV } }
     case 'checking':
