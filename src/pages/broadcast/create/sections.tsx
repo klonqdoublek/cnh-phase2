@@ -31,6 +31,7 @@ import {
   TIME_ZONES,
   endsNextDay,
   fmtDateTime,
+  isMessageBox,
   type BroadcastContent,
   type DndRule,
   type RecipientType as RecipientTypeValue,
@@ -845,7 +846,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
       onFocusCapture={(e) => {
         const el = e.target as HTMLInputElement | HTMLTextAreaElement
         const key = el.closest('[data-field]')?.getAttribute('data-field')
-        if (key && key in f.content) {
+        if (key && isMessageBox(key)) {
           focus.current = { key, el }
           setNeedsField(false)
         }
@@ -939,28 +940,42 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
 
 /** A channel's message boxes — the Template form's TH fields, without the
  *  (TH): one broadcast is written in one language, Thai or English (BA / Dev
- *  sync, 28 Oct 2026). */
+ *  sync, 28 Oct 2026). Push's Deep link and Email's sender are the Template
+ *  form's too (BA & Dev feedback, 30 Oct 2026); they take no dynamic field. */
 function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boolean; tint?: Tint }) {
-  const box = (id: keyof BroadcastContent, label: string, placeholder: string, extra?: { multiline?: boolean; boxHeight?: 77 }) => (
-    <Text
-      id={id}
-      label={label}
-      required
-      disabled={!on}
-      value={f.content[id]}
-      max={CONTENT_MAX[id]}
-      error={f.errors[id]}
-      placeholder={placeholder}
-      onChange={f.setC(id)}
-      tint={tint}
-      {...extra}
-    />
-  )
+  const box = (
+    id: keyof BroadcastContent,
+    label: string,
+    placeholder: string,
+    extra?: { multiline?: boolean; boxHeight?: 77; optional?: boolean; hint?: string },
+  ) => {
+    const { optional, ...rest } = extra ?? {}
+    return (
+      <Text
+        id={id}
+        label={label}
+        required={!optional}
+        disabled={!on}
+        value={f.content[id]}
+        max={CONTENT_MAX[id]}
+        error={f.errors[id]}
+        placeholder={placeholder}
+        onChange={f.setC(id)}
+        tint={isMessageBox(id) ? tint : undefined}
+        {...rest}
+      />
+    )
+  }
   if (channel === 'Push notification')
     return (
       <>
         {box('pushTitle', 'Push title', 'Enter push title')}
         {box('pushBody', 'Push message', 'Enter push message', { boxHeight: 77 })}
+        {box('pushDeeplink', 'Deep link', 'Enter a deep link URL (optional)', {
+          multiline: true,
+          optional: true,
+          hint: 'A deep link will take customers to your specific destination when tapping the push notification',
+        })}
       </>
     )
   if (channel === 'Email')
@@ -968,6 +983,12 @@ function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boo
       <>
         {box('emailSubject', 'Email subject', 'Enter email subject')}
         {box('emailBody', 'Email content', 'Enter email content', { multiline: true })}
+        {/* Side by side, as the Template form's half-width sender fields; at one
+            box height (the Template's Sender name is 77 tall) so the pair lines up. */}
+        <div className="grid grid-cols-2 items-start gap-[var(--space-6)]">
+          {box('emailSenderName', 'Sender name', 'Enter sender name')}
+          {box('emailSenderAddress', 'Sender email address', 'Enter sender email address (optional)', { optional: true })}
+        </div>
       </>
     )
   return box('smsMessage', 'SMS message', 'Enter SMS message', { multiline: true })

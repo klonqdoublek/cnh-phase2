@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   BROADCAST_COPY,
   DEFAULT_DND,
+  EMPTY_CONTENT,
   dndRule,
   checkAudience,
   columnHolds,
@@ -35,10 +36,12 @@ const CHECK_MS = 600
 const CREATE_MS = 900
 
 export const CHANNEL_FIELDS: Record<Channel, (keyof BroadcastContent)[]> = {
-  'Push notification': ['pushTitle', 'pushBody'],
-  Email: ['emailSubject', 'emailBody'],
+  'Push notification': ['pushTitle', 'pushBody', 'pushDeeplink'],
+  Email: ['emailSubject', 'emailBody', 'emailSenderName', 'emailSenderAddress'],
   SMS: ['smsMessage'],
 }
+/** Optional, as on the Template form: only their maximum is checked. */
+const OPTIONAL: (keyof BroadcastContent)[] = ['pushDeeplink', 'emailSenderAddress']
 /** Each message box's maximum — the Template form's TH fields, which draft 2.2
  *  (Figma 85:19401, 15 Oct 2026) copies into the channel cards. */
 export const CONTENT_MAX: Record<keyof BroadcastContent, number> = {
@@ -47,9 +50,10 @@ export const CONTENT_MAX: Record<keyof BroadcastContent, number> = {
   emailSubject: 255,
   emailBody: 2048,
   smsMessage: 800,
+  pushDeeplink: 2048,
+  emailSenderName: 255,
+  emailSenderAddress: 255,
 }
-
-const EMPTY_CONTENT: BroadcastContent = { smsMessage: '', emailSubject: '', emailBody: '', pushTitle: '', pushBody: '' }
 
 export type FormErrors = Partial<
   Record<
@@ -252,7 +256,9 @@ export function useBroadcastForm({
     if (audience?.headers.length && !column) e.column = BROADCAST_COPY.noColumn
     for (const c of channels)
       for (const k of CHANNEL_FIELDS[c])
-        if (!content[k].trim()) e[k] = BROADCAST_COPY.required
+        if (!content[k].trim()) {
+          if (!OPTIONAL.includes(k)) e[k] = BROADCAST_COPY.required
+        }
         else if (content[k].length > CONTENT_MAX[k]) e[k] = BROADCAST_COPY.msgMax(CONTENT_MAX[k])
     if (mode === 'schedule') {
       if (!startDate) e.startDate = BROADCAST_COPY.required
