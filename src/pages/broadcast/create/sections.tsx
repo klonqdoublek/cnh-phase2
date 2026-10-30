@@ -39,6 +39,7 @@ import { SERVICE_CODE_LOV, type Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
 import type { Tint } from './highlight'
+import { MessagePreview, ShowPreview } from './preview'
 import { TRIGGER, useFieldShortcut } from './shortcut'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
@@ -572,6 +573,9 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   const shortcut = useFieldShortcut(f)
   const columns = f.fields.map((field) => field.column).join('\n')
   const tint = useMemo<Tint>(() => ({ columns: new Set(columns.split('\n')) }), [columns])
+  /* Each card's preview shows until its Hide preview. */
+  const [hidden, setHidden] = useState<Channel[]>([])
+  const showPreview = (c: Channel, show: boolean) => setHidden((h) => (show ? h.filter((x) => x !== c) : [...h, c]))
 
   const cards = (
     <div
@@ -586,15 +590,21 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
     >
       {f.offered.map((c) => {
         const on = f.channels.includes(c)
+        const preview = !hidden.includes(c)
         return (
           <FormSectionCard
             key={c}
             className="min-w-0 border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
             title={
-              hasFields ? (
+              hasFields || !preview ? (
                 <span className="flex items-center justify-between gap-[var(--space-4)]">
                   {c}
-                  <FieldMenuButton f={f} label={`Add dynamic field to ${c}`} disabled={!on} onInsert={(t) => insert(t, c)} />
+                  <span className="flex items-center gap-[var(--space-6)]">
+                    {!preview && <ShowPreview onShow={() => showPreview(c, true)} />}
+                    {hasFields && (
+                      <FieldMenuButton f={f} label={`Add dynamic field to ${c}`} disabled={!on} onInsert={(t) => insert(t, c)} />
+                    )}
+                  </span>
                 </span>
               ) : (
                 c
@@ -604,7 +614,15 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
             invalid={invalid}
             rowGap={4}
           >
-            <ChannelFields f={f} channel={c} on={on} tint={tint} />
+            {/* Fields left, the preview right, as the deck draws Email (30 Oct 2026). */}
+            <div className={cn('grid items-stretch gap-[var(--space-6)]', preview ? 'grid-cols-2' : 'grid-cols-1')}>
+              <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
+                <ChannelFields f={f} channel={c} on={on} tint={tint} />
+              </div>
+              {preview && (
+                <MessagePreview channel={c} content={f.content} audience={f.audience} onHide={() => showPreview(c, false)} />
+              )}
+            </div>
           </FormSectionCard>
         )
       })}
@@ -678,12 +696,11 @@ function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boo
       <>
         {box('emailSubject', 'Email subject', 'Enter email subject')}
         {box('emailBody', 'Email content', 'Enter email content', { multiline: true })}
-        {/* Side by side, as the Template form's half-width sender fields; at one
-            box height (the Template's Sender name is 77 tall) so the pair lines up. */}
-        <div className="grid grid-cols-2 items-start gap-[var(--space-6)]">
-          {box('emailSenderName', 'Sender name', 'Enter sender name')}
-          {box('emailSenderAddress', 'Sender email address', 'Enter sender email address (optional)', { optional: true })}
-        </div>
+        {/* One under the other at one box height (the Template's Sender name is
+            77 tall): the preview takes the card's right half, so a pair side by
+            side cut the address placeholder short (30 Oct 2026). */}
+        {box('emailSenderName', 'Sender name', 'Enter sender name')}
+        {box('emailSenderAddress', 'Sender email address', 'Enter sender email address (optional)', { optional: true })}
       </>
     )
   return box('smsMessage', 'SMS message', 'Enter SMS message', { multiline: true })

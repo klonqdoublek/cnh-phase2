@@ -81,6 +81,7 @@ Already aligned:
 - `detail-drawer` sections take rows only. `DrawerSection` adds a note under the rows and an action in the head.
 - No radio card. `ModeOption` is a bordered card around a webds Radio Button.
 - `TablePagination` has no disabled chevrons. `ListFooter` adds them.
+- No message preview (30 Oct 2026). `create/preview.tsx` composes it from Surface/Secondary, Card Surface and Ghost Button.
 
 **Recommended clean-ups, not done** (outside the BA's asks):
 
@@ -113,6 +114,7 @@ The original build has none of this copy. Change it here if the BA rules otherwi
 | Service code (30 Oct, BA & Dev feedback) | Label `Service code` and placeholder `Select service code` are the Template form's (transcribed). Confirm dialog and drawer row `Service code` (composed placement). Fixture codes composed. |
 | Deep link and sender (30 Oct, BA & Dev feedback) | Transcribed from the Template form: `Deep link`, its hint and placeholder; `Sender email address` and `Enter sender email address (optional)`. Adapted: `Sender name` / `Enter sender name` (was `Sender name (EN)` / `Enter sender name in English`). Drawer rows `Deep link`, `Sender name`, `Sender email address`. Fixture sender `Bangkok Bank` composed. |
 | Dynamic field (30 Oct, BA & Dev feedback) | Title-row note `Type $ to add a dynamic field` (was `Type / to …`, composed 21 Oct). Token `${COLUMN}` (the deck's format). `+` screen-reader label `Add dynamic field to {channel}`. No-file note `Dynamic fields can be added once the audience file is uploaded.` (composed 21 Oct). |
+| Message preview (30 Oct, BA & Dev feedback) | `Preview` and `Hide preview` are the deck's; `Show preview` (title row, chevron-left) and `Type a message to see its preview.` are composed. |
 | Message content card (21 Oct) | Title `Create broadcast message`, the requester's wording. The original build called the step `Manual content`; draft 2.2 has no title on the card. |
 | Recipient type and column (28 Oct) | Drawer and confirm dialog: `Recipient type` reads `CIS ID`, `Email` or `SMS` (BA / Dev sync, 28 Oct; was `CIS` or `Direct recipient`), and the ID column sits on its own row, `Recipient column` (Step 2's label before a type is chosen). Was one value, `CIS · by CIS_ID`; the team design head read the `·` join as AI-generated copy. |
 | Recipient type radios (28 Oct, BA / Dev sync) | `CIS ID` / `Send to customers using CIS ID from file` (the original build's line), `Email` / `Send email to addresses from file`, `SMS` / `Send SMS to mobile numbers from file`. The Direct recipient radio and its `Send by Email or SMS to contacts from file` are gone. |
