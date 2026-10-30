@@ -581,7 +581,7 @@ export function Dashboard({
           importJobs.submit(list, fileName, replace)
         }}
       />
-      <ImportFeedback feedback={feedback} jobs={importJobs.jobs} held={isJobPreset(importPreset)} onRetry={importJobs.retry} />
+      <ImportFeedback feedback={feedback} jobs={importJobs.jobs} held={isJobPreset(importPreset)} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />
       <ListToast
         open={downloadFailed}
         appearance="negative"

@@ -9,12 +9,19 @@ import { JobRow } from './JobRow'
 /**
  * Direction A — an upload panel at the bottom right (Google Drive, Dropbox,
  * Proton Drive, Chatbase, ElevenLabs; Mobbin, 28 Oct 2026). It opens on
- * Import and lists every job of this visit, newest first. Its header names
+ * Import and lists every job of this session, newest first. Its header names
  * the state ("Importing 1 file", "Import complete", "Import failed"), folds
  * the list (chevron) and closes the panel (close). webds ships no floating
  * panel: Surface/Primary, Radius 3, the Border/Primary inset and
  * --shadow-overlay, as the Prototype control draws its own (gap). It sits
  * 16 above the list's 68 footer so the pagination stays in reach.
+ *
+ * Close ends the session (requester, 30 Oct 2026, after Google Drive, where
+ * closing a finished panel clears it): Completed and Error jobs leave the list.
+ * A Processing job keeps running on the server, because closing does not
+ * cancel it, and the panel comes back with that job alone when it changes. A
+ * file imported while the panel is open joins the same list. The templates
+ * already imported stay in the list as Drafts either way.
  */
 export function UploadPanel({
   jobs,

@@ -13,7 +13,9 @@ type Event = { kind: 'started' | JobStatus; job: ImportJob }
  * What each direction says when a job starts, finishes or fails (BA / Dev,
  * 28 Oct 2026; four directions until one is chosen):
  *
- *   A  the upload panel opens on every change; no toast
+ *   A  the upload panel opens on every change; no toast. Its close ends the
+ *      session (30 Oct 2026): finished jobs leave the list, a Processing one
+ *      stays and brings the panel back, alone, when it changes
  *   (B, toast + Recent imports with a drawer, left the code on 29 Oct 2026,
  *   requester; it stays on the Figma playground.)
  *   (A and C: each job's row carries its result.)
@@ -60,11 +62,13 @@ export function ImportFeedback({
   jobs,
   held,
   onRetry,
+  onDismiss,
 }: {
   feedback: ReturnType<typeof useImportFeedback>
   jobs: ImportJob[]
   held: boolean
   onRetry: (id: number) => void
+  onDismiss: (id: number) => void
 }) {
   const { event, clearEvent, panelOpen, setPanelOpen, direction } = feedback
   const kind = event?.kind
@@ -79,7 +83,14 @@ export function ImportFeedback({
   return (
     <>
       {direction === 'A' && panelOpen && jobs.length > 0 && (
-        <UploadPanel jobs={jobs} onRetry={onRetry} onClose={() => setPanelOpen(false)} />
+        <UploadPanel
+          jobs={jobs}
+          onRetry={onRetry}
+          onClose={() => {
+            jobs.filter((j) => j.status !== 'processing').forEach((j) => onDismiss(j.id))
+            setPanelOpen(false)
+          }}
+        />
       )}
 
       <ListToast
