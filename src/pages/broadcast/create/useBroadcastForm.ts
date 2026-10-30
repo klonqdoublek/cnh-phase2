@@ -55,6 +55,7 @@ export type FormErrors = Partial<
   Record<
     | 'name'
     | 'description'
+    | 'serviceCode'
     | 'file'
     | 'channels'
     | 'column'
@@ -82,6 +83,7 @@ const combine = (date: string, time: string) => {
 }
 
 const fromDraft = (b: Broadcast): FormSeed => ({
+  serviceCode: b.serviceCode,
   file: b.audienceText === undefined ? undefined : { name: b.audienceFile, text: b.audienceText },
   recipientType: b.recipientType,
   column: b.recipientColumn,
@@ -116,6 +118,7 @@ export function useBroadcastForm({
   const [errors, setErrors] = useState<FormErrors>(() => (seed.errors as FormErrors) ?? {})
   const [name, setName] = useState(seed.name ?? '')
   const [description, setDescription] = useState(seed.description ?? '')
+  const [serviceCode, setServiceCode] = useState(seed.serviceCode ?? '')
   const [file, setFile] = useState<File | null>(() =>
     seed.file ? new File([seed.file.text], seed.file.name, { type: 'text/csv' }) : null,
   )
@@ -163,7 +166,7 @@ export function useBroadcastForm({
   const [checkFailed, setCheckFailed] = useState(seed.open === 'check-fail')
   const fields = useMemo(() => fieldsOf(audience, column), [audience, column])
   const checking = file !== null && read === null
-  const dirty = !!(file || name || description || channels.length || Object.values(content).some(Boolean))
+  const dirty = !!(file || name || description || serviceCode || channels.length || Object.values(content).some(Boolean))
   /* CIS ID offers every channel on its own switch; Email and SMS send by that one channel. */
   const offered = recipientType === 'cis' ? [...CHANNELS] : [TYPE_CHANNEL[recipientType]]
 
@@ -242,6 +245,7 @@ export function useBroadcastForm({
     if (!name.trim()) e.name = BROADCAST_COPY.required
     else if (name.length > 100) e.name = BROADCAST_COPY.msgMax(100)
     if (description.length > 250) e.description = BROADCAST_COPY.msgMax(250)
+    if (!serviceCode) e.serviceCode = BROADCAST_COPY.required
     if (!file) e.file = BROADCAST_COPY.noFile
     else if (read && !read.ok) e.file = read.message
     if (!channels.length) e.channels = BROADCAST_COPY.noChannel
@@ -311,6 +315,7 @@ export function useBroadcastForm({
   const record = (status: BroadcastStatus): Omit<Broadcast, 'id'> => ({
     name: name.trim(),
     description: description.trim(),
+    serviceCode,
     channels: CHANNELS.filter((c) => channels.includes(c)),
     audienceFile: file?.name ?? '',
     audienceText: file ? fileText : undefined,
@@ -368,6 +373,8 @@ export function useBroadcastForm({
     setName,
     description,
     setDescription,
+    serviceCode,
+    setServiceCode,
     file,
     read,
     audience,
