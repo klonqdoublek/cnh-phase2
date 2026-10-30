@@ -295,7 +295,7 @@ How each message row goes out while the job is Processing:
 To change in the prototype (not built yet):
 
 - Processing gets the Delivery result back, with a refresh. Sending and the quiet-period pause move from Published to Processing: BC-0004 (inside the quiet period) and the sending fixtures go back to Processing. Published is the finished job, with its report.
-- The Queue drawer gets **Cancel broadcast** with the same confirm dialog as the Draft. Cancelled then means a draft or a queued broadcast, cancelled before processing.
+- ~~The Queue drawer gets **Cancel broadcast** with the same confirm dialog as the Draft.~~ Built (PR #70, 29 Oct 2026): Cancel only, no Edit, the dialog's safe answer reads *Keep broadcast*. Cancelled now means a draft or a queued broadcast, cancelled before processing.
 - The status value becomes **QUEUED** (was Queue): badge, Status filter, fixtures and docs. FAILED becomes **ERROR** as a value too, if the rename covers more than the label (the badge already reads Error).
 - Published gets a report-generating state: no Download report (list row and drawer) until the report is ready. Copy for that state is not given yet.
 - A failed validation in Processing ends in Error.
