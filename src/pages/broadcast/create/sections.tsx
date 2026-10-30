@@ -13,7 +13,6 @@ import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
 import { OutlineButton } from '@/bbl/outline-button'
 import { PillChip } from '@/bbl/pill-chip'
-import { RadioButton } from '@/bbl/radio-button'
 import { ScrollBar } from '@/bbl/scroll-bar'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
@@ -24,7 +23,18 @@ import { SelectList } from '@/patterns/select-list'
 import { FormSectionCard } from '@/patterns/form-section-card'
 import { InfoNote } from '@/patterns/info-note'
 import { FormStep } from '@/patterns/console-page'
-import { BROADCAST_COPY, DAYS, ID_LABEL, TIME_ZONES, endsNextDay, fmtDateTime, type BroadcastContent, type DndRule } from '@/data/broadcast'
+import {
+  BROADCAST_COPY,
+  DAYS,
+  ID_LABEL,
+  RECIPIENT_TYPE_LABEL,
+  TIME_ZONES,
+  endsNextDay,
+  fmtDateTime,
+  type BroadcastContent,
+  type DndRule,
+  type RecipientType as RecipientTypeValue,
+} from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import type { Concept, Overflow } from '@/prototype/dynamic-field'
@@ -124,7 +134,12 @@ export function AudienceFile({ f }: F) {
             buttonLabel={BROADCAST_COPY.browse}
             hint={[BROADCAST_COPY.dropTitle, BROADCAST_COPY.dropHint]}
             accept=".csv,.xlsx,text/csv"
-            error={!!f.errors.file}
+            /* One file at a time (BA MoM, 29 Oct 2026): a drag of two or more turns the
+               zone Negative with "1 File Only", held after the drop, as Import's zone. */
+            maxFiles={1}
+            tooManyHint={BROADCAST_COPY.oneFile}
+            error={f.tooMany || !!f.errors.file}
+            errorHint={f.tooMany ? BROADCAST_COPY.oneFile : undefined}
             onFiles={f.pick}
             className="min-h-[164px]"
           />
@@ -343,36 +358,38 @@ export function MiniTable({
   )
 }
 
+/* Three types since the BA / Dev sync (28 Oct 2026), was CIS / Direct
+   recipient. The CIS ID line is the original build's; Email and SMS are composed. */
+const RECIPIENT_TYPES: { value: RecipientTypeValue; description: string }[] = [
+  { value: 'cis', description: 'Send to customers using CIS ID from file' },
+  { value: 'email', description: 'Send email to addresses from file' },
+  { value: 'sms', description: 'Send SMS to mobile numbers from file' },
+]
+
 function RecipientType({ f }: F) {
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
       <FieldLabel required>Select Recipient type</FieldLabel>
       <div role="radiogroup" aria-label="Recipient type" className="flex gap-[var(--space-2)] py-[var(--space-3)]">
-        <ModeOption
-          on={f.recipientType === 'cis'}
-          label="CIS"
-          description="Send to customers using CIS ID from file"
-          className="w-[377px]"
-          onSelect={() => f.setRecipientType('cis')}
-        />
-        <ModeOption
-          on={f.recipientType === 'direct'}
-          label="Direct recipient"
-          description="Send by Email or SMS to contacts from file"
-          className="w-[377px]"
-          onSelect={() => f.setRecipientType('direct')}
-        />
+        {RECIPIENT_TYPES.map((t) => (
+          <ModeOption
+            key={t.value}
+            on={f.recipientType === t.value}
+            label={RECIPIENT_TYPE_LABEL[t.value]}
+            description={t.description}
+            className="w-[377px]"
+            onSelect={() => f.setRecipientType(t.value)}
+          />
+        ))}
       </div>
     </div>
   )
 }
 
 function ColumnSelect({ f }: F) {
-  const label = f.kind ? `${ID_LABEL[f.kind]} column` : 'Recipient column'
+  const label = `${ID_LABEL[f.kind]} column`
   const hint = f.audience
-    ? f.kind
-      ? `Select the column that contains ${ID_LABEL[f.kind].toLowerCase().replace('cis id', 'CIS ID')}`
-      : 'Choose Email or SMS first'
+    ? `Select the column that contains ${ID_LABEL[f.kind].toLowerCase().replace('cis id', 'CIS ID')}`
     : 'Upload the file first'
   return (
     <Select
@@ -381,7 +398,7 @@ function ColumnSelect({ f }: F) {
       required
       value={f.column}
       options={f.audience?.headers ?? []}
-      disabled={!f.audience || !f.kind}
+      disabled={!f.audience}
       error={f.errors.column}
       hint={hint}
       placeholder="Select column"
@@ -763,14 +780,14 @@ function ChannelAlert({ f }: F) {
  *    layout     cards three across (1, 2, 2.2) · stacked full width as CNH (1.2)
  *
  *  Each card is switched on its own title row (webds `form-section-card`):
- *  off keeps what was typed and disables it. Direct recipient offers Email
- *  and SMS, one at a time. */
+ *  off keeps what was typed and disables it. An Email or SMS broadcast has
+ *  that one card, always on, with no switch (BA / Dev sync, 28 Oct 2026). */
 export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; concept: Concept }) {
   const invalid = !!f.errors.channels
   const insert = useInsertField(f, focus)
   const [needsField, setNeedsField] = useState(false)
   const shared = concept.placement === 'shared'
-  const direct = f.recipientType === 'direct'
+  const single = f.recipientType !== 'cis'
   const hasFields = f.fields.length > 0
   const insertShared: Insert = (token) => setNeedsField(!insert(token))
   const typed = concept.picker === 'shortcut'
@@ -803,9 +820,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
         'grid items-stretch',
         concept.layout === 'stacked'
           ? 'grid-cols-1 gap-[var(--space-8)]'
-          : direct
-            ? 'grid-cols-2 gap-[var(--space-8)]'
-            : 'grid-cols-3 gap-[var(--space-8)]',
+          : 'grid-cols-3 gap-[var(--space-8)]',
       )}
       {...shortcut.handlers}
       onFocusCapture={(e) => {
@@ -819,8 +834,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
     >
       {f.offered.map((c) => {
         const on = f.channels.includes(c)
-        /* Direct draws its fields live on both cards (Figma 325:62582). */
-        const editable = direct || on
+        const editable = on
         const perCard = !shared && hasFields
         const cardButton = perCard && menu && (
           <FieldMenuButton
@@ -841,19 +855,6 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
             <ChannelFields f={f} channel={c} on={editable} tint={typed && concept.look === 'tint' ? tint : undefined} />
           </>
         )
-        if (direct)
-          return (
-            <DirectChannelCard
-              key={c}
-              channel={c}
-              selected={on}
-              invalid={invalid}
-              action={cardButton}
-              onSelect={() => f.setChannel(c, true)}
-            >
-              {body}
-            </DirectChannelCard>
-          )
         return (
           <FormSectionCard
             key={c}
@@ -868,7 +869,7 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
                 c
               )
             }
-            toggle={{ on, onToggle: (v) => f.setChannel(c, v) }}
+            toggle={single ? undefined : { on, onToggle: (v) => f.setChannel(c, v) }}
             invalid={invalid}
             rowGap={4}
           >
@@ -917,53 +918,9 @@ export function MessageContent({ f, focus, concept }: F & { focus: FocusRef; con
   )
 }
 
-/** Direct recipient's channel card (Figma 325:62582, 20 Oct 2026): Email and
- *  SMS two across, one picked at a time by the radio in its title row. The
- *  picked card is Card Surface `State=Selected` (Border/Highlight); both
- *  cards' fields stay live, as drawn. The rule "pick a channel" strokes both
- *  cards negative, as `form-section-card` does. */
-function DirectChannelCard({
-  channel,
-  selected,
-  invalid,
-  action,
-  onSelect,
-  children,
-}: {
-  channel: Channel
-  selected: boolean
-  invalid: boolean
-  action?: React.ReactNode
-  onSelect: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <CardSurface
-      tabIndex={-1}
-      state={selected ? 'selected' : 'default'}
-      data-invalid={invalid ? 'true' : undefined}
-      className={cn(
-        'flex h-auto min-w-0 flex-col items-stretch gap-[var(--space-8)] p-[var(--space-6)] hover:bg-[var(--color-surface-primary-default)] active:bg-[var(--color-surface-primary-default)]',
-        /* Same 1px on both, so picking one does not move its content; the
-           Selected stroke is drawn inside it. */
-        'border',
-        selected ? 'border-transparent' : 'border-[var(--color-border-primary-default)]',
-        invalid && 'webds-pattern-form-section-card--s1',
-      )}
-    >
-      <span className="flex items-center gap-[var(--space-4)]">
-        <label className="flex flex-1 cursor-pointer items-center gap-[var(--space-3)]">
-          <RadioButton selected={selected} aria-label={channel} onClick={onSelect} />
-          <span className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">{channel}</span>
-        </label>
-        {action}
-      </span>
-      <div className="flex flex-col gap-[var(--space-4)]">{children}</div>
-    </CardSurface>
-  )
-}
-
-/** A channel's message boxes — the Template form's TH fields. */
+/** A channel's message boxes — the Template form's TH fields, without the
+ *  (TH): one broadcast is written in one language, Thai or English (BA / Dev
+ *  sync, 28 Oct 2026). */
 function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boolean; tint?: Tint }) {
   const box = (id: keyof BroadcastContent, label: string, placeholder: string, extra?: { multiline?: boolean; boxHeight?: 77 }) => (
     <Text
@@ -983,18 +940,18 @@ function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boo
   if (channel === 'Push notification')
     return (
       <>
-        {box('pushTitle', 'Push title (TH)', 'Enter push title in Thai')}
-        {box('pushBody', 'Push message (TH)', 'Enter push message in Thai', { boxHeight: 77 })}
+        {box('pushTitle', 'Push title', 'Enter push title')}
+        {box('pushBody', 'Push message', 'Enter push message', { boxHeight: 77 })}
       </>
     )
   if (channel === 'Email')
     return (
       <>
-        {box('emailSubject', 'Email subject (TH)', 'Enter email subject')}
-        {box('emailBody', 'Email content (TH)', 'Enter email content', { multiline: true })}
+        {box('emailSubject', 'Email subject', 'Enter email subject')}
+        {box('emailBody', 'Email content', 'Enter email content', { multiline: true })}
       </>
     )
-  return box('smsMessage', 'SMS message (TH)', 'Enter SMS message in Thai', { multiline: true })
+  return box('smsMessage', 'SMS message', 'Enter SMS message', { multiline: true })
 }
 
 /* ── Delivery ───────────────────────────────────────────────────────────── */
@@ -1009,7 +966,7 @@ export function Delivery({ f }: F) {
           description="Start sending after you submit this broadcast."
           onSelect={() => {
             f.setMode('now')
-            f.clear('startDate', 'startTime', 'end')
+            f.clear('startDate', 'startTime')
           }}
         />
         <ModeOption
@@ -1019,9 +976,9 @@ export function Delivery({ f }: F) {
           onSelect={() => f.setMode('schedule')}
         />
       </div>
-      {/* Schedule delivery only: Start on the left, End on the right
-          (requester, 20 Oct 2026; draft 2.2 drew End first). Send as soon
-          as possible has no end (requester, 15 Oct 2026). */}
+      {/* Schedule delivery only: Start, in the left half (requester, 20 Oct
+          2026). No End date (BA MoM, 29 Oct 2026; 14–29 Oct an optional End
+          sat on the right, BA's Q2 answer). */}
       {f.mode === 'schedule' && (
         <div className="grid grid-cols-2 items-start gap-[var(--space-6)]">
           {/* One field, as CMS's Effective date: webds' Date Time Picker. The
@@ -1040,20 +997,6 @@ export function Delivery({ f }: F) {
               f.setStartTime(v.slice(11, 16))
             }}
           />
-          {/* Broadcast End (BA, 2026-10-14): optional, with Clear, as CMS's
-              Expiry date. Sending stops here; whoever is left is Not sent. */}
-          <DateTimeInput
-            label="End date and time"
-            optional
-            clearable
-            className="w-full"
-            value={f.end}
-            min={f.startDate || ymd(new Date())}
-            minuteStep={5}
-            error={!!f.errors.end}
-            message={f.errors.end}
-            onChange={f.setEnd}
-          />
         </div>
       )}
       <Outlook f={f} />
@@ -1064,6 +1007,9 @@ export function Delivery({ f }: F) {
 /** When sending actually starts, given the quiet period. */
 function Outlook({ f }: F) {
   if (!f.start || !f.first) return null
+  /* Do Not Disturb that never ends has no start to promise; its warning is the
+     Do Not Disturb card's or the confirm dialog's (28 Oct 2026). */
+  if (f.neverSends) return null
   return (
     <Alert
       appearance="brand"
@@ -1077,13 +1023,35 @@ function Outlook({ f }: F) {
             ? 'Sending starts right after you submit.'
             : `Sending starts at ${fmtDateTime(f.start)}.`}
         {f.dnd.enabled && ' Sending pauses during the quiet period and resumes after it.'}
-        {f.end && ` Sending stops at ${fmtDateTime(new Date(f.end))}; recipients not sent by then are counted as Not sent.`}
       </>}
     />
   )
 }
 
 /* ── DND (its own card under Delivery Date) ──────────────────────────────── */
+
+/** Do Not Disturb that covers every day, all day (BA / Dev sync, 28 Oct
+ *  2026): an Alert, Title only, as the Delivery card's Outlook, on the Do Not
+ *  Disturb card as soon as the periods add up. Caution while editing; once
+ *  Submit is pressed it is the error that blocks it and turns Negative, as the
+ *  channel cards' Alert does (BA MoM and requester, 29 Oct 2026: Submit is
+ *  never disabled; 28–29 Oct a warning only, on the card or in the confirm
+ *  dialog, switched by a `?dndw=` Prototype control option). */
+function NeverSendsAlert({ error }: { error: boolean }) {
+  return error ? (
+    <Alert
+      appearance="negative"
+      icon={<Icon slug="close-circle" size={24} color="var(--color-icon-negative-default)" />}
+      title={BROADCAST_COPY.dndNeverSends}
+    />
+  ) : (
+    <Alert
+      appearance="caution"
+      icon={<Icon slug="caution" size={24} color="var(--color-icon-caution-default)" />}
+      title={BROADCAST_COPY.dndNeverSends}
+    />
+  )
+}
 
 /** One quiet period on one row: its days, its hours or All day, and — when
  *  there is more than one — a trash to remove it (draft 2.2, Figma 89:4665). */
@@ -1212,6 +1180,11 @@ export function DndCard({ f }: F) {
           <DndRuleRow f={f} rule={rule} index={i} />
         </CardSurface>
       ))}
+      {f.neverSends && (
+        <div data-error={f.errors.dnd ? 'true' : undefined}>
+          <NeverSendsAlert error={!!f.errors.dnd} />
+        </div>
+      )}
       <span className="flex">
         <OutlineButton disabled={!dnd.enabled} onClick={f.addDndRule}>
           Add more period

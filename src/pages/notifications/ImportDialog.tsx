@@ -38,10 +38,13 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * One file per import (requester, 15 Oct 2026), the way a CMS asset slot
  * takes one: the 84-tall drop zone until a file is picked, then the file's
  * slot in its place, with no Preview: the users are not technical and will
- * not open the file to read it (BA, 22 Oct 2026). A drag of two or more files is
- * refused, so the files fly back (design critique, 20 Oct 2026; was: the drop
- * landed and took none); the zone keeps its empty look (requester, 27 Oct 2026;
- * was Negative with CMS's "1 File Only"). The control takes .jsonl only: the chooser
+ * not open the file to read it (BA, 22 Oct 2026). A drag of two or more files turns the
+ * zone Negative with CMS's "1 File Only" while it is over the zone. Released
+ * outside the zone, the zone goes back to default. Released on it, nothing is
+ * taken and the error stays until the dialog is cancelled or one valid file
+ * is dropped or chosen (Korarit's comment and the requester, 29 Oct 2026; was:
+ * the drop was refused and the files flew back, design critique, 20 Oct 2026,
+ * error back by the BA's MoM, 29 Oct 2026). The control takes .jsonl only: the chooser
  * filters by it and a dropped file of another type is not taken, so there is
  * no Invalid file format state (requester, 22 Oct 2026).
  *
@@ -86,6 +89,8 @@ export function ImportDialog({
   const [picked, setPicked] = useState<Picked | null>(null)
   const [phase, setPhase] = useState<Phase>('idle')
   const [message, setMessage] = useState<string | null>(null)
+  /* A drop of two or more files on the zone, or the `too-many` route. Cleared by Cancel or one valid file. */
+  const [tooMany, setTooMany] = useState(false)
   const nextKey = useRef(0)
   /* `#/list/import/drag-replace` holds the slot's drag look until the file changes. */
   const [heldDrag, setHeldDrag] = useState(false)
@@ -105,15 +110,18 @@ export function ImportDialog({
     setPhase(preset === 'uploading' ? 'uploading' : preset === 'failure' ? 'failed' : preset === 'duplicate' ? 'replace' : 'idle')
     setMessage(preset === 'no-file' ? IMPORT_COPY.noFile : null)
     setHeldDrag(preset === 'drag-replace')
+    setTooMany(preset === 'too-many')
   }, [open, preset])
 
   const failed = phase === 'failed'
   const problem = picked?.problem ?? null
+  const noFile = message === IMPORT_COPY.noFile
 
   const reset = () => {
     setPicked(null)
     setPhase('idle')
     setMessage(null)
+    setTooMany(false)
   }
   const close = () => {
     if (uploading) return
@@ -123,14 +131,19 @@ export function ImportDialog({
 
   const add = (list: FileList | null) => {
     if (!list?.length) return
-    /* The zone refuses a drop of two or more (maxFiles); the chooser takes one. */
-    if (list.length > 1) return
+    /* Two or more dropped on the zone: take none and hold "1 File Only". The chooser takes one. */
+    if (list.length > 1) {
+      setMessage(null)
+      setTooMany(true)
+      return
+    }
     const file = list[0]
     /* The chooser offers .jsonl only; a dropped file of another type is not taken. */
     if (!isJsonl(file.name)) return
     setMessage(null)
     setPhase('idle')
     setHeldDrag(false)
+    setTooMany(false)
     setPicked({ key: nextKey.current++, file, size: file.size, problem: null })
   }
 
@@ -225,13 +238,16 @@ export function ImportDialog({
               hint={IMPORT_COPY.dropTitle}
               accept=".jsonl"
               maxFiles={1}
-              error={message === IMPORT_COPY.noFile}
+              tooManyHint={IMPORT_COPY.oneFile}
+              error={tooMany || noFile}
+              /* Inside the zone, as "1 File Only" reads (requester, 29 Oct 2026; was an Inline Message under it). */
+              errorHint={tooMany ? IMPORT_COPY.oneFile : noFile ? IMPORT_COPY.noFile : undefined}
               onFiles={add}
             />
           )}
 
           {/* webds Inline Message under the matrix, inset to the zone's text as CMS's required message is. */}
-          {message && (
+          {message && !noFile && (
             <InlineMessage appearance="negative" size="xs" className="pl-[var(--space-4)]">
               {message}
             </InlineMessage>

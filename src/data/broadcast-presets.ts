@@ -8,7 +8,8 @@ import type { Channel } from './templates'
 export const FORM_PRESETS = [
   'file-error',
   'cis',
-  'direct',
+  'email',
+  'sms',
   'wrong-column',
   'errors',
   'step1-filled',
@@ -19,7 +20,8 @@ export const FORM_PRESETS = [
   'filled',
   'quiet',
   'dnd-rules',
-  'end',
+  'dnd-all-week',
+  'dnd-all-week-submit',
   'large-file',
   'checking',
   'confirm',
@@ -165,8 +167,6 @@ export type FormSeed = {
   mode?: 'now' | 'schedule'
   /** Days from today, and HH:mm. */
   start?: { inDays: number; time: string }
-  /** Broadcast End: days from today, and HH:mm. */
-  end?: { inDays: number; time: string }
   dnd?: Dnd
   /** A dialog open on arrival. `checking` is Submit's full read of the file,
    *  held; `blocked` is its result when the file cannot be used. */
@@ -213,24 +213,41 @@ export const nextWeekday = () => {
 /** Days until the next Saturday, so a start then waits out the weekend rule. */
 export const nextSaturday = () => ((6 - new Date().getDay() + 7) % 7) || 7
 
+/** Do Not Disturb that leaves no time to send, made of two periods so the
+ *  warning shows they add up (BA / Dev sync, 28 Oct 2026). */
+const ALL_WEEK_DND: Dnd = {
+  enabled: true,
+  rules: [
+    { id: 'dnd-weekdays-all-day', days: [1, 2, 3, 4, 5], allDay: true, from: '00:00', to: '00:00' },
+    { id: 'dnd-weekend-all-day', days: [6, 0], allDay: true, from: '00:00', to: '00:00' },
+  ],
+  timeZone: 'Asia/Bangkok',
+}
+
 export function formSeed(preset: FormPreset): FormSeed {
   switch (preset) {
     case 'file-error':
       return { file: { name: 'recipients.txt', text: 'CIS_ID\n100001\n' } }
     case 'cis':
       return { file: filled.file, recipientType: 'cis' }
-    case 'direct':
+    case 'email':
       return {
         file: { name: 'audience-direct.csv', text: DIRECT_CSV },
-        recipientType: 'direct',
+        recipientType: 'email',
+        channels: ['Email'],
+      }
+    case 'sms':
+      return {
+        file: { name: 'audience-direct.csv', text: DIRECT_CSV },
+        recipientType: 'sms',
         channels: ['SMS'],
       }
     case 'wrong-column':
-      // PROPOSAL, pending BA (Q15): Direct SMS with the email column, Submit pressed.
+      // PROPOSAL, pending BA (Q15): SMS with the email column, Submit pressed.
       return {
         ...filled,
         file: { name: 'audience-direct.csv', text: DIRECT_CSV },
-        recipientType: 'direct',
+        recipientType: 'sms',
         column: 'EMAIL',
         channels: ['SMS'],
         press: 'submit',
@@ -253,13 +270,11 @@ export function formSeed(preset: FormPreset): FormSeed {
       return { ...filled, mode: 'schedule', start: { inDays: nextWeekday(), time: '21:00' }, dnd: DEFAULT_DND }
     case 'dnd-rules':
       return { ...filled, mode: 'schedule', start: { inDays: nextSaturday(), time: '10:00' }, dnd: BA_DND }
-    case 'end':
-      return {
-        ...filled,
-        mode: 'schedule',
-        start: { inDays: nextWeekday(), time: '10:00' },
-        end: { inDays: nextWeekday(), time: '12:00' },
-      }
+    case 'dnd-all-week':
+      return { ...filled, dnd: ALL_WEEK_DND }
+    /* Submit pressed: the Alert turns Negative and blocks it (BA MoM, 29 Oct 2026). */
+    case 'dnd-all-week-submit':
+      return { ...filled, dnd: ALL_WEEK_DND, errors: { dnd: BROADCAST_COPY.dndNeverSends } }
     case 'large-file':
       return { ...filled, file: { name: 'audience-cis-large.csv', text: LARGE_CSV } }
     case 'checking':
@@ -270,7 +285,7 @@ export function formSeed(preset: FormPreset): FormSeed {
       return {
         ...filled,
         file: { name: 'audience-direct.csv', text: DIRECT_CSV },
-        recipientType: 'direct',
+        recipientType: 'sms',
         column: 'MOBILE_NO',
         channels: ['SMS'],
         open: 'confirm',

@@ -4,7 +4,7 @@
 
 Phase 2 of the **Customer Notification Hub (CNH)** console: Import templates and Broadcast message, on top of the Phase 1 notification list. This repo is a **rebuild on webds** of Korn's prototype (https://cnh-tm-phase2.vercel.app, built on `@bbl-web/ui-components`), started 2026-10-12 to enhance it. The original source was not available; `.reference/` holds the deployed build and the app code cut out of it (see `.reference/README.md`).
 
-Start with `docs/requirements.md`: what Phase 2 is, every feature's rules, the BA's rulings and what is still open.
+Start with `docs/requirements.md`: what Phase 2 is, every feature's rules, the BA's rulings and what is still open. Its section *BA MoM, 29 Oct 2026* lists the latest BA minutes item by item, with what is built and what is not.
 
 The webds flow archive already records this delivery as `cnh-phase2` (`get_flow`): its routes, rulings, open questions P2-1…P2-20 and gaps. Read it before changing a flow.
 
@@ -29,7 +29,7 @@ Hash routes, one per state, the same as the original build — the flow archive 
 - Broadcast: `#/broadcast`, `#/broadcast/{loading,error,empty,submitted,draft-saved,cancelled,download-success,download-failed}`, `#/broadcast/download[/fail]`, `#/broadcast/create[/<preset>|/loading|/fail]`, `#/broadcast/view/<id>[/cancel|/cancel-fail|/download[/fail]]`, `#/broadcast/edit/<id>[/loading|/fail]`
 - `#/login`
 
-The floating Prototype control has two groups. **Screen state** lists the states of the screen on show (`src/prototype/screen-states.ts`) and opens each one; add a state's route there when you add one here. **Design direction** switches the dynamic-field concepts on Create / Edit broadcast. `?panel=0` hides the Task flow button and the Prototype control (the task flow renders screens in iframes with it). `?flow=1` opens the task flow on load.
+The floating Prototype control has two groups. **Screen state** lists the states of the screen on show (`src/prototype/screen-states.ts`) and opens each one; add a state's route there when you add one here. **Design direction** switches the dynamic-field concepts on Create / Edit broadcast, and where a Do Not Disturb that covers every day, all day is warned about (`?dndw=inline|submit`). `?panel=0` hides the Task flow button and the Prototype control (the task flow renders screens in iframes with it). `?flow=1` opens the task flow on load.
 
 ## Design system — webds
 
@@ -41,7 +41,7 @@ Same rules as the CMS prototype:
 - **Every value is a token.** No literal hex. App code imports `cn` from `@/lib/cn` (twMerge); `@/lib/utils` is the installed clsx-only one.
 - No dark mode. Fonts come from webds (`styles/bbl-fonts.css`).
 - CNH's own patterns were measured on this product: `product-shell`, `sign-in-split`, `console-page`, `form-section-card`, `form-field`, `detail-drawer`, `profile-menu`. Prefer them.
-- **File upload is the CMS prototype's** (requester's call, 12 Oct 2026): `src/components/upload/` — `UploadZone` from CMS `EmptyAssetSlot`, `UploadedFile` from CMS `UploadedAssetSlot`. webds ships no upload control (gap). `FilePreviewDialog` from CMS `AssetPreviewModal`. Use these for any new upload; Import takes one file (15 Oct 2026): the zone until a file is picked, then its CMS slot, no Preview (BA, 22 Oct 2026); two or more dropped are refused with the zone unchanged (27 Oct 2026), over 10 MB reads "Max file size: 10 MB".
+- **File upload is the CMS prototype's** (requester's call, 12 Oct 2026): `src/components/upload/` — `UploadZone` from CMS `EmptyAssetSlot`, `UploadedFile` from CMS `UploadedAssetSlot`. webds ships no upload control (gap). `FilePreviewDialog` from CMS `AssetPreviewModal`. Use these for any new upload; Import takes one file (15 Oct 2026): the zone until a file is picked, then its CMS slot, no Preview (BA, 22 Oct 2026); two or more dropped read "1 File Only" (BA MoM, 29 Oct 2026), over 10 MB reads "Max file size: 10 MB".
 - **Borrow from CMS before building.** `docs/cms-components.md` lists what CMS hand-built, what CNH copied (and how it differs) and what is still there to borrow. Broadcast's open requirement questions and composed copy live in `docs/broadcast-gaps.md`.
 - Tailwind scans `src/` only (`source('./')` in `src/index.css`), so the 6 MB reference bundle stays out of the build.
 - `noUnusedParameters` is off because the installed `task-flow-view` has an unused map parameter.

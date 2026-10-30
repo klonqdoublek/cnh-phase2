@@ -48,6 +48,7 @@ function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: Broadc
   /* Which dynamic-field draft the message area draws — the prototype's
      Concept panel switches it (src/prototype/ConceptPanel.tsx). */
   const concept = useConcept()
+  /* Where Do Not Disturb that never ends is warned about (28 Oct 2026). */
 
   return (
     <div className="relative h-full bg-[var(--color-surface-secondary-default)]">

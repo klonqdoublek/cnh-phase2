@@ -20,8 +20,12 @@ export const BROADCAST_COPY = {
   loadFail: 'Unable to get information',
   dropTitle: 'Upload audience file',
   /* Was `Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000
-     recipients` (original build); reworded without the `·` joins, 28 Oct 2026. */
-  dropHint: 'CSV or XLSX, up to 10 MB and 1,000 recipients',
+     recipients` (original build); reworded without the `·` joins, 28 Oct 2026;
+     "and 1,000 recipients" dropped by the BA's MoM, 29 Oct 2026. The 1,000
+     limit stays (`MAX_RECIPIENTS`, checked on Submit). */
+  dropHint: 'CSV or XLSX, up to 10 MB',
+  /* Two or more files dropped at once (BA MoM, 29 Oct 2026): CMS's copy, as Import reads. */
+  oneFile: '1 File Only',
   browse: 'Choose file',
   sample: 'Download sample file',
   noFile: 'Upload an audience file to continue',
@@ -45,13 +49,14 @@ export const BROADCAST_COPY = {
     return `${column} contains ${plural[holds]}. Select the column that contains ${plural[wanted]}`
   },
   noChannel: 'Please enable at least 1 notification channel',
-  noDirectChannel: 'Select Email or SMS',
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
   pickField: 'Click in a message field first, then choose a field to insert',
   startPast: 'Start must be later than the current time',
-  endBeforeStart: 'End must be later than the start',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
+  /** Composed (BA / Dev sync, 28 Oct 2026). A Caution while editing; on Submit an
+   *  error that blocks it (BA MoM, 29 Oct 2026; was a warning only). */
+  dndNeverSends: 'Do Not Disturb covers every day, all day. No message will be sent.',
   submitTitle: 'Submit this broadcast?',
   submitFailTitle: 'Unable to submit the broadcast',
   createdTitle: 'Broadcast submitted',
@@ -59,11 +64,13 @@ export const BROADCAST_COPY = {
   draftTitle: 'Draft saved',
   draftBody: (name: string) => `${name} is saved as a draft`,
   draftNeedsName: 'Enter a broadcast name to save a draft',
-  /* Cancel a draft (19 Oct 2026). Composed: the original build has no cancel. */
+  /* Cancel a draft (19 Oct 2026), or a Queue broadcast (BA MoM, 29 Oct 2026). Composed: the original build has no cancel. */
   cancel: 'Cancel broadcast',
   cancelTitle: 'Cancel this broadcast?',
   cancelBody: (name: string) => `${name} will not be sent, and it cannot be edited again.`,
   cancelKeep: 'Keep draft',
+  /* A Queue broadcast is no draft (29 Oct 2026). Composed. */
+  cancelKeepQueued: 'Keep broadcast',
   cancelledTitle: 'Broadcast cancelled',
   cancelledBody: (name: string) => `${name} is cancelled`,
   /* Download report from a list row or the drawer (22 Oct 2026), through
@@ -145,11 +152,18 @@ export async function readAudienceFile(file: File): Promise<AudienceResult> {
 
 /* ── recipients ────────────────────────────────────────────────────────── */
 
-export type RecipientType = 'cis' | 'direct'
+/** Three recipient types (BA / Dev sync, 28 Oct 2026): CIS ID, Email or SMS.
+ *  Before, CIS or Direct recipient, where Direct then picked Email or SMS on
+ *  the channel cards; the second pick confused users. */
+export type RecipientType = 'cis' | 'email' | 'sms'
 export type IdKind = 'cis' | 'mobile' | 'email'
 
-export const idKind = (type: RecipientType, channels: Channel[]): IdKind | null =>
-  type === 'cis' ? 'cis' : channels.includes('SMS') ? 'mobile' : channels.includes('Email') ? 'email' : null
+export const RECIPIENT_TYPE_LABEL: Record<RecipientType, string> = { cis: 'CIS ID', email: 'Email', sms: 'SMS' }
+
+/** The one channel an Email or SMS broadcast sends by; CIS ID picks its own. */
+export const TYPE_CHANNEL: Record<Exclude<RecipientType, 'cis'>, Channel> = { email: 'Email', sms: 'SMS' }
+
+export const idKind = (type: RecipientType): IdKind => (type === 'sms' ? 'mobile' : type)
 
 export const ID_LABEL: Record<IdKind, string> = { cis: 'CIS ID', mobile: 'Mobile number', email: 'Email address' }
 const DUPLICATE: Record<IdKind, string> = {
@@ -261,6 +275,29 @@ export const BA_DND: Dnd = {
   ],
   timeZone: 'Asia/Bangkok',
 }
+/** Composed (29 Oct 2026) so the list, drawer and Edit show more than two
+ *  periods: weeknights, Saturday from noon and all of Sunday. */
+export const THREE_PERIOD_DND: Dnd = {
+  enabled: true,
+  rules: [
+    { id: 'dnd-weeknights', days: [1, 2, 3, 4, 5], allDay: false, from: '20:00', to: '08:00' },
+    { id: 'dnd-saturday', days: [6], allDay: false, from: '12:00', to: '08:00' },
+    { id: 'dnd-sunday', days: [0], allDay: true, from: '00:00', to: '00:00' },
+  ],
+  timeZone: 'Asia/Bangkok',
+}
+/** Composed (29 Oct 2026): four periods, a lunch break as well as nights and
+ *  a weekend kept as two days. */
+export const FOUR_PERIOD_DND: Dnd = {
+  enabled: true,
+  rules: [
+    { id: 'dnd-lunch', days: [1, 2, 3, 4, 5], allDay: false, from: '12:00', to: '13:00' },
+    { id: 'dnd-weeknights', days: [1, 2, 3, 4, 5], allDay: false, from: '20:00', to: '08:00' },
+    { id: 'dnd-saturday', days: [6], allDay: true, from: '00:00', to: '00:00' },
+    { id: 'dnd-sunday', days: [0], allDay: true, from: '00:00', to: '00:00' },
+  ],
+  timeZone: 'Asia/Bangkok',
+}
 /** `offset` follows the quiet period's time label (design critique, 27 Oct
  *  2026), in place of a Time zone row under the periods. */
 export const TIME_ZONES = [{ value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)', offset: 'GMT+7' }]
@@ -301,6 +338,16 @@ export function quietUntil(t: Date, dnd: Dnd): Date | null {
     if (until && (!end || until > end)) end = until
   }
   return end
+}
+
+/** Whether the quiet periods leave no moment in the week to send, however
+ *  they add up: Mon – Sun All day, or Mon – Fri All day and Sat, Sun All day
+ *  (BA / Dev sync, 28 Oct 2026). Every 5-minute step of one week is tried. */
+export function dndNeverSends(dnd: Dnd): boolean {
+  if (!dnd.enabled || !dnd.rules.length) return false
+  const monday = new Date(2026, 9, 26)
+  for (let m = 0; m < 7 * 24 * 60; m += 5) if (!quietUntil(new Date(monday.getTime() + m * 60_000), dnd)) return false
+  return true
 }
 
 /** The first moment a broadcast starting at `t` can actually send — rules
@@ -349,7 +396,10 @@ export type BroadcastContent = {
 
 /** The status list of values (16 Oct 2026; meanings 19 Oct 2026):
  *  DRAFT — saved as a draft · QUEUE — submitted, accepted by the system ·
- *  PROCESSING — the system has started sending · PUBLISHED — finished ·
+ *  PROCESSING — the system has picked the broadcast up and is validating it,
+ *  nothing sent yet · PUBLISHED — validated; it sends, pauses in a quiet
+ *  period and finishes under Published (BA / Dev sync, 28 Oct 2026; was
+ *  "started sending" and "finished"; the lifecycle is pending BA confirmation) ·
  *  FAILED — a system error · CANCELLED — a draft cancelled before submit.
  *  Only a Draft can be cancelled; once submitted it cannot. */
 export const BROADCAST_STATUSES = ['Draft', 'Queue', 'Processing', 'Published', 'Failed', 'Cancelled'] as const
@@ -369,17 +419,16 @@ export type Broadcast = {
   startMode: 'now' | 'schedule'
   /** `YYYY-MM-DDTHH:mm`, local time. */
   start: string
-  /** Broadcast End (optional, BA 2026-10-14): sending stops here, and whoever
-   *  is still waiting is counted as Not sent. `YYYY-MM-DDTHH:mm`. */
-  end?: string
   dnd: Dnd
   status: BroadcastStatus
   success: number
   failed: number
-  /** Recipients still unsent when the end was reached, or when a system
-   *  error stopped the broadcast (Failed). */
+  /** Recipients still unsent when a system error stopped the broadcast
+   *  (Failed). The Broadcast End that also cut recipients off is gone (BA MoM,
+   *  29 Oct 2026). */
   notSent?: number
-  /** Processing, but inside a quiet period (was the Paused status). */
+  /** Published and still sending, but inside a quiet period (was the Paused
+   *  status, then Processing until 28 Oct 2026). */
   quiet?: boolean
   content: BroadcastContent
   createdBy: string
@@ -417,8 +466,8 @@ const directFile = (n: number) =>
   '\n'
 
 export const BROADCASTS: Broadcast[] = [
-  /* Composed (28 Oct 2026) so every status has a Direct recipient example as
-     well as a CIS one: this Draft, BC-0011 Queue and BC-0010 Cancelled. */
+  /* Composed (28 Oct 2026) so every status has an Email or SMS example as
+     well as a CIS ID one: this Draft, BC-0011 Queue and BC-0010 Cancelled. */
   {
     id: 'BC-0012',
     name: 'Card delivery notice',
@@ -427,7 +476,7 @@ export const BROADCASTS: Broadcast[] = [
     audienceFile: 'card-delivery-mobile.csv',
     audienceText: directFile(420),
     recipients: 420,
-    recipientType: 'direct',
+    recipientType: 'sms',
     recipientColumn: 'MOBILE_NO',
     startMode: 'schedule',
     start: '2026-11-04T10:00',
@@ -446,12 +495,11 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['Email'],
     audienceFile: 'fixed-deposit-email.csv',
     recipients: 350,
-    recipientType: 'direct',
+    recipientType: 'email',
     recipientColumn: 'EMAIL',
     startMode: 'schedule',
     start: '2026-10-15T08:00',
-    end: '2026-10-17T18:00',
-    dnd: DEFAULT_DND,
+    dnd: THREE_PERIOD_DND,
     status: 'Queue',
     success: 0,
     failed: 0,
@@ -466,7 +514,7 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['SMS'],
     audienceFile: 'mobile-update.csv',
     recipients: 150,
-    recipientType: 'direct',
+    recipientType: 'sms',
     recipientColumn: 'MOBILE_NO',
     startMode: 'schedule',
     start: '2026-10-20T09:00',
@@ -488,11 +536,11 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['Email'],
     audienceFile: 'loan-due-october.csv',
     recipients: 500,
-    recipientType: 'direct',
+    recipientType: 'email',
     recipientColumn: 'EMAIL',
     startMode: 'now',
     start: '2026-10-07T14:00',
-    dnd: DEFAULT_DND,
+    dnd: BA_DND,
     status: 'Failed',
     success: 120,
     failed: 2,
@@ -512,7 +560,7 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-12-01T09:00',
-    dnd: DEFAULT_DND,
+    dnd: FOUR_PERIOD_DND,
     status: 'Cancelled',
     success: 0,
     failed: 0,
@@ -531,7 +579,7 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-11-02T09:00',
-    dnd: DEFAULT_DND,
+    dnd: THREE_PERIOD_DND,
     status: 'Draft',
     success: 0,
     failed: 0,
@@ -549,7 +597,6 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-10-12T09:00',
-    end: '2026-10-16T18:00',
     dnd: BA_DND,
     status: 'Queue',
     success: 0,
@@ -568,14 +615,15 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['SMS'],
     audienceFile: 'savings-mobile.csv',
     recipients: 1000,
-    recipientType: 'direct',
+    recipientType: 'sms',
     recipientColumn: 'MOBILE_NO',
     startMode: 'now',
     start: '2026-10-05T10:00',
     dnd: DEFAULT_DND,
+    /* Validating (28 Oct 2026): nothing attempted yet, so no report. */
     status: 'Processing',
-    success: 612,
-    failed: 9,
+    success: 0,
+    failed: 0,
     content: content(
       'Dear Customer, effective 1 November 2026, our savings account interest rate will be updated. Thank you.',
     ),
@@ -593,7 +641,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-10-03T19:00',
     dnd: DEFAULT_DND,
-    status: 'Processing',
+    status: 'Published',
     quiet: true,
     success: 402,
     failed: 3,
@@ -626,7 +674,7 @@ export const BROADCASTS: Broadcast[] = [
     channels: ['Email'],
     audienceFile: 'cc-statement.csv',
     recipients: 1000,
-    recipientType: 'direct',
+    recipientType: 'email',
     recipientColumn: 'EMAIL',
     startMode: 'schedule',
     start: '2026-09-21T07:00',
@@ -638,8 +686,9 @@ export const BROADCASTS: Broadcast[] = [
     createdBy: 'Naree R.',
     createdAt: '2026-09-19T14:30',
   },
-  /* The deck's scenario F (composed, 2026-10-14): the end came before every
-     recipient was sent, so 174 are Not sent and the broadcast is Published. */
+  /* Composed, 2026-10-14. Was the deck's scenario F: the end came before every
+     recipient was sent, 174 Not sent; with no Broadcast End (BA MoM, 29 Oct
+     2026) every recipient was attempted. */
   {
     id: 'BC-0001',
     name: 'Savings interest rate update',
@@ -650,12 +699,10 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-09-15T10:00',
-    end: '2026-09-15T12:00',
     dnd: DEFAULT_DND,
     status: 'Published',
-    success: 820,
+    success: 994,
     failed: 6,
-    notSent: 174,
     content: content('Dear Customer, effective 1 October 2026, our savings account interest rate will be updated. Thank you.'),
     createdBy: 'Panisa R.',
     createdAt: '2026-09-12T09:30',
@@ -684,7 +731,10 @@ export const STATUS_LABEL: Record<BroadcastStatus, string> = {
   Cancelled: 'Cancelled',
 }
 
-/** Recipients not yet attempted: not sent, not failed, not cut off by the end. */
+/** Draft and Queue can be cancelled; once processing starts, not (BA MoM, 29 Oct 2026). */
+export const isCancellable = (b: Broadcast) => b.status === 'Draft' || b.status === 'Queue'
+
+/** Recipients not yet attempted: not sent, not failed, not stopped by a system error. */
 export const waitingOf = (b: Broadcast) => Math.max(0, b.recipients - b.success - b.failed - (b.notSent ?? 0))
 
 export const EMPTY = '–'
@@ -718,7 +768,8 @@ const csvCell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/
 
 export const deliveryReportName = (b: Broadcast) => `${b.id}-delivery-report.csv`
 
-/** A report exists once anything was attempted (Processing, Published or Failed). */
+/** A report exists once anything was attempted (Published or Failed; Processing
+ *  only validates, BA / Dev sync 28 Oct 2026). */
 export const hasDeliveryReport = (b: Broadcast) => b.success + b.failed > 0
 
 export function deliveryReportCsv(b: Broadcast): string {
@@ -731,7 +782,7 @@ export function deliveryReportCsv(b: Broadcast): string {
   }
   add(b.success, 'Success', () => '')
   add(b.failed, 'Failed', (i) => reasons[i % reasons.length])
-  add(b.notSent ?? 0, 'Not sent', () => (b.status === 'Failed' ? 'System error' : 'Broadcast ended'))
+  add(b.notSent ?? 0, 'Not sent', () => 'System error')
   add(waiting, 'Waiting to send', () => '')
   return rows.map((row) => row.map(csvCell).join(',')).join('\n') + '\n'
 }
