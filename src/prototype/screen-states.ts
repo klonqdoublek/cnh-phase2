@@ -41,13 +41,34 @@ const IMPORT: Screen = {
   states: [
     s('#/list/import', 'Default', 'Import dialog'),
     s('#/list/import/selected', 'Data', 'File selected'),
+    s('#/list/import/drag-replace', 'Data', 'New file dragged over the file'),
     s('#/list/import/uploading', 'Loading', 'Uploading'),
     s('#/list/import/no-file', 'Error', 'Import pressed with no file'),
     s('#/list/import/too-many', 'Error', 'More than one file dropped'),
     s('#/list/import/too-large', 'Error', 'File over 10 MB'),
     s('#/list/import/failure', 'Error', 'Import failure'),
     s('#/list/import/duplicate', 'Dialog', 'Replace imported templates?'),
-    s('#/list/import/success', 'Toast', 'Import success'),
+    s('#/list/import/processing', 'Loading', 'Submitted, importing on the server'),
+    s('#/list/import/process-failed', 'Error', 'Import fails on the server (proposal)'),
+    s('#/list/import/success', 'Toast', 'Import done, templates on the list'),
+  ],
+}
+
+/** Import Template (BA & Dev deck, 30 Oct 2026): the list and one drawer per status. */
+const IMPORT_TEMPLATE: Screen = {
+  name: 'Import Template',
+  states: [
+    s('#/import-template', 'Default', 'Import Template list', true),
+    s('#/import-template/view/IMP-0012', 'Data', 'Drawer: Queue', true),
+    s('#/import-template/view/IMP-0011', 'Data', 'Drawer: Processing', true),
+    s('#/import-template/view/IMP-0010', 'Data', 'Drawer: Published, report being generated', true),
+    s('#/import-template/view/IMP-0009', 'Data', 'Drawer: Published, report ready', true),
+    s('#/import-template/view/IMP-0007', 'Data', 'Drawer: Published, nothing failed', true),
+    s('#/import-template/loading', 'Loading', 'Loading', true),
+    s('#/import-template/empty', 'Empty', 'No files imported', true),
+    s('#/import-template/error', 'Error', 'Unable to get information', true),
+    s('#/import-template/view/IMP-0008', 'Error', 'Drawer: Error', true),
+    s('#/import-template/view/IMP-0009/download', 'Dialog', 'Download the import report?', true),
   ],
 }
 
@@ -150,6 +171,7 @@ const CREATE_BROADCAST: Screen = {
 export function screenOf(hash: string): Screen | null {
   if (hash === '' || hash === '#/' || /^#\/list(\/(loading|error|empty))?$/.test(hash)) return NOTIFICATION_LIST
   if (/^#\/list\/import(\/[a-z-]+)?$/.test(hash)) return IMPORT
+  if (/^#\/import-template(\/(loading|error|empty|view\/[A-Z]+-[A-Z]?\d+(\/download)?))?$/.test(hash)) return IMPORT_TEMPLATE
   if (/^#\/create(\/[a-z]+)?$/.test(hash)) return CREATE_NOTIFICATION
   const edit = hash.match(/^#\/edit\/([^/]+)/)
   if (edit) return editNotification(edit[1])

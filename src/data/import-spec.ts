@@ -20,9 +20,12 @@ export const IMPORT_PRESETS = [
   'too-many',
   'too-large',
   'selected',
+  'drag-replace',
   'duplicate',
   'uploading',
   'failure',
+  'processing',
+  'process-failed',
   'success',
 ] as const
 export type ImportPreset = (typeof IMPORT_PRESETS)[number]
@@ -42,6 +45,9 @@ export const IMPORT_COPY = {
      file's slot, CMS's upload-failed slot without Try again, when Import finds the file over
      the limit. 20–22 Oct it was the empty zone's hint and the file was not taken. */
   size: 'Max file size: 10 MB',
+  /* Composed (BA / Dev, 28 Oct 2026): a file dragged over the picked file replaces it on
+     the drop; this reads over the slot while the file is above it. */
+  dropReplace: 'Drop to replace',
   /* CMS's two-files message in the drop zone (ASSET_COPY.tooMany). */
   oneFile: '1 File Only',
   noFile: 'Select a .jsonl file to import',
@@ -51,8 +57,29 @@ export const IMPORT_COPY = {
      second line, "Please try again", became CMS's Try again button. */
   failTitle: 'Unable to import templates',
   retry: 'Try again',
-  successTitle: 'Templates imported',
-  successBody: (n: number) => `${n} ${n === 1 ? 'template was' : 'templates were'} added as draft`,
+  /* Background processing (BA / Dev, 28 Oct 2026): Import that passes the dialog's checks
+     sends the file to a server; its templates reach the list about 10 minutes later.
+     Direction A's upload panel (design critique, 29 Oct 2026). Composed. */
+  processingNote: 'Takes about 10 minutes',
+  /* A job waiting for the server to start it (composed, 30 Oct 2026). */
+  queuedNote: 'Waiting to start',
+  close: 'Close',
+  /* Opens the import on the Import Template page (composed, 30 Oct 2026). */
+  view: 'View',
+  /* An import's status, as Broadcast's (BA & Dev feedback deck Post MMP 2, 30 Oct 2026:
+     "Status – เหมือน Broadcast Message"): Queue, Processing, Published, Error. Was
+     Processing / Completed / Error (requester, 29 Oct 2026). */
+  statusQueued: 'Queue',
+  statusProcessing: 'Processing',
+  statusDone: 'Published',
+  statusFailed: 'Error',
+  panelTitle: (processing: number, failed: number) =>
+    processing ? `Importing ${processing} ${processing === 1 ? 'file' : 'files'}` : failed ? 'Import failed' : 'Import completed',
+  /* "Import Status" since 29 Oct 2026 (requester; was "Imports"). */
+  indicator: 'Import Status',
+  /* An import's result (requester, 29 Oct 2026, answering the BA's MoM: "imported row by
+     row"). The server checks each template on its own, so a file can import in part. */
+  resultLine: (imported: number, failed: number) => `${imported} imported, ${failed} failed`,
   /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
      before it imports over that file. Since the design critique (20 Oct 2026) it opens
      after the upload spinner, alone, not over the Import dialog. Reworded 21 Oct 2026
@@ -69,6 +96,24 @@ export const IMPORT_FAIL_SENTINEL = 'error'
 /** CMS's limit (MAX_ASSET_BYTES); the BA has not set one for Import yet (size limits, P2-1…P2-9). */
 export const MAX_IMPORT_BYTES = 10 * 1024 * 1024
 export const UPLOAD_MS = 1200
+/** The server's ~10 minutes, shortened so a demo can watch a job finish. */
+export const PROCESS_MS = 8000
+/** In the queue before the server starts the job (Queue, 30 Oct 2026), shortened likewise. */
+export const QUEUE_MS = 2000
+/** The report is generated after the job turns Published (BA & Dev deck, 30 Oct 2026). */
+export const REPORT_MS = 6000
+/** A file name containing this fails on the server after the upload (PROPOSAL, pending BA). */
+export const IMPORT_PROCESS_FAIL_SENTINEL = 'reject'
+
+/** What the server makes of each template (requester, 29 Oct 2026: templates import row by
+ *  row). The prototype's stand-in for the server's checks, a PROPOSAL: a template with no
+ *  name fails. Which checks the server really runs is the backend's. */
+const rowProblem = (t: Template) => (t.name ? null : 'Missing template name')
+export type ImportResult = { imported: Template[]; failed: number }
+export function serverResult(templates: Template[]): ImportResult {
+  const imported = templates.filter((t) => !rowProblem(t))
+  return { imported, failed: templates.length - imported.length }
+}
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '')
 
@@ -199,8 +244,28 @@ export function presetFile(preset: ImportPreset): DemoFile | null {
  *  Their templates are not on the seeded list, so importing over one replaces nothing. */
 export const IMPORT_HISTORY: Record<string, string[]> = { [VALID_FILES[2].name]: [] }
 
-/** The templates the success route lands on the list: the one file `selected` picks. */
+/** The job presets' file: five templates, one with no name, so the result shows a part
+ *  import (4 imported, 1 failed; requester, 29 Oct 2026). */
+const JOB_FILE: DemoFile = {
+  name: 'campaign-oct.jsonl',
+  text: toJsonl([
+    demo('Card payment due', 'แจ้งเตือนก่อนถึงวันครบกำหนดชำระบัตรเครดิต', 'M Credit Card', ['Push notification', 'Email'], 'NANOTI'),
+    demo('Login OTP', 'ส่งรหัส OTP เพื่อยืนยันการเข้าสู่ระบบ', 'Bualuang mBanking', ['SMS'], 'NAOTP'),
+    demo('Monthly statement ready', 'แจ้งเมื่อ e-Statement ประจำเดือนพร้อมให้ดาวน์โหลด', 'M Credit Card', ['Email'], 'NABATCH'),
+    demo('', 'โปรโมชันบัตรเครดิตเดือนตุลาคม', 'M Credit Card', ['Push notification'], 'NAMKTBATCH'),
+    demo('Insurance renewal', 'แจ้งเตือนต่ออายุกรมธรรม์ประกันล่วงหน้า 30 วัน', 'AIA', ['Email', 'SMS'], 'NAMKTBATCH'),
+  ]),
+}
+
+/** Every template in the job presets' file; the server's result decides which land. */
 export const presetTemplates = () => {
-  const check = parseTemplates(VALID_FILES[0].text)
+  const check = parseTemplates(JOB_FILE.text)
   return check.ok ? check.templates : []
 }
+
+/** Presets drawn on the list after the Import dialog has closed: the server's job, not the dialog. */
+export const JOB_PRESETS = ['processing', 'process-failed', 'success'] as const satisfies readonly ImportPreset[]
+export const isJobPreset = (p: ImportPreset | undefined): p is (typeof JOB_PRESETS)[number] =>
+  (JOB_PRESETS as readonly string[]).includes(p ?? '')
+/** The file the job presets show. */
+export const presetFileName = () => JOB_FILE.name

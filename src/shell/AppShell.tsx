@@ -13,6 +13,8 @@ export const NAV: ProductNavGroup[] = [
     items: [
       { id: 'template-management', label: 'Notification management' },
       { id: 'broadcast', label: 'Broadcast message' },
+      /* BA & Dev feedback deck Post MMP 2, slide 8 (30 Oct 2026). */
+      { id: 'import-template', label: 'Import Template' },
     ],
   },
 ]
@@ -34,7 +36,7 @@ export function AppShell({ activeId, children }: { activeId: string; children: R
         logo={<img src="/bbl-logo.svg" alt="Bangkok Bank" width={161} height={40} />}
         nav={NAV}
         activeId={activeId}
-        onSelect={(id) => go(id === 'broadcast' ? '/broadcast' : '/list')}
+        onSelect={(id) => go(id === 'broadcast' ? '/broadcast' : id === 'import-template' ? '/import-template' : '/list')}
         footer={<ProfileRow expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)} />}
         overlay={
           menuOpen ? (

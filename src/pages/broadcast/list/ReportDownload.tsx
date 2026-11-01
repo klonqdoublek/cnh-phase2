@@ -18,14 +18,21 @@ export type ReportResult = { ok: true; file: string } | { ok: false }
  * `held` opens on a result and keeps its toast up (preset routes).
  * On the body, since the drawer's transform would pin a fixed layer inside it;
  * `data-report-download` lets the drawer tell these clicks from an outside one.
+ * The Import Template drawer reuses it with `file` and its own `title`
+ * (30 Oct 2026) in place of a broadcast.
  */
 export function ReportDownload({
-  broadcast,
+  broadcast = null,
+  file = null,
+  title = BROADCAST_COPY.reportTitle,
   onDone,
   failNext,
   held,
 }: {
-  broadcast: Broadcast | null
+  broadcast?: Broadcast | null
+  /** Any other report: its file name and its CSV. */
+  file?: { name: string; text: () => string } | null
+  title?: string
   onDone: () => void
   failNext?: boolean
   held?: ReportResult
@@ -36,7 +43,8 @@ export function ReportDownload({
   const closeToast = useCallback(() => setResult(null), [])
 
   const download = () => {
-    if (!broadcast) return
+    const report = file ?? (broadcast && { name: deliveryReportName(broadcast), text: () => deliveryReportCsv(broadcast) })
+    if (!report) return
     onDone()
     setHolding(false)
     if (failPending) {
@@ -44,20 +52,19 @@ export function ReportDownload({
       setResult({ ok: false })
       return
     }
-    const name = deliveryReportName(broadcast)
-    downloadText(name, deliveryReportCsv(broadcast))
-    setResult({ ok: true, file: name })
+    downloadText(report.name, report.text())
+    setResult({ ok: true, file: report.name })
   }
 
   return createPortal(
     <div data-report-download>
       <ConfirmDialog
-        open={broadcast !== null}
+        open={broadcast !== null || file !== null}
         anatomy="sectioned"
         contentType="label-xl"
         layer="fixed"
         width={600}
-        title={BROADCAST_COPY.reportTitle}
+        title={title}
         cancelLabel="Cancel"
         confirmLabel={BROADCAST_COPY.reportConfirm}
         onCancel={onDone}
