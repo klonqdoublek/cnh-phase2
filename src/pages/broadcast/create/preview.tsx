@@ -1,19 +1,21 @@
-import { CardSurface } from '@/bbl/building-block-card-surface'
-import { GhostButton } from '@/bbl/ghost-button'
-import { Icon } from '@/bbl/icon'
+import type { ReactNode } from 'react'
+import { Avatar } from '@/bbl/avatar'
 import type { Audience, BroadcastContent } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import { NOTE } from './fields'
 
 /* The message preview beside each channel card's fields (BA & Dev feedback,
  * 30 Oct 2026: "Display preview all channel by first row data from audience
- * file"). The deck draws Email: fields on the left, a grey Preview area on the
- * right holding the message as a white card, each field filled from the file's
- * first data row and tinted as a link, and *Hide preview ›* top right. Push and
- * SMS follow the same shape. webds ships no message preview (gap): the area is
- * Surface/Secondary, the card is Card Surface with the Border/Primary stroke
- * the DND period cards carry, the toggle is a Ghost Button. */
+ * file"). Each field is filled from the file's first data row and tinted as a
+ * link. Always on show, no Hide preview (requester, 1 Nov 2026).
+ *
+ * Each channel reads as the message the customer gets (requester, 1 Nov 2026;
+ * Mobbin: Klaviyo / Fresha SMS bubbles, Xero / Apollo email headers): Push a
+ * notification banner, Email a mail with its sender and subject, SMS a chat
+ * bubble. A part with nothing typed, and the whole message while its card is
+ * switched off, is a grey bar, a neutral placeholder (requester, 1 Nov 2026).
+ * webds ships no message preview (gap): the area is Surface/Secondary, the
+ * message surfaces are Surface/Primary with the Border/Primary stroke. */
 
 const TOKEN = /(\$\{[^{}$\s]+\})/
 
@@ -21,10 +23,12 @@ const TOKEN = /(\$\{[^{}$\s]+\})/
 const firstRow = (audience: Audience | null) =>
   new Map(audience ? audience.headers.map((h, i) => [h, audience.rows[0]?.[i] ?? '']) : [])
 
+type Row = Map<string, string>
+
 /** A message with every `${COLUMN}` the file has filled from its first row,
  *  the value tinted. A token the file has no column for stays as typed; with
  *  no file yet, every token does. */
-function Filled({ text, row }: { text: string; row: Map<string, string> }) {
+function Filled({ text, row }: { text: string; row: Row }) {
   return (
     <>
       {text.split(TOKEN).map((run, i) => {
@@ -41,63 +45,125 @@ function Filled({ text, row }: { text: string; row: Map<string, string> }) {
   )
 }
 
-/** What each channel's preview card shows: a title line, then the body. */
-const PARTS: Record<Channel, (c: BroadcastContent) => [string, string]> = {
-  'Push notification': (c) => [c.pushTitle, c.pushBody],
-  Email: (c) => [c.emailSubject, c.emailBody],
-  SMS: (c) => ['', c.smsMessage],
+/** The placeholder for a part with nothing to show. */
+function Bar({ className }: { className?: string }) {
+  return <span className={cn('block h-[var(--space-3)] rounded-full bg-[var(--color-surface-tertiary-default)]', className)} />
 }
 
-/** *Show preview ‹* — on the card's title row while the preview is hidden. */
-export function ShowPreview({ onShow }: { onShow: () => void }) {
+/** One part of a message: its text, or bars while it is empty or the card is off. */
+function Part({ text, row, off, className, bars = ['w-2/3'] }: { text: string; row: Row; off: boolean; className: string; bars?: string[] }) {
+  if (off || !text.trim()) {
+    return (
+      <span className="flex flex-col gap-[var(--space-2)] py-[var(--space-1)]">
+        {bars.map((w, i) => (
+          <Bar key={i} className={w} />
+        ))}
+      </span>
+    )
+  }
   return (
-    <GhostButton appearance="highlight" padding="none" onClick={onShow}>
-      Show preview
-      <Icon slug="chevron-left" size={16} color="currentColor" />
-    </GhostButton>
+    <p className={cn('whitespace-pre-line break-words text-[var(--color-text-primary-default)]', className)}>
+      <Filled text={text} row={row} />
+    </p>
   )
+}
+
+const SURFACE = 'border border-[var(--color-border-primary-default)] bg-[var(--color-surface-primary-default)]'
+
+type PreviewProps = { c: BroadcastContent; row: Row; off: boolean }
+
+/** Push: a notification banner from the app, as the phone shows it. */
+function PushPreview({ c, row, off }: PreviewProps) {
+  return (
+    <div className={cn(SURFACE, 'flex w-full gap-[var(--space-3)] rounded-[var(--radius-4)] p-[var(--space-4)] shadow-raised')}>
+      {/* The app icon: the Bangkok Bank mark, the logo's first 34 units (the wordmark starts at 37.7). */}
+      <span className="flex size-[var(--space-10)] shrink-0 items-center justify-center rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]">
+        <svg viewBox="0 0 34 40" className="h-[var(--space-6)]" aria-hidden>
+          <image href="/bbl-logo.svg" width="161" height="40" />
+        </svg>
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-1)]">
+        <span className="flex items-center justify-between gap-[var(--space-2)]">
+          <span className="type-label-s text-[var(--color-text-secondary-default)]">Bualuang mBanking</span>
+          <span className="type-body-xs text-[var(--color-text-tertiary-default)]">now</span>
+        </span>
+        <Part text={c.pushTitle} row={row} off={off} className="type-body-s-emphasized" bars={['w-1/2']} />
+        <Part text={c.pushBody} row={row} off={off} className="type-body-s line-clamp-4" bars={['w-full', 'w-3/4']} />
+      </div>
+    </div>
+  )
+}
+
+/** The sender's initials for the email avatar, up to two. */
+const initials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('')
+
+/** Email: the mail as it opens, sender and address over the subject and body. */
+function EmailPreview({ c, row, off }: PreviewProps) {
+  const name = off ? '' : c.emailSenderName.trim()
+  const address = off ? '' : c.emailSenderAddress.trim()
+  return (
+    <div className={cn(SURFACE, 'flex w-full flex-col rounded-[var(--radius-3)]')}>
+      <div className="flex items-center gap-[var(--space-3)] border-b border-[var(--color-border-primary-default)] px-[var(--space-4)] py-[var(--space-3)]">
+        {name ? (
+          <Avatar type="letter" initials={initials(name)} size={32} />
+        ) : (
+          <span className="size-[var(--space-8)] shrink-0 rounded-full bg-[var(--color-surface-tertiary-default)]" />
+        )}
+        <span className="flex min-w-0 flex-1 flex-col">
+          <Part text={name} row={row} off={off} className="type-label-m-emphasized" bars={['w-1/3']} />
+          {address && <span className="type-body-xs truncate text-[var(--color-text-tertiary-default)]">{address}</span>}
+        </span>
+      </div>
+      <div className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]">
+        <Part text={c.emailSubject} row={row} off={off} className="type-heading-xxs-emphasized" bars={['w-2/3']} />
+        <Part text={c.emailBody} row={row} off={off} className="type-body-s" bars={['w-full', 'w-full', 'w-1/2']} />
+      </div>
+    </div>
+  )
+}
+
+/** SMS: the message as a received chat bubble. */
+function SmsPreview({ c, row, off }: PreviewProps) {
+  return (
+    <div className="flex w-full flex-col gap-[var(--space-2)]">
+      <span className="type-body-xs text-center text-[var(--color-text-tertiary-default)]">Today</span>
+      <div className="w-4/5 self-start rounded-[var(--radius-4)] rounded-bl-[var(--radius-1)] bg-[var(--color-surface-primary-default)] px-[var(--space-4)] py-[var(--space-3)]">
+        <Part text={c.smsMessage} row={row} off={off} className="type-body-s" bars={['w-full', 'w-full', 'w-1/2']} />
+      </div>
+    </div>
+  )
+}
+
+const PREVIEWS: Record<Channel, (p: PreviewProps) => ReactNode> = {
+  'Push notification': PushPreview,
+  Email: EmailPreview,
+  SMS: SmsPreview,
 }
 
 export function MessagePreview({
   channel,
   content,
   audience,
-  onHide,
+  on,
 }: {
   channel: Channel
   content: BroadcastContent
   audience: Audience | null
-  onHide: () => void
+  /** False while the card is switched off: the message is all placeholder. */
+  on: boolean
 }) {
-  const row = firstRow(audience)
-  const [title, body] = PARTS[channel](content)
-  const empty = !title.trim() && !body.trim()
+  const Preview = PREVIEWS[channel]
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
-      <div className="flex items-center justify-between gap-[var(--space-4)]">
-        <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Preview</span>
-        <GhostButton appearance="highlight" padding="none" onClick={onHide}>
-          Hide preview
-          <Icon slug="chevron-right" size={16} color="currentColor" />
-        </GhostButton>
-      </div>
+      <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Preview</span>
       <div className="flex min-h-[240px] flex-1 flex-col justify-center rounded-[var(--radius-2)] bg-[var(--color-surface-secondary-default)] p-[var(--space-6)]">
-        {empty ? (
-          <p className={cn(NOTE, 'text-center')}>Type a message to see its preview.</p>
-        ) : (
-          <CardSurface className="h-auto flex-col items-start gap-[var(--space-2)] border border-[var(--color-border-primary-default)]">
-            {title.trim() && (
-              <p className="type-label-l-emphasized whitespace-pre-line break-words text-[var(--color-text-primary-default)]">
-                <Filled text={title} row={row} />
-              </p>
-            )}
-            {body.trim() && (
-              <p className="type-body-s whitespace-pre-line break-words text-[var(--color-text-primary-default)]">
-                <Filled text={body} row={row} />
-              </p>
-            )}
-          </CardSurface>
-        )}
+        <Preview c={content} row={firstRow(audience)} off={!on} />
       </div>
     </div>
   )

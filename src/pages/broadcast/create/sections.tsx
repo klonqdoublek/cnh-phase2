@@ -39,7 +39,7 @@ import { SERVICE_CODE_LOV, type Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
 import type { Tint } from './highlight'
-import { MessagePreview, ShowPreview } from './preview'
+import { MessagePreview } from './preview'
 import { TRIGGER, useFieldShortcut } from './shortcut'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
@@ -573,9 +573,6 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   const shortcut = useFieldShortcut(f)
   const columns = f.fields.map((field) => field.column).join('\n')
   const tint = useMemo<Tint>(() => ({ columns: new Set(columns.split('\n')) }), [columns])
-  /* Each card's preview shows until its Hide preview. */
-  const [hidden, setHidden] = useState<Channel[]>([])
-  const showPreview = (c: Channel, show: boolean) => setHidden((h) => (show ? h.filter((x) => x !== c) : [...h, c]))
 
   const cards = (
     <div
@@ -590,21 +587,15 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
     >
       {f.offered.map((c) => {
         const on = f.channels.includes(c)
-        const preview = !hidden.includes(c)
         return (
           <FormSectionCard
             key={c}
             className="min-w-0 border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
             title={
-              hasFields || !preview ? (
+              hasFields ? (
                 <span className="flex items-center justify-between gap-[var(--space-4)]">
                   {c}
-                  <span className="flex items-center gap-[var(--space-6)]">
-                    {!preview && <ShowPreview onShow={() => showPreview(c, true)} />}
-                    {hasFields && (
-                      <FieldMenuButton f={f} label={`Add dynamic field to ${c}`} disabled={!on} onInsert={(t) => insert(t, c)} />
-                    )}
-                  </span>
+                  <FieldMenuButton f={f} label={`Add dynamic field to ${c}`} disabled={!on} onInsert={(t) => insert(t, c)} />
                 </span>
               ) : (
                 c
@@ -615,13 +606,11 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
             rowGap={4}
           >
             {/* Fields left, the preview right, as the deck draws Email (30 Oct 2026). */}
-            <div className={cn('grid items-stretch gap-[var(--space-6)]', preview ? 'grid-cols-2' : 'grid-cols-1')}>
+            <div className="grid grid-cols-2 items-stretch gap-[var(--space-6)]">
               <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
                 <ChannelFields f={f} channel={c} on={on} tint={tint} />
               </div>
-              {preview && (
-                <MessagePreview channel={c} content={f.content} audience={f.audience} onHide={() => showPreview(c, false)} />
-              )}
+              <MessagePreview channel={c} content={f.content} audience={f.audience} on={on} />
             </div>
           </FormSectionCard>
         )
