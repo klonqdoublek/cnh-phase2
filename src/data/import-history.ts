@@ -42,7 +42,9 @@ export const IMPORT_TEMPLATE_COPY = {
   title: 'Import Template',
   search: 'Search by import file name',
   emptyTitle: 'No files imported yet',
-  emptyLine: 'Import a template file from Notification management to see it here',
+  /* Was "Import a template file from Notification management to see it here" until the page had its own Import (1 Nov 2026, composed). */
+  emptyLine: 'Import a template file to see its result here',
+  importAction: 'Import',
   noResults: 'No results found',
   loadFail: 'Unable to get information',
   resultTitle: 'Import result',

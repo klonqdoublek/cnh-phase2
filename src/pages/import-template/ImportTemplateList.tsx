@@ -21,6 +21,8 @@ import { ListTable, type ListColumn } from '../broadcast/list/ListTable'
 export type ImportTemplateListProps = {
   records: ImportRecord[]
   onOpen: (r: ImportRecord) => void
+  /** Opens the Import dialog from this page (PROPOSAL, 1 Nov 2026, pending BA). */
+  onImport: () => void
   /** `#/import-template/loading` · `#/import-template/error`. */
   state?: 'ready' | 'loading' | 'error'
   onRetry?: () => void
@@ -42,10 +44,11 @@ const COLUMNS: ListColumn<ImportRecord>[] = [
  * MMP 2, slides 8–9, 30 Oct 2026; reverses the requester's 29 Oct "no separate
  * page"). Built as Broadcast's list: webds `console-page`, the same filter band
  * (search by file name and Status; no Channel, an import has none), table and
- * footer, newest first. Selecting a row opens its drawer. No header action:
- * files are imported from Notification management.
+ * footer, newest first. Selecting a row opens its drawer. Import sits in the
+ * header and the empty state as a second way in, beside Notification
+ * management's (PROPOSAL, 1 Nov 2026, pending BA: the deck does not ask for it).
  */
-export function ImportTemplateList({ records, onOpen, state = 'ready', onRetry }: ImportTemplateListProps) {
+export function ImportTemplateList({ records, onOpen, onImport, state = 'ready', onRetry }: ImportTemplateListProps) {
   const [requestedPage, setPage] = useState(0)
   const [query, setQuery] = useState('')
   const [statuses, setStatuses] = useState<string[]>([...IMPORT_STATUSES])
@@ -102,6 +105,7 @@ export function ImportTemplateList({ records, onOpen, state = 'ready', onRetry }
     <div className="flex h-full min-h-px flex-col">
       <ConsolePage
         title={COPY.title}
+        headerActions={<Button onClick={onImport}>{COPY.importAction}</Button>}
         columnWidth="fill"
         className="[&>[data-part=Body]]:bg-[var(--color-surface-primary-default)] [&>[data-part=Body]>div]:gap-0 [&>[data-part=Body]>div]:px-0 [&>[data-part=Body]>div]:pt-0 [&>[data-part=Body]>div]:pb-0 [&>[data-part=Header]]:px-[var(--space-4)]"
       >
@@ -109,6 +113,7 @@ export function ImportTemplateList({ records, onOpen, state = 'ready', onRetry }
           <EmptyState
             variant="idle"
             title={<span className="type-heading-xs-emphasized">{COPY.emptyTitle}</span>}
+            action={<Button onClick={onImport}>{COPY.importAction}</Button>}
             bodyMaxWidth="none"
             className="mt-[var(--space-6)] h-[813px] justify-start gap-[var(--space-8)] pt-[124px] [&>div]:gap-[var(--space-8)] [&>div>span:last-child]:text-[var(--color-text-secondary-default)]"
           >
