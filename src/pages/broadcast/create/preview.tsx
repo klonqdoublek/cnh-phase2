@@ -13,7 +13,9 @@ import { cn } from '@/lib/cn'
  * Mobbin: Klaviyo / Fresha SMS bubbles; Email after Gmail's reading view):
  * Push a notification banner, Email a mail as the inbox opens it, SMS a
  * chat bubble. A part with nothing typed, and the whole message while its card is
- * switched off, is a grey bar, a neutral placeholder (requester, 1 Nov 2026).
+ * switched off, is a neutral placeholder (requester, 1 Nov 2026): Push reads
+ * its field labels in tertiary text (no skeleton bars, requester 1 Nov
+ * 2026); Email and SMS draw grey bars.
  * webds ships no message preview (gap): the area is Surface/Secondary, the
  * message surfaces are Surface/Primary with the Border/Primary stroke. */
 
@@ -51,7 +53,25 @@ function Bar({ className }: { className?: string }) {
 }
 
 /** One part of a message: its text, or bars while it is empty or the card is off. */
-function Part({ text, row, off, className, bars = ['w-2/3'] }: { text: string; row: Row; off: boolean; className: string; bars?: string[] }) {
+function Part({
+  text,
+  row,
+  off,
+  className,
+  bars = ['w-2/3'],
+  label,
+}: {
+  text: string
+  row: Row
+  off: boolean
+  className: string
+  bars?: string[]
+  /** Stands in, in tertiary text, instead of the bars (Push, requester 1 Nov 2026). */
+  label?: string
+}) {
+  if ((off || !text.trim()) && label) {
+    return <p className={cn('text-[var(--color-text-tertiary-default)]', className)}>{label}</p>
+  }
   if (off || !text.trim()) {
     return (
       <span className="flex flex-col gap-[var(--space-2)] py-[var(--space-1)]">
@@ -87,8 +107,8 @@ function PushPreview({ c, row, off }: PreviewProps) {
           <span className="type-label-s text-[var(--color-text-secondary-default)]">Bualuang mBanking</span>
           <span className="type-body-xs text-[var(--color-text-tertiary-default)]">now</span>
         </span>
-        <Part text={c.pushTitle} row={row} off={off} className="type-body-s-emphasized" bars={['w-1/2']} />
-        <Part text={c.pushBody} row={row} off={off} className="type-body-s line-clamp-4" bars={['w-full', 'w-3/4']} />
+        <Part text={c.pushTitle} row={row} off={off} className="type-body-s-emphasized" label="Push title" />
+        <Part text={c.pushBody} row={row} off={off} className="type-body-s line-clamp-4" label="Push message" />
       </div>
     </div>
   )
