@@ -50,7 +50,6 @@ export const BROADCAST_COPY = {
   },
   noChannel: 'Please enable at least 1 notification channel',
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
-  pickField: 'Click in a message field first, then choose a field to insert',
   startPast: 'Start must be later than the current time',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
@@ -223,7 +222,7 @@ export function checkAudience(audience: Audience, column: string, kind: IdKind):
 /* ── message content ───────────────────────────────────────────────────── */
 
 export const fieldsOf = (audience: Audience | null | undefined, idColumn: string) =>
-  (audience?.headers ?? []).filter((h) => h && h !== idColumn).map((column) => ({ column, token: `{{${column}}}` }))
+  (audience?.headers ?? []).filter((h) => h && h !== idColumn).map((column) => ({ column, token: `\${${column}}` }))
 
 export function smsInfo(text: string) {
   const unicode = /[^\x00-\x7F]/.test(text)
@@ -392,7 +391,30 @@ export type BroadcastContent = {
   emailBody: string
   pushTitle: string
   pushBody: string
+  /** Optional, as the Template form's Deep link (BA & Dev feedback, 30 Oct 2026). */
+  pushDeeplink: string
+  /** Required; one language, so one name (BA & Dev feedback, 30 Oct 2026). */
+  emailSenderName: string
+  /** Optional. */
+  emailSenderAddress: string
 }
+
+export const EMPTY_CONTENT: BroadcastContent = {
+  smsMessage: '',
+  emailSubject: '',
+  emailBody: '',
+  pushTitle: '',
+  pushBody: '',
+  pushDeeplink: '',
+  emailSenderName: '',
+  emailSenderAddress: '',
+}
+
+/** The message boxes a dynamic field goes into; the deep link and the sender
+ *  take none. */
+export const MESSAGE_BOXES = ['pushTitle', 'pushBody', 'emailSubject', 'emailBody', 'smsMessage'] as const
+export const isMessageBox = (key: string): key is (typeof MESSAGE_BOXES)[number] =>
+  (MESSAGE_BOXES as readonly string[]).includes(key)
 
 /** The status list of values (16 Oct 2026; meanings 19 Oct 2026):
  *  DRAFT — saved as a draft · QUEUE — submitted, accepted by the system ·
@@ -438,12 +460,17 @@ export type Broadcast = {
   createdAt: string
 }
 
+/* The deep link is the Template fixture's; the sender name is composed
+   (30 Oct 2026). */
 const content = (message: string, subject = '', body = message): BroadcastContent => ({
   smsMessage: message,
   emailSubject: subject,
   emailBody: body,
   pushTitle: subject,
   pushBody: message,
+  pushDeeplink: 'bualuang://notification/detail',
+  emailSenderName: 'Bangkok Bank',
+  emailSenderAddress: '',
 })
 
 const cis = { recipientType: 'cis' as const, recipientColumn: 'CIS_ID' }
@@ -488,7 +515,7 @@ export const BROADCASTS: Broadcast[] = [
     status: 'Draft',
     success: 0,
     failed: 0,
-    content: content('Dear {{CUSTOMER_NAME}}, your new debit card will be delivered within 7 days.'),
+    content: content('Dear ${CUSTOMER_NAME}, your new debit card will be delivered within 7 days.'),
     createdBy: 'Naree R.',
     createdAt: '2026-10-09T11:20',
   },
@@ -572,7 +599,7 @@ export const BROADCASTS: Broadcast[] = [
     status: 'Cancelled',
     success: 0,
     failed: 0,
-    content: content('Dear {{CUSTOMER_NAME}}, use code {{PROMOTION_CODE}} for our year-end promotion.'),
+    content: content('Dear ${CUSTOMER_NAME}, use code ${PROMOTION_CODE} for our year-end promotion.'),
     createdBy: 'Panisa R.',
     createdAt: '2026-10-08T15:20',
   },
@@ -612,8 +639,8 @@ export const BROADCASTS: Broadcast[] = [
     success: 0,
     failed: 0,
     content: content(
-      'Dear {{CUSTOMER_NAME}}, your payment of THB {{AMOUNT}} was successful.',
-      'Special offer for {{CUSTOMER_NAME}}',
+      'Dear ${CUSTOMER_NAME}, your payment of THB ${AMOUNT} was successful.',
+      'Special offer for ${CUSTOMER_NAME}',
     ),
     createdBy: 'Panisa R.',
     createdAt: '2026-10-05T10:12',

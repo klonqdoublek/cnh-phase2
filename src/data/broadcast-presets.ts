@@ -2,7 +2,7 @@
  * (`#/broadcast/create/<preset>`, `#/broadcast/<list preset>`), and the seeds
  * each Create preset fills the form with. */
 
-import { BA_DND, BROADCAST_COPY, DEFAULT_DND, type BroadcastContent, type Dnd, type ListToast, type RecipientType } from './broadcast'
+import { BA_DND, BROADCAST_COPY, DEFAULT_DND, EMPTY_CONTENT, type BroadcastContent, type Dnd, type ListToast, type RecipientType } from './broadcast'
 import type { Channel } from './templates'
 
 export const FORM_PRESETS = [
@@ -149,11 +149,11 @@ export const NO_VALID_CSV = `CIS_ID,CUSTOMER_NAME,ACCOUNT_NO,AMOUNT,PROMOTION_CO
 ,Nattapong Wongsa,4567891230,2100.00,OCT24
 `
 
-export const MESSAGE = `Dear {{CUSTOMER_NAME}},
-Your payment of THB {{AMOUNT}} was successful.
-Reference: {{ACCOUNT_NO}}.`
+export const MESSAGE = `Dear \${CUSTOMER_NAME},
+Your payment of THB \${AMOUNT} was successful.
+Reference: \${ACCOUNT_NO}.`
 
-export const SUBJECT = 'Special offer for {{CUSTOMER_NAME}}'
+export const SUBJECT = 'Special offer for ${CUSTOMER_NAME}'
 
 /** What a preset (or a reopened Draft) puts into the form before it renders. */
 export type FormSeed = {
@@ -187,7 +187,16 @@ export const filled: FormSeed = {
   channels: ['Email', 'SMS'],
   name: 'October Customer Campaign',
   description: 'Send payment confirmation and special offer to selected customers in October.',
-  content: { smsMessage: MESSAGE, emailSubject: SUBJECT, emailBody: MESSAGE, pushTitle: SUBJECT, pushBody: MESSAGE },
+  content: {
+    smsMessage: MESSAGE,
+    emailSubject: SUBJECT,
+    emailBody: MESSAGE,
+    pushTitle: SUBJECT,
+    pushBody: MESSAGE,
+    pushDeeplink: '',
+    emailSenderName: 'Bangkok Bank',
+    emailSenderAddress: '',
+  },
 }
 
 /* Error behavior, CNH Phase 1's five steps (Figma JjvzdUwg5LlKHDQvo2fny0
@@ -198,7 +207,7 @@ const step1: FormSeed = { name: filled.name, description: filled.description }
 const emailTyped: FormSeed = {
   ...step1,
   channels: ['Email'],
-  content: { smsMessage: '', emailSubject: SUBJECT, emailBody: '', pushTitle: '', pushBody: '' },
+  content: { ...EMPTY_CONTENT, emailSubject: SUBJECT },
 }
 
 /** Days until the next Monday–Thursday, so a 21:00 start lands in the quiet period. */

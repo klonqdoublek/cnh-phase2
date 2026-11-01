@@ -1,10 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import type { Erase } from '@/prototype/dynamic-field'
 import { MIRRORED } from './shortcut'
 
 /* Idea 4's highlighted fields (requester, 21 Oct 2026, after Churnkey's
- * message editor on Mobbin): each `{{COLUMN}}` of the audience file reads as
+ * message editor on Mobbin): each `${COLUMN}` of the audience file reads as
  * a tinted chip inside the message box. The box stays webds Text Field /
  * Text Area — it takes the typing, the caret and the selection, its own text
  * made transparent — and this layer, laid exactly over it, paints the text
@@ -13,7 +12,8 @@ import { MIRRORED } from './shortcut'
  * A chip is one unit, as a rich-text editor's atom node (Tiptap's Mention is
  * `atom: true`): the caret never stops inside it — arrows step over it, a
  * click inside lands on its nearer edge — and Backspace / Delete take it
- * whole, in one of three ways the Prototype control picks (`Erase`). A chip
+ * whole (BA & Dev feedback, 30 Oct 2026, kept the default of the three ways
+ * the Prototype control offered: Whole, Select, Re-pick). A chip
  * still shows the token's own characters, not a friendlier label: that needs
  * a rich-text box webds does not ship (gap). The tint is drawn outside the
  * glyphs with a spread shadow, so it adds no width and the text stays where
@@ -24,17 +24,14 @@ type Box = HTMLInputElement | HTMLTextAreaElement
 export type Tint = {
   /** The file's columns — only their tokens are chips. */
   columns: Set<string>
-  erase: Erase
-  /** The shortcut's trigger, which `trigger` erase leaves in the chip's place. */
-  mark: string
 }
 
-const TOKEN = /(\{\{[^{}\s]+\}\})/
-const TOKENS = /\{\{([^{}\s]+)\}\}/g
+const TOKEN = /(\$\{[^{}$\s]+\})/
+const TOKENS = /\$\{([^{}$\s]+)\}/g
 
 /** Splits a message into plain runs and the tokens the file has a column for. */
 const runs = (value: string, columns: Set<string>) =>
-  value.split(TOKEN).map((text) => ({ text, field: TOKEN.test(text) && columns.has(text.slice(2, -2)) }))
+  value.split(TOKEN).map((text) => ({ text, field: TOKEN.test(text) && columns.has(text.slice(2, -1)) }))
 
 /** Where each chip starts and ends in the message. */
 const chips = (value: string, columns: Set<string>) =>
@@ -84,10 +81,7 @@ function useAtomicChips(box: Box | null, value: string, tint: Tint, onChange: (v
         const hit = list.find((x) => (back ? x.start < from && from <= x.end : x.start <= from && from < x.end))
         if (!hit) return
         e.preventDefault()
-        if (t.erase === 'select') return el.setSelectionRange(hit.start, hit.end)
-        const leave = back && t.erase === 'trigger' ? t.mark : ''
-        /* Leaving the trigger is to pick again: Backspace's keyup reopens the menu. */
-        put(v.slice(0, hit.start) + leave + v.slice(hit.end), hit.start + leave.length)
+        put(v.slice(0, hit.start) + v.slice(hit.end), hit.start)
       } else if ((back || e.key === 'Delete') && from !== to) {
         /* A selection that cuts into a chip takes the whole chip. */
         const a = Math.min(from, ...list.filter((x) => x.start < from && from < x.end).map((x) => x.start))
