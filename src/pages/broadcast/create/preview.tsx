@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Avatar } from '@/bbl/avatar'
+import { Icon } from '@/bbl/icon'
 import type { Audience, BroadcastContent } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
@@ -10,8 +10,9 @@ import { cn } from '@/lib/cn'
  * link. Always on show, no Hide preview (requester, 1 Nov 2026).
  *
  * Each channel reads as the message the customer gets (requester, 1 Nov 2026;
- * Mobbin: Klaviyo / Fresha SMS bubbles, WeTransfer / Calendly mail windows):
- * Push a notification banner, Email a mail window, SMS a chat bubble. A part with nothing typed, and the whole message while its card is
+ * Mobbin: Klaviyo / Fresha SMS bubbles; Email after Gmail's reading view):
+ * Push a notification banner, Email a mail as the inbox opens it, SMS a
+ * chat bubble. A part with nothing typed, and the whole message while its card is
  * switched off, is a grey bar, a neutral placeholder (requester, 1 Nov 2026).
  * webds ships no message preview (gap): the area is Surface/Secondary, the
  * message surfaces are Surface/Primary with the Border/Primary stroke. */
@@ -93,49 +94,41 @@ function PushPreview({ c, row, off }: PreviewProps) {
   )
 }
 
-/** The sender's initials for the email avatar, up to two. */
-const initials = (name: string) =>
-  name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('')
-
-/** Email: the mail opened in a mail window (requester, 1 Nov 2026: the first
- *  card did not read as an email; Mobbin: WeTransfer's window and letter,
- *  Calendly's subject over the sender, Square / Podia's logo-headed letter).
- *  A window bar, the subject, the sender with the address and *Today*, then
- *  the content as a white letter under the Bangkok Bank logo on a grey canvas. */
+/** Email: the mail as an inbox opens it (requester, 1 Nov 2026, after a
+ *  Gmail screenshot; a mail window with a logo-headed letter came first and
+ *  read too dressed up): the subject on top, then the sender row (a
+ *  grey person, Sender name and its address, *to me*, *Today*), then
+ *  the content as plain text under the sender's name. */
 function EmailPreview({ c, row, off }: PreviewProps) {
   const name = off ? '' : c.emailSenderName.trim()
   const address = off ? '' : c.emailSenderAddress.trim()
   return (
-    <div className={cn(SURFACE, 'flex w-full flex-col overflow-hidden rounded-[var(--radius-3)] shadow-raised')}>
-      <div className="flex gap-[var(--space-1-5)] border-b border-[var(--color-border-primary-default)] px-[var(--space-4)] py-[var(--space-2)]">
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="size-[var(--space-2)] rounded-full bg-[var(--color-surface-tertiary-default)]" />
-        ))}
-      </div>
-      <div className="flex flex-col gap-[var(--space-3)] px-[var(--space-4)] py-[var(--space-3)]">
-        <Part text={c.emailSubject} row={row} off={off} className="type-heading-xxs-emphasized" bars={['w-2/3']} />
-        <div className="flex items-center gap-[var(--space-3)]">
-          {name ? (
-            <Avatar type="letter" initials={initials(name)} size={32} />
-          ) : (
-            <span className="size-[var(--space-8)] shrink-0 rounded-full bg-[var(--color-surface-tertiary-default)]" />
-          )}
-          <span className="flex min-w-0 flex-1 flex-col">
-            <Part text={name} row={row} off={off} className="type-label-m-emphasized" bars={['w-1/3']} />
-            {address && <span className="type-body-xs truncate text-[var(--color-text-tertiary-default)]">{address}</span>}
-          </span>
-          <span className="type-body-xs shrink-0 text-[var(--color-text-tertiary-default)]">Today</span>
-        </div>
-      </div>
-      <div className="bg-[var(--color-surface-secondary-default)] px-[var(--space-6)] pt-[var(--space-4)]">
-        <div className="flex flex-col gap-[var(--space-4)] rounded-t-[var(--radius-2)] bg-[var(--color-surface-primary-default)] p-[var(--space-5)]">
-          <img src="/bbl-logo.svg" alt="Bangkok Bank" className="h-[var(--space-6)] w-auto self-start" />
-          <span className="border-t border-[var(--color-border-primary-default)]" />
+    <div className={cn(SURFACE, 'flex w-full flex-col gap-[var(--space-4)] rounded-[var(--radius-3)] p-[var(--space-5)]')}>
+      <Part text={c.emailSubject} row={row} off={off} className="type-heading-xs" bars={['w-2/3']} />
+      <div className="flex gap-[var(--space-3)]">
+        {/* A grey person, as an inbox draws a sender with no photo; webds Avatar's
+            Icon type is a dashed placeholder, so the circle is drawn here. */}
+        <span className="flex size-[var(--space-10)] shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-tertiary-default)] text-[var(--color-icon-tertiary-default)]">
+          <Icon slug="user" size={24} color="currentColor" />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-4)]">
+          <div className="flex items-start justify-between gap-[var(--space-3)]">
+            <span className="flex min-w-0 flex-col">
+              {name ? (
+                <span className="truncate">
+                  <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">{name}</span>
+                  {address && <span className="type-body-xs text-[var(--color-text-tertiary-default)]"> &lt;{address}&gt;</span>}
+                </span>
+              ) : (
+                <Bar className="my-[var(--space-1)] w-[var(--space-32)]" />
+              )}
+              <span className="type-body-xs flex items-center gap-[var(--space-0-5)] text-[var(--color-text-tertiary-default)]">
+                to me
+                <Icon slug="chevron-down" size={16} color="currentColor" />
+              </span>
+            </span>
+            <span className="type-body-xs shrink-0 text-[var(--color-text-tertiary-default)]">Today</span>
+          </div>
           <Part text={c.emailBody} row={row} off={off} className="type-body-s" bars={['w-full', 'w-full', 'w-1/2']} />
         </div>
       </div>
