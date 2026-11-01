@@ -18,6 +18,7 @@ import { IMPORT_RECORDS, type ImportRecord } from '@/data/import-history'
 import { ImportTemplateList } from '@/pages/import-template/ImportTemplateList'
 import { ImportTemplateDrawer } from '@/pages/import-template/ImportTemplateDrawer'
 import { recordOfJob } from '@/pages/import-template/records'
+import { ImportDialog } from '@/pages/notifications/ImportDialog'
 
 /* Routes are the cnh-tm-phase2 build's, one per state, so the webds flow
  * archive (cnh-phase2) and its task flow still point at the right screen. */
@@ -37,6 +38,7 @@ export default function App() {
   const [created, setCreated] = useState<ListToast | null>(null)
   const [openBroadcast, setOpenBroadcast] = useState<Broadcast | null>(null)
   const [openImport, setOpenImport] = useState<string | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   /* Puts imported templates on the list. Importing over a file replaces the templates its earlier import added. */
   const landImport = (imported: Template[], fileName?: string, replace?: boolean) => {
@@ -165,6 +167,7 @@ export default function App() {
         <ImportTemplateList
           records={hash === '#/import-template/empty' ? [] : importRecords}
           onOpen={(r) => setOpenImport(r.id)}
+          onImport={() => setImportOpen(true)}
           state={hash === '#/import-template/loading' ? 'loading' : hash === '#/import-template/error' ? 'error' : 'ready'}
           onRetry={() => go('/import-template')}
         />
@@ -228,6 +231,24 @@ export default function App() {
             setCreated({ name: viewing.name, draft: false, cancelled: true })
             setOpenBroadcast(null)
             go('/broadcast')
+          }}
+        />
+      )}
+
+      {/* Import from this page as well (PROPOSAL, 1 Nov 2026, pending BA). The
+          submitted file shows as a Queue row on top of the list. */}
+      {onImportTemplate && (
+        <ImportDialog
+          open={importOpen || hash === '#/import-template/import'}
+          importedNames={Object.keys(importHistory)}
+          onClose={() => {
+            setImportOpen(false)
+            if (hash === '#/import-template/import') go('/import-template')
+          }}
+          onImported={(list, fileName, replace) => {
+            setImportOpen(false)
+            if (hash === '#/import-template/import') go('/import-template')
+            importJobs.submit(list, fileName, replace)
           }}
         />
       )}
