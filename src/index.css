@@ -25,3 +25,14 @@
 .webds-pattern-sign-in-split {
   height: 100%;
 }
+
+/* Import direction E (29 Oct 2026): the indeterminate import bar. The server
+   reports no percentage, so a third-width segment runs across the track. */
+@keyframes import-bar {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}

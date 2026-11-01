@@ -65,6 +65,11 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * Its Replace uploads again. Its Cancel goes back to this dialog with the file
  * still in its slot, for the user to remove (BA, 22 Oct 2026; was: closed it
  * and stayed on the list).
+ *
+ * A file dropped on the picked file replaces it at once, with no question
+ * (BA / Dev, 28 Oct 2026): the slot reads "Drop to replace" while the file is
+ * over it, and the drop goes through the same `add` as the zone, so it takes
+ * one .jsonl only and clears the old file's error.
  */
 export function ImportDialog({
   open,
@@ -87,6 +92,8 @@ export function ImportDialog({
   /* A drop of two or more files on the zone, or the `too-many` route. Cleared by Cancel or one valid file. */
   const [tooMany, setTooMany] = useState(false)
   const nextKey = useRef(0)
+  /* `#/list/import/drag-replace` holds the slot's drag look until the file changes. */
+  const [heldDrag, setHeldDrag] = useState(false)
   /* Whether the last upload was an import over: Try again repeats it without asking again. */
   const lastReplace = useRef(false)
   const uploading = phase === 'uploading'
@@ -102,6 +109,7 @@ export function ImportDialog({
     } else setPicked(null)
     setPhase(preset === 'uploading' ? 'uploading' : preset === 'failure' ? 'failed' : preset === 'duplicate' ? 'replace' : 'idle')
     setMessage(preset === 'no-file' ? IMPORT_COPY.noFile : null)
+    setHeldDrag(preset === 'drag-replace')
     setTooMany(preset === 'too-many')
   }, [open, preset])
 
@@ -134,11 +142,13 @@ export function ImportDialog({
     if (!isJsonl(file.name)) return
     setMessage(null)
     setPhase('idle')
+    setHeldDrag(false)
     setTooMany(false)
     setPicked({ key: nextKey.current++, file, size: file.size, problem: null })
   }
 
   const remove = () => {
+    setHeldDrag(false)
     setPicked(null)
     setMessage(null)
     setPhase('idle')
@@ -216,6 +226,10 @@ export function ImportDialog({
               retryLabel={IMPORT_COPY.retry}
               onRetry={failed ? () => upload(lastReplace.current) : undefined}
               onRemove={remove}
+              onDropFiles={add}
+              dropLabel={IMPORT_COPY.dropReplace}
+              maxFiles={1}
+              dragOver={heldDrag}
             />
           ) : (
             /* The CMS prototype's upload zone (components/upload) — webds ships none. */

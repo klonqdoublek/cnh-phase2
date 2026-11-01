@@ -31,7 +31,7 @@ import { KINDS, screenOf, stateOf, type Kind } from './screen-states'
  * state it lists them, so loading, error, empty and dialog states are one
  * click away (./screen-states.ts), folded by kind so only the kind on show
  * is open (requester, 28 Oct 2026); on Create / Edit broadcast the audience
- * file's size too. Design direction, on Create / Edit broadcast only: channel
+ * file's size too. Design direction, on Create / Edit broadcast: channel
  * layout, then how a field is picked with its own options in one row, and a
  * line naming the draft that combination is (./dynamic-field.ts). Drag it by
  * its title bar; it remembers where it was left, whether it was collapsed and
@@ -185,10 +185,12 @@ export function ConceptPanel() {
   if (new URLSearchParams(location.search).get('panel') === '0') return null
   const screen = screenOf(hash)
   const concepts = /^#\/broadcast\/(create|edit)/.test(hash)
+  /* The Import directions left on 30 Oct 2026: A, the upload panel, is the only one (design critique, 29 Oct). */
+  const directions = concepts
   if (!screen && !concepts) return null
   const state = screen && stateOf(screen, hash)
-  /* Off Create / Edit broadcast there is no direction to pick: Screen state alone, no tabs. */
-  const shown: Group = concepts ? group : 'state'
+  /* Where there is no direction to pick: Screen state alone, no tabs. */
+  const shown: Group = directions ? group : 'state'
 
   const idea = concept.picker === 'shortcut' ? undefined : ideaOf(concept)
   const name = nameOf(concept)
@@ -252,7 +254,7 @@ export function ConceptPanel() {
 
       {open && (
         <>
-          {concepts && (
+          {directions && (
             <div role="tablist" aria-label="Prototype control group" className="flex px-[var(--space-4)] pt-[var(--space-3)]">
               {GROUPS.map((g) => (
                 <LineTab
@@ -328,7 +330,7 @@ export function ConceptPanel() {
               </>
             )}
 
-            {shown === 'direction' && (
+            {shown === 'direction' && concepts && (
               <>
                 <div className="flex flex-col gap-[var(--space-2)]">
                   <span className="type-label-m-emphasized text-[var(--color-text-primary-default)]">1. Channel layout</span>

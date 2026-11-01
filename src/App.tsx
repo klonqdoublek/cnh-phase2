@@ -13,6 +13,11 @@ import { TemplateDrawer } from '@/pages/template/TemplateDrawer'
 import { BroadcastList } from '@/pages/broadcast/BroadcastList'
 import { BroadcastDrawer } from '@/pages/broadcast/BroadcastDrawer'
 import { BroadcastWizard, type SaveKind } from '@/pages/broadcast/BroadcastWizard'
+import { useImportJobs } from '@/pages/notifications/import-status/jobs'
+import { IMPORT_RECORDS, type ImportRecord } from '@/data/import-history'
+import { ImportTemplateList } from '@/pages/import-template/ImportTemplateList'
+import { ImportTemplateDrawer } from '@/pages/import-template/ImportTemplateDrawer'
+import { recordOfJob } from '@/pages/import-template/records'
 
 /* Routes are the cnh-tm-phase2 build's, one per state, so the webds flow
  * archive (cnh-phase2) and its task flow still point at the right screen. */
@@ -31,6 +36,18 @@ export default function App() {
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>(BROADCASTS)
   const [created, setCreated] = useState<ListToast | null>(null)
   const [openBroadcast, setOpenBroadcast] = useState<Broadcast | null>(null)
+  const [openImport, setOpenImport] = useState<string | null>(null)
+
+  /* Puts imported templates on the list. Importing over a file replaces the templates its earlier import added. */
+  const landImport = (imported: Template[], fileName?: string, replace?: boolean) => {
+    const gone = new Set(replace && fileName ? importHistory[fileName] : [])
+    const base = nextRunning(templates)
+    const stamped = imported.map((t, i) => stampImported(t, base + i))
+    setTemplates((list) => [...stamped, ...list.filter((t) => !gone.has(t.id))])
+    if (fileName) setImportHistory((h) => ({ ...h, [fileName]: stamped.map((t) => t.id) }))
+  }
+  /* Since 28 Oct 2026 (BA / Dev) Import submits a job; the templates land when the server is done, about 10 minutes later. */
+  const importJobs = useImportJobs(landImport)
 
   const backToList = (n: ListNotice) => {
     setNotice(n)
@@ -126,6 +143,12 @@ export default function App() {
       ? ((importMatch[1] ?? 'initial') as ImportPreset)
       : undefined
   const onBroadcast = hash.startsWith('#/broadcast')
+  /* Import Template (BA & Dev deck, 30 Oct 2026): this session's jobs on top of the seeded imports. */
+  const onImportTemplate = hash.startsWith('#/import-template')
+  const importRecords: ImportRecord[] = [...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS]
+  const importView = hash.match(/^#\/import-template\/view\/([A-Z]+-[A-Z]?\d+)(\/download)?$/)
+  const importViewId = openImport ?? importView?.[1]
+  const viewingImport = importViewId ? importRecords.find((r) => r.id === importViewId) : undefined
   const preset = listPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
   const viewMatch = hash.match(/^#\/broadcast\/view\/([A-Z]+-\d+)(\/cancel(?:-fail)?|\/download(?:\/fail)?)?$/)
   const viewId = viewMatch?.[1]
@@ -137,8 +160,15 @@ export default function App() {
   const reportResult = reportPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
 
   return (
-    <AppShell activeId={onBroadcast ? 'broadcast' : 'template-management'}>
-      {onBroadcast ? (
+    <AppShell activeId={onBroadcast ? 'broadcast' : onImportTemplate ? 'import-template' : 'template-management'}>
+      {onImportTemplate ? (
+        <ImportTemplateList
+          records={hash === '#/import-template/empty' ? [] : importRecords}
+          onOpen={(r) => setOpenImport(r.id)}
+          state={hash === '#/import-template/loading' ? 'loading' : hash === '#/import-template/error' ? 'error' : 'ready'}
+          onRetry={() => go('/import-template')}
+        />
+      ) : onBroadcast ? (
         <BroadcastList
           key={reportConfirm || reportResult ? hash : 'list'}
           broadcasts={hash === '#/broadcast/empty' ? [] : broadcasts}
@@ -172,14 +202,8 @@ export default function App() {
           onDownloadRequestHandled={() => setDownloadRequest(null)}
           importPreset={importPreset}
           importedNames={Object.keys(importHistory)}
-          onImport={(imported, fileName, replace) => {
-            /* Importing over a file replaces the templates its earlier import added. */
-            const gone = new Set(replace && fileName ? importHistory[fileName] : [])
-            const base = nextRunning(templates)
-            const stamped = imported.map((t, i) => stampImported(t, base + i))
-            setTemplates((list) => [...stamped, ...list.filter((t) => !gone.has(t.id))])
-            if (fileName) setImportHistory((h) => ({ ...h, [fileName]: stamped.map((t) => t.id) }))
-          }}
+          onImport={landImport}
+          importJobs={importJobs}
         />
       )}
 
@@ -204,6 +228,18 @@ export default function App() {
             setCreated({ name: viewing.name, draft: false, cancelled: true })
             setOpenBroadcast(null)
             go('/broadcast')
+          }}
+        />
+      )}
+
+      {onImportTemplate && viewingImport && (
+        <ImportTemplateDrawer
+          key={`${viewingImport.id}${importView?.[2] ?? ''}`}
+          record={viewingImport}
+          confirmingDownload={!!importView?.[2]}
+          onClose={() => {
+            setOpenImport(null)
+            if (importView) go('/import-template')
           }}
         />
       )}

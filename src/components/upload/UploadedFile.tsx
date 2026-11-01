@@ -3,6 +3,7 @@ import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
 import { OutlineButton } from '@/bbl/outline-button'
+import { useState } from 'react'
 import { cn } from '@/lib/cn'
 
 /**
@@ -38,6 +39,10 @@ export function UploadedFile({
   previewLabel = 'Preview',
   onPreview,
   onRemove,
+  onDropFiles,
+  dropLabel,
+  maxFiles,
+  dragOver: heldOver = false,
 }: {
   name: string
   meta?: React.ReactNode
@@ -55,15 +60,48 @@ export function UploadedFile({
   /** Shows the Outline Preview button. */
   onPreview?: () => void
   onRemove?: () => void
+  /** Makes the slot a drop target: the dropped files replace this one. */
+  onDropFiles?: (files: FileList) => void
+  /** Centred on the drag look while a file is over the slot. */
+  dropLabel?: React.ReactNode
+  /** A drag carrying more files than this is refused before the drop. */
+  maxFiles?: number
+  /** Holds the drag look on, for a route that shows the state. */
+  dragOver?: boolean
 }) {
+  const [over, setOver] = useState(false)
+  const tooMany = (data: DataTransfer) => maxFiles != null && data.items.length > maxFiles
+  const dropTarget = onDropFiles
+    ? {
+        onDragOver: (event: React.DragEvent) => {
+          event.preventDefault()
+          const refuse = tooMany(event.dataTransfer)
+          event.dataTransfer.dropEffect = refuse ? 'none' : 'copy'
+          if (over === refuse) setOver(!refuse)
+        },
+        onDragLeave: (event: React.DragEvent) => {
+          // Moving onto a child also fires dragleave; only leaving the slot counts.
+          if (event.currentTarget.contains(event.relatedTarget as Node | null)) return
+          setOver(false)
+        },
+        onDrop: (event: React.DragEvent) => {
+          event.preventDefault()
+          setOver(false)
+          if (tooMany(event.dataTransfer) || !event.dataTransfer.files.length) return
+          onDropFiles(event.dataTransfer.files)
+        },
+      }
+    : {}
+  const showDrop = !!onDropFiles && (over || heldOver)
   const metaInRed = error && errorMessage == null
   const inSlot = error && errorMessage != null && errorPlacement === 'slot'
   return (
     <div className="flex flex-col gap-[var(--space-1)]">
       <div
+        {...dropTarget}
         data-invalid={error ? 'true' : undefined}
         className={cn(
-          'flex min-h-[84px] flex-col justify-between gap-[var(--space-2)] rounded-2 border p-[var(--space-3)]',
+          'relative flex min-h-[84px] flex-col justify-between gap-[var(--space-2)] rounded-2 border p-[var(--space-3)]',
           error ? 'border-[var(--color-border-negative-default)]' : 'border-[var(--color-border-primary-default)]',
         )}
       >
@@ -107,6 +145,14 @@ export function UploadedFile({
                 {previewLabel}
               </OutlineButton>
             )}
+          </span>
+        )}
+        {showDrop && (
+          /* Surface/Highlight/Subtle is a 10% tint: an opaque surface under it hides the file row. */
+          <span aria-hidden className="pointer-events-none absolute -inset-px rounded-2 bg-[var(--color-surface-primary-default)]">
+            <span className="flex size-full items-center justify-center rounded-2 border border-dashed border-[var(--color-border-highlight-default)] bg-[var(--color-surface-highlight-subtle-default)] type-body-s-emphasized text-[var(--color-text-highlight-default)]">
+              {dropLabel}
+            </span>
           </span>
         )}
       </div>
