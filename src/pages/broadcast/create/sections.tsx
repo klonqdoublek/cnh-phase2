@@ -38,7 +38,7 @@ import {
 import { SERVICE_CODE_LOV, type Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
-import type { Tint } from './highlight'
+import { editBox, type Tint } from './highlight'
 import { MessagePreview } from './preview'
 import { TRIGGER, useFieldShortcut } from './shortcut'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
@@ -454,12 +454,9 @@ function useInsertField(f: BroadcastForm, focus: FocusRef) {
     const { el, key } = target
     const from = el.selectionStart ?? el.value.length
     const to = el.selectionEnd ?? el.value.length
-    f.setC(key as keyof BroadcastContent)(el.value.slice(0, from) + token + el.value.slice(to))
     focus.current = { key, el }
-    requestAnimationFrame(() => {
-      el.focus()
-      el.setSelectionRange(from + token.length, from + token.length)
-    })
+    /* The browser's own edit, so ⌘Z takes the picked field back (./highlight.tsx). */
+    editBox(el, from, to, token, f.setC(key as keyof BroadcastContent))
   }
 }
 
