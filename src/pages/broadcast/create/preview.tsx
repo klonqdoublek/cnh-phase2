@@ -13,9 +13,8 @@ import { cn } from '@/lib/cn'
  * Mobbin: Klaviyo / Fresha SMS bubbles; Email after Gmail's reading view):
  * Push a notification banner, Email a mail as the inbox opens it, SMS a
  * chat bubble. A part with nothing typed, and the whole message while its card is
- * switched off, is a neutral placeholder (requester, 1 Nov 2026): Push reads
- * its field labels in tertiary text (no skeleton bars, requester 1 Nov
- * 2026); Email and SMS draw grey bars.
+ * switched off, is a neutral placeholder: the field's label in tertiary text
+ * (requester, 1 Nov 2026; grey skeleton bars came first and were dropped).
  * webds ships no message preview (gap): the area is Surface/Secondary, the
  * message surfaces are Surface/Primary with the Border/Primary stroke. */
 
@@ -47,39 +46,11 @@ function Filled({ text, row }: { text: string; row: Row }) {
   )
 }
 
-/** The placeholder for a part with nothing to show. */
-function Bar({ className }: { className?: string }) {
-  return <span className={cn('block h-[var(--space-3)] rounded-full bg-[var(--color-surface-tertiary-default)]', className)} />
-}
-
-/** One part of a message: its text, or bars while it is empty or the card is off. */
-function Part({
-  text,
-  row,
-  off,
-  className,
-  bars = ['w-2/3'],
-  label,
-}: {
-  text: string
-  row: Row
-  off: boolean
-  className: string
-  bars?: string[]
-  /** Stands in, in tertiary text, instead of the bars (Push, requester 1 Nov 2026). */
-  label?: string
-}) {
-  if ((off || !text.trim()) && label) {
-    return <p className={cn('text-[var(--color-text-tertiary-default)]', className)}>{label}</p>
-  }
+/** One part of a message: its text, or its field's label in tertiary text
+ *  while it is empty or the card is off. */
+function Part({ text, row, off, className, label }: { text: string; row: Row; off: boolean; className: string; label: string }) {
   if (off || !text.trim()) {
-    return (
-      <span className="flex flex-col gap-[var(--space-2)] py-[var(--space-1)]">
-        {bars.map((w, i) => (
-          <Bar key={i} className={w} />
-        ))}
-      </span>
-    )
+    return <p className={cn('text-[var(--color-text-tertiary-default)]', className)}>{label}</p>
   }
   return (
     <p className={cn('whitespace-pre-line break-words text-[var(--color-text-primary-default)]', className)}>
@@ -124,7 +95,7 @@ function EmailPreview({ c, row, off }: PreviewProps) {
   const address = off ? '' : c.emailSenderAddress.trim()
   return (
     <div className={cn(SURFACE, 'flex w-full flex-col gap-[var(--space-4)] rounded-[var(--radius-3)] p-[var(--space-5)]')}>
-      <Part text={c.emailSubject} row={row} off={off} className="type-heading-xs" bars={['w-2/3']} />
+      <Part text={c.emailSubject} row={row} off={off} className="type-heading-xs" label="Email subject" />
       <div className="flex gap-[var(--space-3)]">
         {/* A grey person, as an inbox draws a sender with no photo; webds Avatar's
             Icon type is a dashed placeholder, so the circle is drawn here. */}
@@ -140,7 +111,7 @@ function EmailPreview({ c, row, off }: PreviewProps) {
                   {address && <span className="type-body-xs text-[var(--color-text-tertiary-default)]"> &lt;{address}&gt;</span>}
                 </span>
               ) : (
-                <Bar className="my-[var(--space-1)] w-[var(--space-32)]" />
+                <span className="type-label-m-emphasized text-[var(--color-text-tertiary-default)]">Sender name</span>
               )}
               <span className="type-body-xs flex items-center gap-[var(--space-0-5)] text-[var(--color-text-tertiary-default)]">
                 to me
@@ -149,7 +120,7 @@ function EmailPreview({ c, row, off }: PreviewProps) {
             </span>
             <span className="type-body-xs shrink-0 text-[var(--color-text-tertiary-default)]">Today</span>
           </div>
-          <Part text={c.emailBody} row={row} off={off} className="type-body-s" bars={['w-full', 'w-full', 'w-1/2']} />
+          <Part text={c.emailBody} row={row} off={off} className="type-body-s" label="Email content" />
         </div>
       </div>
     </div>
@@ -162,7 +133,7 @@ function SmsPreview({ c, row, off }: PreviewProps) {
     <div className="flex w-full flex-col gap-[var(--space-2)]">
       <span className="type-body-xs text-center text-[var(--color-text-tertiary-default)]">Today</span>
       <div className="w-4/5 self-start rounded-[var(--radius-4)] rounded-bl-[var(--radius-1)] bg-[var(--color-surface-primary-default)] px-[var(--space-4)] py-[var(--space-3)]">
-        <Part text={c.smsMessage} row={row} off={off} className="type-body-s" bars={['w-full', 'w-full', 'w-1/2']} />
+        <Part text={c.smsMessage} row={row} off={off} className="type-body-s" label="SMS message" />
       </div>
     </div>
   )
