@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { flushSync } from 'react-dom'
 import { MIRRORED } from './shortcut'
 
 /* Idea 4's highlighted fields (requester, 21 Oct 2026, after Churnkey's
@@ -17,7 +16,13 @@ import { MIRRORED } from './shortcut'
  * still shows the token's own characters, not a friendlier label: that needs
  * a rich-text box webds does not ship (gap). The tint is drawn outside the
  * glyphs with a spread shadow, so it adds no width and the text stays where
- * the box has it. */
+ * the box has it.
+ *
+ * Typing, pasting, Enter or Cut over a selection that cuts into a chip take
+ * the whole chip too, so no half token such as `${CUST` is left (requester,
+ * 1 Nov 2026). Every edit made here goes through the browser's own editing
+ * (`editBox`), so ⌘Z / ⌘⇧Z undo and redo a chip erase or a picked field like
+ * typing (requester, 1 Nov 2026; before, the value was set and undo lost it). */
 
 type Box = HTMLInputElement | HTMLTextAreaElement
 
@@ -33,6 +38,20 @@ const TOKENS = /\$\{([^{}$\s]+)\}/g
 const runs = (value: string, columns: Set<string>) =>
   value.split(TOKEN).map((text) => ({ text, field: TOKEN.test(text) && columns.has(text.slice(2, -1)) }))
 
+/** Replaces `from`–`to` in the box with `text` as the browser's own edit, so
+ *  the box's undo history keeps it and its input event reaches React's
+ *  onChange. `fallback` sets the value where the browser has no
+ *  `insertText` command. Leaves the caret after `text`. */
+export function editBox(el: Box, from: number, to: number, text: string, fallback: (v: string) => void) {
+  el.focus()
+  el.setSelectionRange(from, to)
+  const done = text ? document.execCommand('insertText', false, text) : from === to || document.execCommand('delete')
+  if (!done) {
+    fallback(el.value.slice(0, from) + text + el.value.slice(to))
+    requestAnimationFrame(() => el.setSelectionRange(from + text.length, from + text.length))
+  }
+}
+
 /** Where each chip starts and ends in the message. */
 const chips = (value: string, columns: Set<string>) =>
   [...value.matchAll(TOKENS)]
@@ -43,6 +62,11 @@ const chips = (value: string, columns: Set<string>) =>
  *  transparent only then, so its placeholder and plain text are untouched. */
 export const hasField = (value: string, columns: Set<string>) => runs(value, columns).some((r) => r.field)
 
+/** A key that types a character into the box: a printable key, or Enter in a
+ *  text area. Shortcuts with ⌘ / Ctrl / Alt type nothing. */
+const typed = (e: KeyboardEvent, el: Box) =>
+  !e.metaKey && !e.ctrlKey && !e.altKey && (e.key.length === 1 || (e.key === 'Enter' && el instanceof HTMLTextAreaElement))
+
 /** Keeps the caret out of chips and erases a chip whole. Listens on the box
  *  itself, so it runs before the shortcut menu's handlers on the cards. */
 function useAtomicChips(box: Box | null, value: string, tint: Tint, onChange: (v: string) => void) {
@@ -52,12 +76,14 @@ function useAtomicChips(box: Box | null, value: string, tint: Tint, onChange: (v
   useEffect(() => {
     const el = box
     if (!el) return
-    /* A native listener is outside React's batching: commit now, so the
-       caret lands in the new value and the key's own keyup (which the
-       shortcut menu reads) sees it. */
-    const put = (next: string, caret: number) => {
-      flushSync(() => latest.current.onChange(next))
-      el.setSelectionRange(caret, caret)
+    const put = (from: number, to: number, text = '') => editBox(el, from, to, text, latest.current.onChange)
+    /* The selection grown to whole chips at both ends; null when it cuts none. */
+    const grown = (from: number, to: number) => {
+      const { value: v, tint: t } = latest.current
+      const list = chips(v, t.columns)
+      const a = Math.min(from, ...list.filter((x) => x.start < from && from < x.end).map((x) => x.start))
+      const b = Math.max(to, ...list.filter((x) => x.start < to && to < x.end).map((x) => x.end))
+      return a === from && b === to ? null : { a, b }
     }
     /* A caret left inside a chip goes to the chip's nearer edge. */
     const snap = () => {
@@ -81,14 +107,14 @@ function useAtomicChips(box: Box | null, value: string, tint: Tint, onChange: (v
         const hit = list.find((x) => (back ? x.start < from && from <= x.end : x.start <= from && from < x.end))
         if (!hit) return
         e.preventDefault()
-        put(v.slice(0, hit.start) + v.slice(hit.end), hit.start)
-      } else if ((back || e.key === 'Delete') && from !== to) {
-        /* A selection that cuts into a chip takes the whole chip. */
-        const a = Math.min(from, ...list.filter((x) => x.start < from && from < x.end).map((x) => x.start))
-        const b = Math.max(to, ...list.filter((x) => x.start < to && to < x.end).map((x) => x.end))
-        if (a === from && b === to) return
+        put(hit.start, hit.end)
+      } else if (from !== to && (back || e.key === 'Delete' || typed(e, el))) {
+        /* A selection that cuts into a chip takes the whole chip, whether it
+           is erased or typed over. */
+        const g = grown(from, to)
+        if (!g) return
         e.preventDefault()
-        put(v.slice(0, a) + v.slice(b), a)
+        put(g.a, g.b, back || e.key === 'Delete' ? '' : e.key === 'Enter' ? '\n' : e.key)
       } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && from === to && !e.shiftKey && !e.altKey && !e.metaKey) {
         const left = e.key === 'ArrowLeft'
         const hit = list.find((x) => (left ? x.start < from && from <= x.end : x.start <= from && from < x.end))
@@ -98,13 +124,32 @@ function useAtomicChips(box: Box | null, value: string, tint: Tint, onChange: (v
         el.setSelectionRange(edge, edge)
       }
     }
+    /* Cut and paste over a selection that cuts into a chip: the whole chip
+       goes to the clipboard, or is replaced by what is pasted. */
+    const cut = (e: ClipboardEvent) => {
+      const g = grown(el.selectionStart ?? 0, el.selectionEnd ?? 0)
+      if (!g || !e.clipboardData) return
+      e.preventDefault()
+      e.clipboardData.setData('text/plain', el.value.slice(g.a, g.b))
+      put(g.a, g.b)
+    }
+    const paste = (e: ClipboardEvent) => {
+      const g = grown(el.selectionStart ?? 0, el.selectionEnd ?? 0)
+      if (!g || !e.clipboardData) return
+      e.preventDefault()
+      put(g.a, g.b, e.clipboardData.getData('text/plain'))
+    }
     /* Typed as an element: a union of two box types loses the keydown overload. */
     const host: HTMLElement = el
     host.addEventListener('keydown', key)
+    host.addEventListener('cut', cut)
+    host.addEventListener('paste', paste)
     el.addEventListener('mouseup', snap)
     el.addEventListener('keyup', snap)
     return () => {
       host.removeEventListener('keydown', key)
+      host.removeEventListener('cut', cut)
+      host.removeEventListener('paste', paste)
       el.removeEventListener('mouseup', snap)
       el.removeEventListener('keyup', snap)
     }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ListItem } from '@/bbl/list-item'
 import { isMessageBox, type BroadcastContent } from '@/data/broadcast'
+import { editBox } from './highlight'
 import type { BroadcastForm } from './useBroadcastForm'
 
 /* Idea 4 (requester, 21 Oct 2026): a message box as a text editor — typing
@@ -113,15 +114,12 @@ export function useFieldShortcut(f: BroadcastForm) {
     setOpen({ key: key as keyof BroadcastContent, el, start, end: caret, query: hit[1], at: caretPoint(el, start) })
   }
 
+  /* The browser's own edit, so ⌘Z takes the picked field back (./highlight.tsx). */
   const insert = (token: string) => {
     if (!open) return
     const { el, key, start, end } = open
-    f.setC(key)(el.value.slice(0, start) + token + el.value.slice(end))
     setOpen(null)
-    requestAnimationFrame(() => {
-      el.focus()
-      el.setSelectionRange(start + token.length, start + token.length)
-    })
+    editBox(el, start, end, token, f.setC(key))
   }
 
   /* The menu is placed once per keystroke; a page scroll or resize would

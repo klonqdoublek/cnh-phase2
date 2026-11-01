@@ -42,6 +42,10 @@ export const BROADCAST_COPY = {
   invalidNote: 'Invalid recipients are skipped. Only valid recipients will receive the broadcast.',
   previewTitle: 'Preview (first 5 rows)',
   required: 'This field is required',
+  /** Composed (requester, 1 Nov 2026): a `${…}` the audience file has no column
+   *  for, e.g. after the file or the ID column changed. */
+  unknownField: (tokens: string[]) =>
+    `${tokens.join(', ')} ${tokens.length === 1 ? 'is not a column' : 'are not columns'} in the audience file`,
   noColumn: 'Select the column that identifies each recipient',
   /** PROPOSAL, composed (not in the original build), pending BA (Q15). */
   wrongColumn: (column: string, holds: 'mobile' | 'email', wanted: 'mobile' | 'email') => {
@@ -223,6 +227,12 @@ export function checkAudience(audience: Audience, column: string, kind: IdKind):
 
 export const fieldsOf = (audience: Audience | null | undefined, idColumn: string) =>
   (audience?.headers ?? []).filter((h) => h && h !== idColumn).map((column) => ({ column, token: `\${${column}}` }))
+
+/** The `${…}` tokens in a message that name no field of the file, each once. */
+export const unknownTokens = (text: string, fields: { column: string }[]) => {
+  const known = new Set(fields.map((f) => f.column))
+  return [...new Set([...text.matchAll(/\$\{([^{}$\s]+)\}/g)].filter((m) => !known.has(m[1])).map((m) => m[0]))]
+}
 
 export function smsInfo(text: string) {
   const unicode = /[^\x00-\x7F]/.test(text)

@@ -7,6 +7,8 @@ import {
   checkAudience,
   columnHolds,
   fieldsOf,
+  isMessageBox,
+  unknownTokens,
   dndNeverSends,
   firstSend,
   idKind,
@@ -260,6 +262,12 @@ export function useBroadcastForm({
           if (!OPTIONAL.includes(k)) e[k] = BROADCAST_COPY.required
         }
         else if (content[k].length > CONTENT_MAX[k]) e[k] = BROADCAST_COPY.msgMax(CONTENT_MAX[k])
+        else if (audience && isMessageBox(k)) {
+          /* A field the file has no column for — left behind when the file or
+             its ID column changed — would send as typed (requester, 1 Nov 2026). */
+          const missing = unknownTokens(content[k], fields)
+          if (missing.length) e[k] = BROADCAST_COPY.unknownField(missing)
+        }
     if (mode === 'schedule') {
       if (!startDate) e.startDate = BROADCAST_COPY.required
       if (!startTime) e.startTime = BROADCAST_COPY.required
