@@ -35,7 +35,7 @@ import {
   type DndRule,
   type RecipientType as RecipientTypeValue,
 } from '@/data/broadcast'
-import type { Channel } from '@/data/templates'
+import { SERVICE_CODE_LOV, type Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import type { Concept, Overflow } from '@/prototype/dynamic-field'
 import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
@@ -117,13 +117,14 @@ export function BasicInfo({ f }: F) {
 
 /* ── Step 2 ─────────────────────────────────────────────────────────────── */
 
-/** Recipient type, the upload (its preview under the file) and the ID
- *  column, one under the other at full width (requester, 22 Oct 2026: top to
- *  bottom). The upload is the CMS prototype's zone and file slot
+/** Service code, recipient type, the upload (its preview under the file) and
+ *  the ID column, one under the other at full width (requester, 22 Oct 2026:
+ *  top to bottom). The upload is the CMS prototype's zone and file slot
  *  (components/upload) — webds ships no upload control (gap). */
 export function AudienceFile({ f }: F) {
   return (
     <FormSectionCard title="Upload Audience file">
+      <ServiceCode f={f} />
       <RecipientType f={f} />
       <div data-error={f.errors.file ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
         <FieldLabel required>Upload File</FieldLabel>
@@ -383,6 +384,24 @@ function RecipientType({ f }: F) {
         ))}
       </div>
     </div>
+  )
+}
+
+/** Service code (BA & Dev feedback, 30 Oct 2026): one of Phase 1's codes, a
+ *  dropdown at the top of the card, as wide as the ID column's. Label and
+ *  placeholder are the Template form's; there it is a multi-select. */
+function ServiceCode({ f }: F) {
+  return (
+    <Select
+      label="Service code"
+      className="w-[456px]"
+      required
+      value={f.serviceCode}
+      options={SERVICE_CODE_LOV}
+      error={f.errors.serviceCode}
+      placeholder="Select service code"
+      onChange={f.setServiceCode}
+    />
   )
 }
 

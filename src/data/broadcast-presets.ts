@@ -157,6 +157,7 @@ export const SUBJECT = 'Special offer for {{CUSTOMER_NAME}}'
 
 /** What a preset (or a reopened Draft) puts into the form before it renders. */
 export type FormSeed = {
+  serviceCode?: string
   file?: { name: string; text: string }
   recipientType?: RecipientType
   column?: string
@@ -180,6 +181,7 @@ export type FormSeed = {
 export const filled: FormSeed = {
   /* The wide file, so every Create preset shows the preview scrolling both ways (requester, 15 Oct 2026). */
   file: { name: 'audience-cis-large.csv', text: LARGE_CSV },
+  serviceCode: 'NAMKTBATCH',
   recipientType: 'cis',
   column: 'CIS_ID',
   channels: ['Email', 'SMS'],

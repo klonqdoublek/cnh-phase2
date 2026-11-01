@@ -105,6 +105,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
       icon: 'calendar',
       rows: [
         ['Description', b.description],
+        ['Service code', b.serviceCode],
         ['Audience file', b.audienceFile],
         ['Recipient type', RECIPIENT_TYPE_LABEL[b.recipientType]],
         ['Recipient column', b.recipientColumn],
