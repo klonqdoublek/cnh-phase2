@@ -1,4 +1,4 @@
-import { BROADCASTS, hasDeliveryReport, isCancellable } from '@/data/broadcast'
+import { BROADCASTS, isCancellable, reportReady } from '@/data/broadcast'
 import flow from './flow-cnh-phase2.json'
 
 /* Prototype runner only — the states each screen can be opened in, so the
@@ -113,7 +113,7 @@ const BROADCAST_LIST: Screen = {
   ],
 }
 
-/** The drawer over the list: Cancel's states on a Draft or Queue, Download's where there is a report. */
+/** The drawer over the list: Cancel's states on a Draft or Queued, Download's where the report is ready. */
 const broadcastDetail = (id: string): Screen => {
   const b = BROADCASTS.find((x) => x.id === id)
   const view = `#/broadcast/view/${id}`
@@ -124,7 +124,7 @@ const broadcastDetail = (id: string): Screen => {
       ...(b && isCancellable(b)
         ? [s(`${view}/cancel-fail`, 'Error', 'Unable to cancel the broadcast', true), s(`${view}/cancel`, 'Dialog', 'Cancel this broadcast?', true)]
         : []),
-      ...(b && hasDeliveryReport(b)
+      ...(b && reportReady(b)
         ? [
             s(`${view}/download/fail`, 'Error', 'Download fails on the next press', true),
             s(`${view}/download`, 'Dialog', 'Download the delivery report?', true),

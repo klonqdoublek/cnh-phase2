@@ -10,7 +10,7 @@ import {
   BROADCAST_STATUSES,
   STATUS_LABEL,
   fmtDateTime,
-  hasDeliveryReport,
+  reportReady,
   type Broadcast,
   type BroadcastStatus as BroadcastStatusValue,
   type ListToast as ListToastValue,
@@ -54,7 +54,7 @@ function StatusCell({ broadcast, onDownload }: { broadcast: Broadcast; onDownloa
   return (
     <div className="relative flex w-full items-center">
       <BroadcastStatus status={broadcast.status} />
-      {hasDeliveryReport(broadcast) && (
+      {reportReady(broadcast) && (
         <button
           type="button"
           aria-label={`Download report for ${broadcast.name}`}

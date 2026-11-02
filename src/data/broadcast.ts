@@ -71,12 +71,12 @@ export const BROADCAST_COPY = {
   draftTitle: 'Draft saved',
   draftBody: (name: string) => `${name} is saved as a draft`,
   draftNeedsName: 'Enter a broadcast name to save a draft',
-  /* Cancel a draft (19 Oct 2026), or a Queue broadcast (BA MoM, 29 Oct 2026). Composed: the original build has no cancel. */
+  /* Cancel a draft (19 Oct 2026), or a Queued broadcast (BA MoM, 29 Oct 2026). Composed: the original build has no cancel. */
   cancel: 'Cancel broadcast',
   cancelTitle: 'Cancel this broadcast?',
   cancelBody: (name: string) => `${name} will not be sent, and it cannot be edited again.`,
   cancelKeep: 'Keep draft',
-  /* A Queue broadcast is no draft (29 Oct 2026). Composed. */
+  /* A Queued broadcast is no draft (29 Oct 2026). Composed. */
   cancelKeepQueued: 'Keep broadcast',
   cancelledTitle: 'Broadcast cancelled',
   cancelledBody: (name: string) => `${name} is cancelled`,
@@ -84,6 +84,10 @@ export const BROADCAST_COPY = {
      Notification management's confirm and toast. Composed after its copy. */
   reportTitle: 'Download the delivery report?',
   reportBody: 'The report will be saved as a CSV file',
+  /* Published, the report not ready yet (BA MoM, 29 Oct 2026: generation starts when the
+     status turns Published). PROPOSAL, pending BA; the line is the Import Template
+     drawer's, composed 30 Oct 2026. */
+  reportGenerating: 'The report is being generated. Download report is available once it is ready.',
   reportConfirm: 'Download',
   reportDoneTitle: 'Download Success',
   reportDoneBody: (file: string) => `${file} is saved`,
@@ -445,16 +449,24 @@ export const MESSAGE_BOXES = ['pushTitle', 'pushBody', 'emailSubject', 'emailBod
 export const isMessageBox = (key: string): key is (typeof MESSAGE_BOXES)[number] =>
   (MESSAGE_BOXES as readonly string[]).includes(key)
 
-/** The status list of values (16 Oct 2026; meanings 19 Oct 2026):
- *  DRAFT — saved as a draft · QUEUE — submitted, accepted by the system ·
- *  PROCESSING — the system has picked the broadcast up and is validating it,
- *  nothing sent yet · PUBLISHED — validated; it sends, pauses in a quiet
- *  period and finishes under Published (BA / Dev sync, 28 Oct 2026; was
- *  "started sending" and "finished"; the lifecycle is pending BA confirmation) ·
- *  FAILED — a system error · CANCELLED — a draft cancelled before submit.
- *  Only a Draft can be cancelled; once submitted it cannot. */
-export const BROADCAST_STATUSES = ['Draft', 'Queue', 'Processing', 'Published', 'Failed', 'Cancelled'] as const
-export type BroadcastStatus = (typeof BROADCAST_STATUSES)[number]
+/** The status list of values (16 Oct 2026) and the BA's Broadcast Job Lifecycle
+ *  (29 Oct 2026; built 2 Nov 2026):
+ *  DRAFT — saved, nothing processed · QUEUED — the job is in the queue,
+ *  waiting to start (was QUEUE) · PROCESSING — the job reads the file,
+ *  validates it and sends row by row; a row is checked against the send time
+ *  and the quiet hours first, so rows in a quiet period wait · PUBLISHED —
+ *  the job has finished and its report is created; not every row was sent
+ *  successfully · FAILED (reads "Error") — failed validation, or an error in
+ *  Processing · CANCELLED — a Draft or Queued broadcast, cancelled.
+ *  Only a Draft or a Queued broadcast can be cancelled. */
+export const BROADCAST_STATUSES = ['Draft', 'Queued', 'Processing', 'Published', 'Failed', 'Cancelled'] as const
+/** A status a broadcast can hold. */
+export type BroadcastOwnStatus = (typeof BROADCAST_STATUSES)[number]
+/** What the badge and the shared maps below take: a broadcast's statuses and
+ *  `Queue`, Import's own value for its waiting step, which Import keeps showing
+ *  as it did until its own session changes it (requester, 2 Nov 2026: this
+ *  change is Broadcast only). Not a Broadcast status. */
+export type BroadcastStatus = BroadcastOwnStatus | 'Queue'
 
 export type Broadcast = {
   id: string
@@ -474,16 +486,20 @@ export type Broadcast = {
   /** `YYYY-MM-DDTHH:mm`, local time. */
   start: string
   dnd: Dnd
-  status: BroadcastStatus
+  status: BroadcastOwnStatus
   success: number
   failed: number
   /** Recipients still unsent when a system error stopped the broadcast
    *  (Failed). The Broadcast End that also cut recipients off is gone (BA MoM,
    *  29 Oct 2026). */
   notSent?: number
-  /** Published and still sending, but inside a quiet period (was the Paused
-   *  status, then Processing until 28 Oct 2026). */
+  /** Processing and inside a quiet period (the old Paused status; Processing
+   *  until 28 Oct 2026, Published until 2 Nov 2026). */
   quiet?: boolean
+  /** Published only: false while the report is still being generated, which
+   *  starts when the status turns Published (BA MoM, 29 Oct 2026). Absent is
+   *  ready. */
+  reportPending?: boolean
   content: BroadcastContent
   createdBy: string
   createdAt: string
@@ -526,7 +542,7 @@ const directFile = (n: number) =>
 
 export const BROADCASTS: Broadcast[] = [
   /* Composed (28 Oct 2026) so every status has an Email or SMS example as
-     well as a CIS ID one: this Draft, BC-0011 Queue and BC-0010 Cancelled. */
+     well as a CIS ID one: this Draft, BC-0011 Queued and BC-0010 Cancelled. */
   {
     id: 'BC-0012',
     name: 'Card delivery notice',
@@ -561,7 +577,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-10-15T08:00',
     dnd: THREE_PERIOD_DND,
-    status: 'Queue',
+    status: 'Queued',
     success: 0,
     failed: 0,
     content: content('', 'Your fixed deposit is maturing', 'Dear Customer, your fixed deposit will mature on 20 October 2026.'),
@@ -664,7 +680,7 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-10-12T09:00',
     dnd: BA_DND,
-    status: 'Queue',
+    status: 'Queued',
     success: 0,
     failed: 0,
     content: content(
@@ -687,10 +703,11 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'now',
     start: '2026-10-05T10:00',
     dnd: DEFAULT_DND,
-    /* Validating (28 Oct 2026): nothing attempted yet, so no report. */
+    /* Sending row by row (BA Broadcast Job Lifecycle, 2 Nov 2026; was validating
+       with nothing attempted, 28 Oct 2026). Composed counts. */
     status: 'Processing',
-    success: 0,
-    failed: 0,
+    success: 412,
+    failed: 3,
     content: content(
       'Dear Customer, effective 1 November 2026, our savings account interest rate will be updated. Thank you.',
     ),
@@ -709,7 +726,9 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'schedule',
     start: '2026-10-03T19:00',
     dnd: DEFAULT_DND,
-    status: 'Published',
+    /* Inside the quiet period, still Processing since the BA's lifecycle
+       (2 Nov 2026; was Published): the rest wait to send. */
+    status: 'Processing',
     quiet: true,
     success: 402,
     failed: 3,
@@ -729,7 +748,9 @@ export const BROADCASTS: Broadcast[] = [
     startMode: 'now',
     start: '2026-09-29T08:15',
     dnd: { ...DEFAULT_DND, enabled: false },
+    /* Finished, report still being generated (2 Nov 2026, composed). */
     status: 'Published',
+    reportPending: true,
     success: 991,
     failed: 7,
     content: content('Bualuang mBanking will be unavailable on 30 Sep 2026, 00:00–04:00.', 'Scheduled maintenance'),
@@ -782,6 +803,7 @@ export const BROADCASTS: Broadcast[] = [
 
 export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'accent' | 'positive' | 'negative'> = {
   Draft: 'caution',
+  Queued: 'disabled',
   Queue: 'disabled',
   Processing: 'accent',
   Published: 'positive',
@@ -795,6 +817,7 @@ export const STATUS_TONE: Record<BroadcastStatus, 'caution' | 'disabled' | 'acce
  *  as the same thing. The value stays FAILED. PROPOSAL, pending BA. */
 export const STATUS_LABEL: Record<BroadcastStatus, string> = {
   Draft: 'Draft',
+  Queued: 'Queued',
   Queue: 'Queue',
   Processing: 'Processing',
   Published: 'Published',
@@ -802,8 +825,8 @@ export const STATUS_LABEL: Record<BroadcastStatus, string> = {
   Cancelled: 'Cancelled',
 }
 
-/** Draft and Queue can be cancelled; once processing starts, not (BA MoM, 29 Oct 2026). */
-export const isCancellable = (b: Broadcast) => b.status === 'Draft' || b.status === 'Queue'
+/** Draft and Queued can be cancelled; once processing starts, not (BA MoM, 29 Oct 2026). */
+export const isCancellable = (b: Broadcast) => b.status === 'Draft' || b.status === 'Queued'
 
 /** Recipients not yet attempted: not sent, not failed, not stopped by a system error. */
 export const waitingOf = (b: Broadcast) => Math.max(0, b.recipients - b.success - b.failed - (b.notSent ?? 0))
@@ -839,9 +862,12 @@ const csvCell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/
 
 export const deliveryReportName = (b: Broadcast) => `${b.id}-delivery-report.csv`
 
-/** A report exists once anything was attempted (Published or Failed; Processing
- *  only validates, BA / Dev sync 28 Oct 2026). */
-export const hasDeliveryReport = (b: Broadcast) => b.success + b.failed > 0
+/** The footer offers Download report in Published alone (BA MoM, 29 Oct 2026;
+ *  was once anything was attempted, Error included). */
+export const reportOffered = (b: Broadcast) => b.status === 'Published'
+/** It works only once the report is generated, which starts when the status
+ *  turns Published. */
+export const reportReady = (b: Broadcast) => reportOffered(b) && !b.reportPending
 
 export function deliveryReportCsv(b: Broadcast): string {
   const waiting = waitingOf(b)
