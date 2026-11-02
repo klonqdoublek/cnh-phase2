@@ -97,11 +97,11 @@ export const IMPORT_FAIL_SENTINEL = 'error'
 export const MAX_IMPORT_BYTES = 10 * 1024 * 1024
 export const UPLOAD_MS = 1200
 /** The server's ~10 minutes, shortened so a demo can watch a job finish. */
-export const PROCESS_MS = 8000
+export const PROCESS_MS = 15000
 /** In the queue before the server starts the job (Queue, 30 Oct 2026), shortened likewise. */
-export const QUEUE_MS = 2000
+export const QUEUE_MS = 5000
 /** The report is generated after the job turns Published (BA & Dev deck, 30 Oct 2026). */
-export const REPORT_MS = 6000
+export const REPORT_MS = 10000
 /** A file name containing this fails on the server after the upload (PROPOSAL, pending BA). */
 export const IMPORT_PROCESS_FAIL_SENTINEL = 'reject'
 
