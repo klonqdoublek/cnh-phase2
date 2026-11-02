@@ -74,6 +74,18 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [fresh, highlightMs])
   const onNotificationList = hash === '' || hash === '#/' || hash.startsWith('#/list')
+
+  /* Import Template shows each import's status as it was when the page opened (requester, 2 Nov 2026:
+     the real list is not expected to update live; open, Dev). Jobs keep running; leaving and coming
+     back shows where they are. The user's own Import from this page shows its Queue row at once. */
+  const onImportTemplatePage = hash.startsWith('#/import-template')
+  const [importSnapshot, setImportSnapshot] = useState<ImportRecord[] | null>(null)
+  const retakeSnapshot = useRef(false)
+  useEffect(() => {
+    if (!onImportTemplatePage) return setImportSnapshot(null)
+    setImportSnapshot((snap) => (snap && !retakeSnapshot.current ? snap : [...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS]))
+    retakeSnapshot.current = false
+  }, [onImportTemplatePage, importJobs.history])
   const seenFresh = useRef(new Set<string>())
   useEffect(() => {
     if (onNotificationList) {
@@ -182,7 +194,7 @@ export default function App() {
   const onBroadcast = hash.startsWith('#/broadcast')
   /* Import Template (BA & Dev deck, 30 Oct 2026): this session's jobs on top of the seeded imports. */
   const onImportTemplate = hash.startsWith('#/import-template')
-  const importRecords: ImportRecord[] = [...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS]
+  const importRecords: ImportRecord[] = importSnapshot ?? [...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS]
   const importView = hash.match(/^#\/import-template\/view\/([A-Z]+-[A-Z]?\d+)(\/download)?$/)
   const importViewId = openImport ?? importView?.[1]
   const viewingImport = importViewId ? importRecords.find((r) => r.id === importViewId) : undefined
@@ -287,6 +299,7 @@ export default function App() {
           onImported={(list, fileName, replace) => {
             setImportOpen(false)
             if (hash === '#/import-template/import') go('/import-template')
+            retakeSnapshot.current = true
             importJobs.submit(list, fileName, replace)
           }}
         />
