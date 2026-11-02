@@ -9,6 +9,7 @@ import {
   fieldsOf,
   isMessageBox,
   unknownTokens,
+  charsetOk,
   dndNeverSends,
   firstSend,
   idKind,
@@ -56,6 +57,23 @@ export const CONTENT_MAX: Record<keyof BroadcastContent, number> = {
   emailSenderName: 255,
   emailSenderAddress: 255,
 }
+
+/** URLs and addresses: the character list does not apply, the forbidden runs do. */
+const RAW: (keyof BroadcastContent)[] = ['pushDeeplink', 'emailSenderAddress']
+
+/** What a message field's value breaks while it is typed — over its maximum,
+ *  outside the allowed characters, or both, one message per line as V.4.3
+ *  writes them. Typing goes on; the error shows at once and Submit stays
+ *  blocked (CNH Template Management V.4.3, requester 2 Nov 2026). */
+export function textProblem(key: keyof BroadcastContent, value: string) {
+  const over = value.length > CONTENT_MAX[key]
+  const charset = !charsetOk(value, RAW.includes(key))
+  if (over && charset) return `${BROADCAST_COPY.msgCharset}\n${BROADCAST_COPY.msgMax(CONTENT_MAX[key])}`
+  if (over) return BROADCAST_COPY.msgMax(CONTENT_MAX[key])
+  if (charset) return BROADCAST_COPY.msgCharset
+  return undefined
+}
+const LIVE = (message: string) => message.startsWith(BROADCAST_COPY.msgCharset) || /^Maximum \d+ characters allowed\.$/.test(message)
 
 export type FormErrors = Partial<
   Record<
@@ -261,7 +279,7 @@ export function useBroadcastForm({
         if (!content[k].trim()) {
           if (!OPTIONAL.includes(k)) e[k] = BROADCAST_COPY.required
         }
-        else if (content[k].length > CONTENT_MAX[k]) e[k] = BROADCAST_COPY.msgMax(CONTENT_MAX[k])
+        else if (textProblem(k, content[k])) e[k] = textProblem(k, content[k])
         else if (audience && isMessageBox(k)) {
           /* A field the file has no column for — left behind when the file or
              its ID column changed — would send as typed (requester, 1 Nov 2026). */
@@ -378,7 +396,18 @@ export function useBroadcastForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /** The error a message field shows: what its value breaks right now (live),
+   *  else the last Submit's (required, unknown field), which stays until the
+   *  next Submit. An off card shows none: what was typed is kept, unchecked. */
+  const fieldError = (key: keyof BroadcastContent, on: boolean) => {
+    if (!on) return undefined
+    const live = textProblem(key, content[key])
+    const kept = errors[key]
+    return live ?? (kept && !LIVE(kept) ? kept : undefined)
+  }
+
   return {
+    fieldError,
     editing: !!initial,
     errors,
     clear,
