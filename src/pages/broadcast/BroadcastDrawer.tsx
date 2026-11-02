@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Button } from '@/bbl/button'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
+import { InlineMessage } from '@/bbl/inline-message'
 import { OutlineButton } from '@/bbl/outline-button'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { DetailDrawer } from '@/patterns/detail-drawer'
@@ -13,13 +14,14 @@ import {
   fmtDateTime,
   fmtDnd,
   fmtNumber,
-  hasDeliveryReport,
   isCancellable,
   quietUntil,
   RECIPIENT_TYPE_LABEL,
+  reportOffered,
+  reportReady,
   waitingOf,
   type Broadcast,
-  type BroadcastStatus as Status,
+  type BroadcastOwnStatus as Status,
 } from '@/data/broadcast'
 import { cn } from '@/lib/cn'
 import { BroadcastStatus } from './list/BroadcastStatus'
@@ -54,32 +56,35 @@ function resumesAt(b: Broadcast) {
 
 const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
   Draft: () => 'Not submitted yet. Nothing is sent until the broadcast is submitted.',
-  Queue: (b) =>
+  Queued: (b) =>
     dndNeverSends(b.dnd)
       ? BROADCAST_COPY.dndNeverSends
       : `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
-  /* Processing only validates, Published sends (BA / Dev sync, 28 Oct 2026):
-     the sending lines moved from Processing to Published. Processing's is composed. */
-  Processing: () => 'Checking the broadcast before sending. Nothing is sent yet.',
+  /* The BA's Broadcast Job Lifecycle (29 Oct 2026, built 2 Nov 2026): Processing reads
+     the file, validates it and sends row by row, so the sending lines are back here
+     (28 Oct 2026 had moved them to Published); Published is the finished job. The
+     refresh line and Published's are composed. */
+  Processing: (b) =>
+    b.quiet
+      ? `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`
+      : 'Messages are being sent. Open the broadcast again to refresh the result.',
   Published: (b) =>
-    waitingOf(b) > 0
-      ? b.quiet
-        ? `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`
-        : 'Messages are being sent.'
-      : 'Every recipient was sent a message.',
+    b.failed > 0
+      ? `The broadcast has finished. ${fmtNumber(b.failed)} recipients were not sent a message.`
+      : 'The broadcast has finished. Every recipient was sent a message.',
   /* Failed and Cancelled (19 Oct 2026): composed, the original build has
      neither. No report pointer (BA MoM, 29 Oct 2026: Download report only in
      Published; the 28 Oct UX writer pointer is dropped). */
   Failed: (b) =>
     `A system error stopped the broadcast.${b.notSent ? ` ${fmtNumber(b.notSent)} recipients were not sent.` : ''}`,
-  /* "before sending started" since a Queue broadcast can be cancelled too (29 Oct 2026; was "before it was submitted"). */
+  /* "before sending started" since a Queued broadcast can be cancelled too (29 Oct 2026; was "before it was submitted"). */
   Cancelled: () => 'Cancelled before sending started. Nothing was sent.',
 }
 
 function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
   const draft = b.status === 'Draft'
-  /* Nothing was attempted: never submitted, or still being validated (28 Oct 2026). */
-  const unsent = draft || b.status === 'Cancelled' || b.status === 'Processing'
+  /* Nothing was attempted: never submitted, or cancelled. Processing sends, so it has a Delivery result (2 Nov 2026). */
+  const unsent = draft || b.status === 'Cancelled'
   const waiting = waitingOf(b)
   const c = b.content
   return [
@@ -158,13 +163,17 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
  * pattern leaves to its consumer: fixed to the right edge over the list with
  * no scrim (as the original), the 225ms slide-in, the `sidebar-collapse`
  * close, Escape, a click outside, and a focus trap. A Draft's footer has
- * Cancel broadcast (behind a confirm dialog) and Edit. A Queue broadcast can
+ * Cancel broadcast (behind a confirm dialog) and Edit. A Queued broadcast can
  * be cancelled too but not edited (BA MoM, 29 Oct 2026; was Draft only), so
  * its footer has Cancel broadcast alone (Figma `Footer · Queued`). Once
- * processing starts it cannot be cancelled; the footer has
- * Download report once anything was attempted (Published or Failed), where the CNH template drawer keeps its Download — behind the same
- * confirm as the list row's download. Processing and Cancelled keep an empty
- * footer, so every drawer ends on the same rule (Figma `Footer · Empty`).
+ * processing starts it cannot be cancelled. Download report is Published's
+ * alone (BA MoM, 29 Oct 2026; was once anything was attempted, Error
+ * included) and works once the report is generated, which starts when the
+ * status turns Published: until then the button is disabled with a line
+ * saying so, as the Import Template drawer's (PROPOSAL, pending BA) — behind
+ * the same confirm as the list row's download. Processing, Error and
+ * Cancelled keep an empty footer, so every drawer ends on the same rule
+ * (Figma `Footer · Empty`).
  */
 export function BroadcastDrawer({
   broadcast,
@@ -182,7 +191,7 @@ export function BroadcastDrawer({
   const [cancelOpen, setCancelOpen] = useState(!!confirmingCancel && cancellable)
   /* The status could not be updated: the broadcast keeps its status. */
   const [cancelFailed, setCancelFailed] = useState(!!openFailed && cancellable)
-  const [reporting, setReporting] = useState(!!confirmingDownload && hasDeliveryReport(broadcast))
+  const [reporting, setReporting] = useState(!!confirmingDownload && reportReady(broadcast))
   /* The dialog owns Escape and clicks while it is up. */
   const dialogUp = useRef(cancelOpen || cancelFailed)
   dialogUp.current = cancelOpen || cancelFailed || reporting
@@ -232,7 +241,6 @@ export function BroadcastDrawer({
   }, [onClose])
 
   const draft = broadcast.status === 'Draft'
-  const attempted = hasDeliveryReport(broadcast)
   const sections = sectionsOf(broadcast)
 
   return (
@@ -284,11 +292,22 @@ export function BroadcastDrawer({
             <OutlineButton appearance="negative" onClick={() => setCancelOpen(true)} className="mr-auto h-[44px]">
               {BROADCAST_COPY.cancel}
             </OutlineButton>
-          ) : attempted ? (
-            <OutlineButton onClick={() => setReporting(true)} className="h-[44px]">
-              Download report
-              <Icon slug="download" size={16} color="var(--color-icon-highlight-default)" />
-            </OutlineButton>
+          ) : reportOffered(broadcast) ? (
+            <div className="flex w-full items-center justify-end gap-[var(--space-4)]">
+              {!reportReady(broadcast) && (
+                <InlineMessage size="s" className="min-w-px flex-1">
+                  {BROADCAST_COPY.reportGenerating}
+                </InlineMessage>
+              )}
+              <OutlineButton disabled={!reportReady(broadcast)} onClick={() => setReporting(true)} className="h-[44px] shrink-0">
+                Download report
+                <Icon
+                  slug="download"
+                  size={16}
+                  color={reportReady(broadcast) ? 'var(--color-icon-highlight-default)' : 'var(--color-icon-disabled-default)'}
+                />
+              </OutlineButton>
+            </div>
           ) : (
             <></>
           )

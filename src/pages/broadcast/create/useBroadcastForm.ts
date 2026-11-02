@@ -19,7 +19,7 @@ import {
   type AudienceResult,
   type Broadcast,
   type BroadcastContent,
-  type BroadcastStatus,
+  type BroadcastOwnStatus,
   type Dnd,
   type DndRule,
   type RecipientCheck,
@@ -344,7 +344,7 @@ export function useBroadcastForm({
     readFile()
   }
 
-  const record = (status: BroadcastStatus): Omit<Broadcast, 'id'> => ({
+  const record = (status: BroadcastOwnStatus): Omit<Broadcast, 'id'> => ({
     name: name.trim(),
     description: description.trim(),
     serviceCode,
@@ -375,9 +375,10 @@ export function useBroadcastForm({
         setFailed(true)
         return
       }
-      /* Submit is accepted into the queue; the system then validates it (Processing,
-         BA / Dev sync 28 Oct 2026). Before, sending now went straight to Processing. */
-      onCreate(record('Queue'), 'submit')
+      /* Submit is accepted into the queue (Queued); the job then reads the file,
+         validates it and sends (Processing), and Published ends it (BA Broadcast Job
+         Lifecycle, 29 Oct 2026; built 2 Nov 2026). Before, sending now went straight to Processing. */
+      onCreate(record('Queued'), 'submit')
     }, CREATE_MS)
   }
 
