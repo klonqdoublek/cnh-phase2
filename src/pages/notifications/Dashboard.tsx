@@ -42,6 +42,8 @@ export type DashboardProps = {
   onRetry: () => void
   onCreate: () => void
   onOpenTemplate: (t: Template) => void
+  /** Templates an import just added: their row is highlighted until it clears (PROPOSAL, 2 Nov 2026). */
+  highlightIds: ReadonlySet<string>
   /** Set by the drawer's Download; the list opens its download dialog for it. */
   downloadRequest: Template | null
   onDownloadRequestHandled: () => void
@@ -80,6 +82,9 @@ const COLUMNS: { label: string; width: number }[] = [
 ]
 
 const ROW_RULE = 'shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]'
+/* A just-imported row (PROPOSAL, 2 Nov 2026): Surface/Accent/Purple, because yellow is the Draft badge's
+   fill, green the Published one's and Surface/Highlight/Subtle the selected row's. Hover and selection win. */
+const ROW_NEW = 'bg-[var(--color-surface-accent-purple-default)]!'
 
 /**
  * Notification management — the Phase 1 list, with Phase 2's Import beside
@@ -92,6 +97,7 @@ export function Dashboard({
   onRetry,
   onCreate,
   onOpenTemplate,
+  highlightIds,
   notice = null,
   onNoticeClose,
   downloadRequest = null,
@@ -414,8 +420,9 @@ export function Dashboard({
                       {rows.map((t) => {
                         const isSelected = selected.has(t.id)
                         const cellState = isSelected ? 'selected' : hovered === t.id ? 'hovered' : 'default'
+                        const rowRule = cn(ROW_RULE, cellState === 'default' && highlightIds.has(t.id) && ROW_NEW)
                         const text = (value: React.ReactNode, wrap = false) => (
-                          <TableDataCell type="slot" state={cellState} className={ROW_RULE}>
+                          <TableDataCell type="slot" state={cellState} className={rowRule}>
                             <span
                               className={cn(
                                 'block w-full overflow-hidden type-body-m text-[var(--color-text-primary-default)]',
@@ -435,7 +442,7 @@ export function Dashboard({
                             className="group h-[64px] cursor-pointer"
                           >
                             <td className="p-0" onClick={(e) => e.stopPropagation()}>
-                              <TableDataCell type="slot" state={cellState} className={cn('justify-center', ROW_RULE)}>
+                              <TableDataCell type="slot" state={cellState} className={cn('justify-center', rowRule)}>
                                 <Checkbox
                                   selection={isSelected ? 'selected' : 'none'}
                                   aria-label={`Select ${t.name}`}
@@ -449,7 +456,7 @@ export function Dashboard({
                             <td className="p-0">{text(t.serviceCode)}</td>
                             <td className="p-0">{text(t.channels.join(', ') || EMPTY, true)}</td>
                             <td className="p-0">
-                              <TableDataCell type="slot" state={cellState} className={ROW_RULE}>
+                              <TableDataCell type="slot" state={cellState} className={rowRule}>
                                 {/* The download mark sits at one position on every row,
                                     20 clear of the widest badge — not after each badge. */}
                                 <div className="relative flex w-full items-center">
