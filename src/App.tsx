@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BROADCASTS, deliveryReportName, type Broadcast, type ListToast } from '@/data/broadcast'
 import { LIST_TOAST, REPORT_DEMO_ID, formPreset, listPreset, reportPreset } from '@/data/broadcast-presets'
 import { IMPORT_HISTORY, IMPORT_PRESETS, type ImportPreset } from '@/data/import-spec'
@@ -26,6 +26,9 @@ import { ImportDialog } from '@/pages/notifications/ImportDialog'
 const nextRunning = (list: Template[]) =>
   list.reduce((max, t) => Math.max(max, Number(t.id.replace(/\D/g, '')) || 0), list.length) + 1
 
+/** How long an imported row stays highlighted (PROPOSAL: 24 hours, pending BA). */
+const HIGHLIGHT_MS = 24 * 60 * 60 * 1000
+
 export default function App() {
   const hash = useHash()
   const [openTemplate, setOpenTemplate] = useState<Template | null>(null)
@@ -39,6 +42,8 @@ export default function App() {
   const [openBroadcast, setOpenBroadcast] = useState<Broadcast | null>(null)
   const [openImport, setOpenImport] = useState<string | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  /* Rows an import just added are highlighted (PROPOSAL, 2 Nov 2026, pending BA): id → when it landed. */
+  const [fresh, setFresh] = useState<ReadonlyMap<string, number>>(new Map())
 
   /* Puts imported templates on the list. Importing over a file replaces the templates its earlier import added. */
   const landImport = (imported: Template[], fileName?: string, replace?: boolean) => {
@@ -47,9 +52,39 @@ export default function App() {
     const stamped = imported.map((t, i) => stampImported(t, base + i))
     setTemplates((list) => [...stamped, ...list.filter((t) => !gone.has(t.id))])
     if (fileName) setImportHistory((h) => ({ ...h, [fileName]: stamped.map((t) => t.id) }))
+    const now = Date.now()
+    setFresh((m) => new Map([...m, ...stamped.map((t) => [t.id, now] as const)]))
   }
   /* Since 28 Oct 2026 (BA / Dev) Import submits a job; the templates land when the server is done, about 10 minutes later. */
   const importJobs = useImportJobs(landImport)
+
+  const unfresh = (gone: (id: string, landed: number) => boolean) =>
+    setFresh((m) => ([...m].some(([id, at]) => gone(id, at)) ? new Map([...m].filter(([id, at]) => !gone(id, at))) : m))
+
+  /* The highlight goes three ways (requester, 2 Nov 2026):
+     1. after HIGHLIGHT_MS, as Gmail's new mail stops standing out (?hl=<seconds> shortens it for a demo);
+     2. when the user leaves Notification management after seeing it, so a new visit starts plain;
+        a row that lands while the user is elsewhere keeps it until seen;
+     3. when the user opens that template. */
+  const highlightMs = (Number(new URLSearchParams(location.search).get('hl')) || 0) * 1000 || HIGHLIGHT_MS
+  useEffect(() => {
+    if (fresh.size === 0) return
+    const next = Math.min(...fresh.values()) + highlightMs - Date.now()
+    const timer = setTimeout(() => unfresh((_, at) => Date.now() - at >= highlightMs), Math.max(0, next))
+    return () => clearTimeout(timer)
+  }, [fresh, highlightMs])
+  const onNotificationList = hash === '' || hash === '#/' || hash.startsWith('#/list')
+  const seenFresh = useRef(new Set<string>())
+  useEffect(() => {
+    if (onNotificationList) {
+      fresh.forEach((_, id) => seenFresh.current.add(id))
+      return
+    }
+    if (seenFresh.current.size === 0) return
+    const seen = seenFresh.current
+    seenFresh.current = new Set()
+    unfresh((id) => seen.has(id))
+  }, [onNotificationList, fresh])
 
   const backToList = (n: ListNotice) => {
     setNotice(n)
@@ -200,7 +235,11 @@ export default function App() {
           onNoticeClose={() => setNotice(null)}
           onRetry={() => go('/list')}
           onCreate={() => go('/create')}
-          onOpenTemplate={setOpenTemplate}
+          onOpenTemplate={(t) => {
+            setOpenTemplate(t)
+            unfresh((id) => id === t.id)
+          }}
+          highlightIds={new Set(fresh.keys())}
           downloadRequest={downloadRequest}
           onDownloadRequestHandled={() => setDownloadRequest(null)}
           importPreset={importPreset}
