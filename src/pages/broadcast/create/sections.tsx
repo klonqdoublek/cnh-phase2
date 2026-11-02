@@ -657,7 +657,7 @@ function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boo
         disabled={!on}
         value={f.content[id]}
         max={CONTENT_MAX[id]}
-        error={f.errors[id]}
+        error={f.fieldError(id, on)}
         placeholder={placeholder}
         onChange={f.setC(id)}
         tint={isMessageBox(id) ? tint : undefined}
