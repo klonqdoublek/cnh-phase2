@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/bbl/button'
 import { GhostButton } from '@/bbl/ghost-button'
+import { Icon } from '@/bbl/icon'
+import { OutlineButton } from '@/bbl/outline-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConsolePage } from '@/patterns/console-page'
 import { EmptyState } from '@/patterns/empty-state'
@@ -26,9 +28,13 @@ export type ImportTemplateListProps = {
   /** `#/import-template/loading` · `#/import-template/error`. */
   state?: 'ready' | 'loading' | 'error'
   onRetry?: () => void
+  /** Fetches the list again: every import's status as of now. */
+  onRefresh: () => void
 }
 
 const PAGE_SIZE = 50
+/** How long the refetch shows the list's loading state in the prototype. */
+const REFRESH_MS = 800
 
 /* Slide 8's columns, in its order. Widths at 1920, as Broadcast's list. */
 const COLUMNS: ListColumn<ImportRecord>[] = [
@@ -48,7 +54,9 @@ const COLUMNS: ListColumn<ImportRecord>[] = [
  * header and the empty state as a second way in, beside Notification
  * management's (PROPOSAL, 1 Nov 2026, pending BA: the deck does not ask for it).
  */
-export function ImportTemplateList({ records, onOpen, onImport, state = 'ready', onRetry }: ImportTemplateListProps) {
+export function ImportTemplateList({ records, onOpen, onImport, state: shownState = 'ready', onRetry, onRefresh }: ImportTemplateListProps) {
+  const [refreshing, setRefreshing] = useState(false)
+  const state = refreshing ? 'loading' : shownState
   const [requestedPage, setPage] = useState(0)
   const [query, setQuery] = useState('')
   const [statuses, setStatuses] = useState<string[]>([...IMPORT_STATUSES])
@@ -105,7 +113,28 @@ export function ImportTemplateList({ records, onOpen, onImport, state = 'ready',
     <div className="flex h-full min-h-px flex-col">
       <ConsolePage
         title={COPY.title}
-        headerActions={<Button onClick={onImport}>{COPY.importAction}</Button>}
+        /* Refresh fetches the page again (design critique with the lead design team, 3 Nov
+           2026): the list shows each import's status as of when it was opened, so the user
+           pulls the newer ones. Filters, search and page stay. Composed: webds ships no
+           refresh pattern; Outline Button with the library's `refresh` icon. */
+        headerActions={
+          <span className="flex items-center gap-[var(--space-4)]">
+            <OutlineButton
+              disabled={state === 'loading'}
+              onClick={() => {
+                setRefreshing(true)
+                setTimeout(() => {
+                  onRefresh()
+                  setRefreshing(false)
+                }, REFRESH_MS)
+              }}
+            >
+              <Icon slug="refresh" size={16} color="currentColor" />
+              {COPY.refreshAction}
+            </OutlineButton>
+            <Button onClick={onImport}>{COPY.importAction}</Button>
+          </span>
+        }
         columnWidth="fill"
         className="[&>[data-part=Body]]:bg-[var(--color-surface-primary-default)] [&>[data-part=Body]>div]:gap-0 [&>[data-part=Body]>div]:px-0 [&>[data-part=Body]>div]:pt-0 [&>[data-part=Body]>div]:pb-0 [&>[data-part=Header]]:px-[var(--space-4)]"
       >
