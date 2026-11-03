@@ -221,6 +221,7 @@ export default function App() {
     >
       {onImportTemplate ? (
         <ImportTemplateList
+          breadcrumb={importMenu}
           records={hash === '#/import-template/empty' ? [] : importRecords}
           onOpen={(r) => setOpenImport(r.id)}
           onImport={() => setImportOpen(true)}

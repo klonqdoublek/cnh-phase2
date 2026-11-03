@@ -189,7 +189,7 @@ export function ConceptPanel() {
                 <span className="type-body-s text-[var(--color-text-secondary-default)]">
                   {access === 'side'
                     ? 'Its own item in the sidebar, under Notification management.'
-                    : 'No sidebar item: the Import button on Notification management opens Import file and View import status.'}
+                    : 'No sidebar item: the Import button on Notification management opens Import file and View import status, whose page carries a breadcrumb back.'}
                 </span>
               </Section>
             )}
