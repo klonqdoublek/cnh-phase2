@@ -158,11 +158,19 @@ export function MessagePreview({
   on: boolean
 }) {
   const Preview = PREVIEWS[channel]
+  /* The fields set the card's height; a message taller than them scrolls
+   * inside the grey area, so the card and its fields stay put (requester,
+   * 3 Nov 2026). The area is laid over its cell so it adds no height of its
+   * own; `my-auto` centres a short message and lets a long one start at the top. */
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
       <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Preview</span>
-      <div className="flex min-h-[240px] flex-1 flex-col justify-center rounded-[var(--radius-2)] bg-[var(--color-surface-secondary-default)] p-[var(--space-6)]">
-        <Preview c={content} row={firstRow(audience)} off={!on} />
+      <div className="relative min-h-[240px] flex-1">
+        <div className="absolute inset-0 flex flex-col overflow-y-auto rounded-[var(--radius-2)] bg-[var(--color-surface-secondary-default)] p-[var(--space-6)]">
+          <div className="my-auto flex w-full flex-col">
+            <Preview c={content} row={firstRow(audience)} off={!on} />
+          </div>
+        </div>
       </div>
     </div>
   )
