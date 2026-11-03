@@ -41,6 +41,9 @@ export type ImportRecord = {
 export const IMPORT_TEMPLATE_COPY = {
   title: 'Import Template',
   search: 'Search by import file name',
+  /* Was "Status" (Broadcast's) until the design critique of 3 Nov 2026: a bare "Queue" did not
+     say what is queued. The column, the Status filter and the drawer name it (composed). */
+  status: 'Import status',
   emptyTitle: 'No files imported yet',
   /* Was "Import a template file from Notification management to see it here" until the page had its own Import (1 Nov 2026, composed). */
   emptyLine: 'Import a template file to see its result here',

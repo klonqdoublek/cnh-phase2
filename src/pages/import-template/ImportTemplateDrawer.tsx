@@ -137,7 +137,7 @@ export function ImportTemplateDrawer({ record, onClose, confirmingDownload }: Im
         title={record.fileName}
         status={
           <>
-            <span className="type-body-s text-[var(--color-text-tertiary-default)]">Status</span>
+            <span className="type-body-s text-[var(--color-text-tertiary-default)]">{COPY.status}</span>
             <BroadcastStatus status={record.status} />
           </>
         }
