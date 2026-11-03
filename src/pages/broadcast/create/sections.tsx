@@ -705,8 +705,8 @@ function NeverSendsAlert({ error }: { error: boolean }) {
   )
 }
 
-/** One quiet period on one row: its days, its hours or All day, and — when
- *  there is more than one — a trash to remove it (draft 2.2, Figma 89:4665). */
+/** One quiet period on one row: its days, and its hours or All day (draft
+ *  2.2, Figma 89:4665). Its trash is the card's, in the top-right corner. */
 function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const off = !f.dnd.enabled
   const daysError = f.errors[`dndDays:${rule.id}`]
@@ -757,7 +757,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
             onChange={(v) => f.setDndRule(rule.id, { to: v })}
             /* The end falls on the next day (BA, 2026-10-19), said under the
                box so the row keeps its width. */
-            hint={endsNextDay(rule) ? 'Next day' : undefined}
+            hint={endsNextDay(rule) ? 'Next Day' : undefined}
           />
           <BesideField>
             <Choice
@@ -769,22 +769,6 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
               onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
             />
           </BesideField>
-          {f.dnd.rules.length > 1 && (
-            <BesideField className="pl-[var(--space-4)]">
-              <IconButton
-                label={`Remove quiet period${which}`}
-                disabled={off}
-                icon={
-                  <Icon
-                    slug="trash"
-                    size={24}
-                    color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'}
-                  />
-                }
-                onClick={() => f.removeDndRule(rule.id)}
-              />
-            </BesideField>
-          )}
         </div>
         {timeError && (
           <InlineMessage appearance="negative" size="xs">
@@ -804,6 +788,23 @@ function BesideField({ className, children }: { className?: string; children: Re
       <FieldLabel> </FieldLabel>
       <span className={cn('flex h-[56px] items-center', className)}>{children}</span>
     </FieldRoot>
+  )
+}
+
+function RemoveRule({ f, id, which }: F & { id: string; which: string }) {
+  const off = !f.dnd.enabled
+  return (
+    <span className="ml-auto flex shrink-0">
+      <IconButton
+        size={24}
+        label={`Remove quiet period${which}`}
+        disabled={off}
+        icon={
+          <Icon slug="trash" size={24} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />
+        }
+        onClick={() => f.removeDndRule(id)}
+      />
+    </span>
   )
 }
 
@@ -835,6 +836,10 @@ export function DndCard({ f }: F) {
       {dnd.rules.map((rule, i) => (
         <CardSurface key={rule.id} className="h-auto items-start border border-[var(--color-border-primary-default)]">
           <DndRuleRow f={f} rule={rule} index={i} />
+          {/* When there is more than one, the trash sits in the card's top-right
+              corner (design critique with the lead design team, 3 Nov 2026; was
+              at the end of the hours row, after All day). */}
+          {dnd.rules.length > 1 && <RemoveRule f={f} id={rule.id} which={` ${i + 1}`} />}
         </CardSurface>
       ))}
       {f.neverSends && (
