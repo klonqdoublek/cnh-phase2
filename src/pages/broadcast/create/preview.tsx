@@ -80,7 +80,7 @@ function PushPreview({ c, row, off }: PreviewProps) {
           <span className="type-body-xs text-[var(--color-text-tertiary-default)]">now</span>
         </span>
         <Part text={c.pushTitle} row={row} off={off} className="type-body-s-emphasized" label="Push title" />
-        <Part text={c.pushBody} row={row} off={off} className="type-body-s line-clamp-4" label="Push message" />
+        <Part text={c.pushBody} row={row} off={off} className="type-body-s" label="Push message" />
       </div>
     </div>
   )
