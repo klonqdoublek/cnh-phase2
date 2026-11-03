@@ -5,7 +5,6 @@ import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
-import { ContainedIconButton } from '@/bbl/contained-icon-button'
 import { FieldLabel } from '@/bbl/field'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
@@ -45,11 +44,11 @@ import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
 /* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
  * 85:19401, 15 Oct 2026): the audience step carries the message content —
- * the channel cards, each with its `+` for a dynamic field — and channels are
- * switched on their own cards. */
+ * the channel cards, each message box with its dynamic field button — and
+ * channels are switched on their own cards. */
 
 type F = { f: BroadcastForm }
-/** The message box the cursor was last in, so a card's `+` knows where to insert. */
+/** The message box the cursor was last in, so a picked field keeps its caret. */
 export type FocusRef = React.MutableRefObject<{ key: string; el: HTMLInputElement | HTMLTextAreaElement } | null>
 
 const sizeLabel = (bytes: number) =>
@@ -342,35 +341,20 @@ function ColumnSelect({ f }: F) {
 
 /* ── Message content (under the audience step) ─────────────────────────── */
 
-/** Each channel's message boxes, in order — where the card's `+` inserts
- *  when the cursor is not in one of that channel's boxes. */
-const CHANNEL_BOXES: Record<Channel, (keyof BroadcastContent)[]> = {
-  'Push notification': ['pushTitle', 'pushBody'],
-  Email: ['emailSubject', 'emailBody'],
-  SMS: ['smsMessage'],
-}
-
-/** Inserts `${COLUMN}` at the caret of the channel's message box the cursor
- *  was last in, or into the channel's first box. */
+/** Inserts `${COLUMN}` into the message box whose button was pressed, at its
+ *  caret (the box keeps its selection while unfocused, so this is also where
+ *  the cursor last left it). */
 function useInsertField(f: BroadcastForm, focus: FocusRef) {
-  return (token: string, channel: Channel) => {
-    type Target = NonNullable<FocusRef['current']>
-    const usable = (t: Target | null): t is Target => !!t && !t.el.disabled && t.el.isConnected
-    let target = focus.current
-    if (!(usable(target) && CHANNEL_BOXES[channel].includes(target.key as keyof BroadcastContent))) {
-      const key = CHANNEL_BOXES[channel][0]
-      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-        `[data-field="${key}"] input, [data-field="${key}"] textarea`,
-      )
-      target = el ? { key, el } : null
-    }
-    if (!usable(target)) return
-    const { el, key } = target
+  return (token: string, key: keyof BroadcastContent) => {
+    const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      `[data-field="${key}"] input, [data-field="${key}"] textarea`,
+    )
+    if (!el || el.disabled) return
     const from = el.selectionStart ?? el.value.length
     const to = el.selectionEnd ?? el.value.length
     focus.current = { key, el }
     /* The browser's own edit, so ⌘Z takes the picked field back (./highlight.tsx). */
-    editBox(el, from, to, token, f.setC(key as keyof BroadcastContent))
+    editBox(el, from, to, token, f.setC(key))
   }
 }
 
@@ -389,7 +373,7 @@ function useDismiss(open: boolean, setOpen: (open: boolean) => void, root: React
   }, [open, setOpen, root])
 }
 
-/** The pop-up under a card's `+`: webds `select-list`, the pattern that puts
+/** The pop-up under a message box's dynamic field button: webds `select-list`, the pattern that puts
  *  the library's Search Field above a single-pick list (requester, 28 Oct
  *  2026; was Dropdown Menu, which has no search). The columns go in as one
  *  unlabelled group and only that group scrolls: scrolling the root moved the
@@ -417,9 +401,12 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
   )
 }
 
-/** Idea 2.2's `+` on a card's title row (Figma 359:112101), which opens the
- *  file's columns in `FieldMenu`. The draft draws the button only; the
- *  pop-up is composed (gap). */
+/** The dynamic field button, which opens the file's columns in `FieldMenu`.
+ *  It sits in each message box's top-right corner, so the pointer does not
+ *  travel to the card's title row (design critique with the lead design team,
+ *  3 Nov 2026; was Idea 2.2's `+` on the card's title row, Figma 359:112101).
+ *  webds `icon-button` at 24 with the `form` icon: the library ships no
+ *  wand, sparkle or `</>` icon (gap). The pop-up is composed (gap). */
 function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (token: string) => void; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
@@ -429,11 +416,12 @@ function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (toke
     <span ref={root} className="relative inline-flex">
       {/* mousedown would blur the message box and lose the caret first */}
       <span className="inline-flex" onMouseDown={(e) => e.preventDefault()}>
-        <ContainedIconButton
+        <IconButton
+          size={24}
           label={label}
           aria-expanded={open}
           disabled={off}
-          icon={<Icon slug="plus" size={16} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />}
+          icon={<Icon slug="form" size={24} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />}
           onClick={() => setOpen(!open)}
         />
       </span>
@@ -466,8 +454,9 @@ function ChannelAlert({ f }: F) {
 }
 
 /** The message area under the audience file. A dynamic field goes in two
- *  ways (BA & Dev feedback, 30 Oct 2026, "Option 2 + 3"): the `+` on each
- *  channel card's title row opens the file's columns (Idea 2.2), and typing
+ *  ways (BA & Dev feedback, 30 Oct 2026, "Option 2 + 3"): the button in each
+ *  message box's top-right corner opens the file's columns (Idea 2.2, moved
+ *  into the box 3 Nov 2026), and typing
  *  `$` in a message box opens them at the caret (Idea 4, ./shortcut.tsx). A
  *  picked field reads `${COLUMN}`, tinted as a chip (./highlight.tsx). The
  *  cards are stacked full width, as the CNH Template form (requester, 27 Oct
@@ -502,16 +491,7 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
           <FormSectionCard
             key={c}
             className="min-w-0 border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
-            title={
-              hasFields ? (
-                <span className="flex items-center justify-between gap-[var(--space-4)]">
-                  {c}
-                  <FieldMenuButton f={f} label={`Add dynamic field to ${c}`} disabled={!on} onInsert={(t) => insert(t, c)} />
-                </span>
-              ) : (
-                c
-              )
-            }
+            title={c}
             toggle={single ? undefined : { on, onToggle: (v) => f.setChannel(c, v) }}
             invalid={invalid}
             rowGap={4}
@@ -519,7 +499,7 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
             {/* Fields left, the preview right, as the deck draws Email (30 Oct 2026). */}
             <div className="grid grid-cols-2 items-stretch gap-[var(--space-6)]">
               <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
-                <ChannelFields f={f} channel={c} on={on} tint={tint} />
+                <ChannelFields f={f} channel={c} on={on} tint={tint} insert={hasFields ? insert : undefined} />
               </div>
               <MessagePreview channel={c} content={f.content} audience={f.audience} on={on} />
             </div>
@@ -555,7 +535,13 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
  *  (TH): one broadcast is written in one language, Thai or English (BA / Dev
  *  sync, 28 Oct 2026). Push's Deep link and Email's sender are the Template
  *  form's too (BA & Dev feedback, 30 Oct 2026); they take no dynamic field. */
-function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boolean; tint?: Tint }) {
+function ChannelFields({
+  f,
+  channel,
+  on,
+  tint,
+  insert,
+}: F & { channel: Channel; on: boolean; tint?: Tint; insert?: (token: string, key: keyof BroadcastContent) => void }) {
   const box = (
     id: keyof BroadcastContent,
     label: string,
@@ -575,6 +561,11 @@ function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boo
         placeholder={placeholder}
         onChange={f.setC(id)}
         tint={isMessageBox(id) ? tint : undefined}
+        corner={
+          insert && isMessageBox(id) ? (
+            <FieldMenuButton f={f} label={`Add dynamic field to ${label}`} disabled={!on} onInsert={(t) => insert(t, id)} />
+          ) : undefined
+        }
         {...rest}
       />
     )

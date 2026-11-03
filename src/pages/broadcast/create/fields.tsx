@@ -1,7 +1,7 @@
 import { Checkbox } from '@/bbl/checkbox'
 import { RadioButton } from '@/bbl/radio-button'
 import { FormField } from '@/patterns/form-field'
-import { useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { cn } from '@/lib/cn'
 import { FieldTint, hasField, type Tint } from './highlight'
 
@@ -31,6 +31,7 @@ export function Text({
   disabled,
   hint,
   tint,
+  corner,
   className,
 }: {
   id: string
@@ -50,6 +51,9 @@ export function Text({
    *  and erased whole (./highlight.tsx). The box's own text goes transparent
    *  under the layer. */
   tint?: Tint
+  /** A control in the box's top-right corner (the dynamic field button). The
+   *  box's text stops short of it. */
+  corner?: React.ReactNode
   className?: string
 }) {
   const root = useRef<HTMLDivElement>(null)
@@ -65,6 +69,8 @@ export function Text({
         multiline && 'whitespace-pre-line',
         tinted &&
           '[&_input]:text-transparent [&_input]:[caret-color:var(--color-text-primary-default)] [&_textarea]:text-transparent [&_textarea]:[caret-color:var(--color-text-primary-default)]',
+        /* 24 for the button + 8 before it; the tint layer mirrors this padding. */
+        corner && '[&_input]:pr-[var(--space-8)] [&_textarea]:pr-[var(--space-8)]',
         className,
       )}
     >
@@ -76,6 +82,34 @@ export function Text({
         onChange={onChange}
       />
       {tint && !disabled && <FieldTint root={root} value={value} tint={tint} onChange={onChange} />}
+      {corner && <BoxCorner root={root}>{corner}</BoxCorner>}
+    </div>
+  )
+}
+
+/** Pins its child inside the box's top-right corner, on the box's 16 padding,
+ *  so a 24 control lines up with the first line of text. The box sits under a
+ *  label whose height the form field owns, so its place is measured. */
+function BoxCorner({ root, children }: { root: React.RefObject<HTMLDivElement | null>; children: React.ReactNode }) {
+  const corner = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const box = root.current?.querySelector<HTMLElement>('.webds-text-field, .webds-text-area')
+    const out = corner.current
+    if (!box || !out || !root.current) return
+    const place = () => {
+      const at = box.getBoundingClientRect()
+      const host = root.current!.getBoundingClientRect()
+      out.style.top = `calc(${at.top - host.top}px + var(--space-4))`
+      out.style.right = `calc(${host.right - at.right}px + var(--space-4))`
+    }
+    place()
+    const seen = new ResizeObserver(place)
+    seen.observe(box)
+    return () => seen.disconnect()
+  })
+  return (
+    <div ref={corner} className="absolute flex">
+      {children}
     </div>
   )
 }
