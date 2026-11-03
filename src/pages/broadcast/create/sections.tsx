@@ -40,6 +40,7 @@ import { editBox, type Tint } from './highlight'
 import { MessagePreview } from './preview'
 import { ScrollBox } from './scroll-box'
 import { TRIGGER, useFieldShortcut } from './shortcut'
+import { fieldIcon } from '@/prototype/field-icon'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
 /* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
@@ -405,8 +406,9 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
  *  It sits in each message box's top-right corner, so the pointer does not
  *  travel to the card's title row (design critique with the lead design team,
  *  3 Nov 2026; was Idea 2.2's `+` on the card's title row, Figma 359:112101).
- *  webds `icon-button` at 24 with the `form` icon: the library ships no
- *  wand, sparkle or `</>` icon (gap). The pop-up is composed (gap). */
+ *  webds `icon-button` at 24 with a syntax icon drawn for CNH, one of four
+ *  (`?dficon=`, ../../../prototype/field-icon.ts): the library ships no
+ *  braces or `</>` icon (gap). The pop-up is composed (gap). */
 function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (token: string) => void; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
@@ -421,7 +423,14 @@ function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (toke
           label={label}
           aria-expanded={open}
           disabled={off}
-          icon={<Icon slug="form" size={24} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />}
+          icon={
+            <Icon
+              dir="cnh-icons"
+              slug={`field-${fieldIcon}`}
+              size={24}
+              color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'}
+            />
+          }
           onClick={() => setOpen(!open)}
         />
       </span>
@@ -573,7 +582,9 @@ function ChannelFields({
   if (channel === 'Push notification')
     return (
       <>
-        {box('pushTitle', 'Push title', 'Enter push title')}
+        {/* One-line message boxes take the Template form's taller 77 box, so the
+            dynamic field button in the corner has room (design critique, 3 Nov 2026). */}
+        {box('pushTitle', 'Push title', 'Enter push title', { boxHeight: 77 })}
         {box('pushBody', 'Push message', 'Enter push message', { boxHeight: 77 })}
         {box('pushDeeplink', 'Deep link', 'Enter a deep link URL (optional)', {
           multiline: true,
@@ -585,7 +596,7 @@ function ChannelFields({
   if (channel === 'Email')
     return (
       <>
-        {box('emailSubject', 'Email subject', 'Enter email subject')}
+        {box('emailSubject', 'Email subject', 'Enter email subject', { boxHeight: 77 })}
         {box('emailBody', 'Email content', 'Enter email content', { multiline: true })}
         {/* One under the other at one box height (the Template's Sender name is
             77 tall): the preview takes the card's right half, so a pair side by
