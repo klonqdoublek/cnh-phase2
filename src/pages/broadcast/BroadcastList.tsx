@@ -202,8 +202,13 @@ export function BroadcastList({
           <div className="flex flex-col">
             {filters}
             {state === 'loading' ? (
-              /* Notification management's loading card (Figma 308:1003, State · Loading). */
-              <EmptyState variant="idle" icon={<SpinnerLoader size="l" />} className="h-[732px] justify-center" />
+              /* Notification management's loading card (Figma 308:1003, State · Loading),
+                 inset 16 on every side so its radius shows (Korarit, 3 Nov 2026). */
+              <EmptyState
+                variant="idle"
+                icon={<SpinnerLoader size="l" />}
+                className="m-[var(--space-4)] h-[700px] justify-center"
+              />
             ) : state === 'error' ? (
               /* Its error card (State · Error): Try again 32 under the line. */
               <EmptyState
