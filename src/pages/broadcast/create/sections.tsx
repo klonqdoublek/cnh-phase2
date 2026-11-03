@@ -5,6 +5,7 @@ import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
+import { ContainedIconButton } from '@/bbl/contained-icon-button'
 import { FieldLabel } from '@/bbl/field'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
@@ -406,7 +407,8 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
  *  It sits in each message box's top-right corner, so the pointer does not
  *  travel to the card's title row (design critique with the lead design team,
  *  3 Nov 2026; was Idea 2.2's `+` on the card's title row, Figma 359:112101).
- *  webds `icon-button` at 24 with a syntax icon drawn for CNH, one of four
+ *  webds `contained-icon-button` (44, highlight outline, white; requester
+ *  asked for an outline, 3 Nov 2026) with a 24 syntax icon drawn for CNH, one of four
  *  (`?dficon=`, ../../../prototype/field-icon.ts): the library ships no
  *  braces or `</>` icon (gap). The pop-up is composed (gap). */
 function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (token: string) => void; disabled?: boolean; label: string }) {
@@ -418,8 +420,9 @@ function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (toke
     <span ref={root} className="relative inline-flex">
       {/* mousedown would blur the message box and lose the caret first */}
       <span className="inline-flex" onMouseDown={(e) => e.preventDefault()}>
-        <IconButton
-          size={24}
+        <ContainedIconButton
+          background
+          iconSize={24}
           label={label}
           aria-expanded={open}
           disabled={off}

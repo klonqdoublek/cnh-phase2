@@ -69,8 +69,9 @@ export function Text({
         multiline && 'whitespace-pre-line',
         tinted &&
           '[&_input]:text-transparent [&_input]:[caret-color:var(--color-text-primary-default)] [&_textarea]:text-transparent [&_textarea]:[caret-color:var(--color-text-primary-default)]',
-        /* 24 for the button + 8 before it; the tint layer mirrors this padding. */
-        corner && '[&_input]:pr-[var(--space-8)] [&_textarea]:pr-[var(--space-8)]',
+        /* The 44 button sits 8 in from the box edge, so the text (16 in) stops
+           48 short: 12 clear of it. The tint layer mirrors this padding. */
+        corner && '[&_input]:pr-[var(--space-12)] [&_textarea]:pr-[var(--space-12)]',
         className,
       )}
     >
@@ -87,8 +88,8 @@ export function Text({
   )
 }
 
-/** Pins its child inside the box's top-right corner, on the box's 16 padding,
- *  so a 24 control lines up with the first line of text. The box sits under a
+/** Pins its child 8 inside the box's top-right corner, so a 44 control is
+ *  centred on the first line of text (16 padding + 24 line). The box sits under a
  *  label whose height the form field owns, so its place is measured. */
 function BoxCorner({ root, children }: { root: React.RefObject<HTMLDivElement | null>; children: React.ReactNode }) {
   const corner = useRef<HTMLDivElement>(null)
@@ -99,8 +100,8 @@ function BoxCorner({ root, children }: { root: React.RefObject<HTMLDivElement | 
     const place = () => {
       const at = box.getBoundingClientRect()
       const host = root.current!.getBoundingClientRect()
-      out.style.top = `calc(${at.top - host.top}px + var(--space-4))`
-      out.style.right = `calc(${host.right - at.right}px + var(--space-4))`
+      out.style.top = `calc(${at.top - host.top}px + var(--space-2))`
+      out.style.right = `calc(${host.right - at.right}px + var(--space-2))`
     }
     place()
     const seen = new ResizeObserver(place)
