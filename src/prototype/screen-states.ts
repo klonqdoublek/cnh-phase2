@@ -30,6 +30,7 @@ const NOTIFICATION_LIST: Screen = {
   name: 'Notification list',
   states: [
     s('#/list', 'Default', 'The list'),
+    s('#/list/import-menu', 'Dialog', 'Import menu open (sub-menu option)', true),
     s('#/list/loading', 'Loading', 'Loading'),
     s('#/list/error', 'Error', 'Unable to get information'),
     s('#/list/empty', 'Empty', 'No templates'),
@@ -170,7 +171,7 @@ const CREATE_BROADCAST: Screen = {
 
 /** The screen a route belongs to, or null when it has no other state. */
 export function screenOf(hash: string): Screen | null {
-  if (hash === '' || hash === '#/' || /^#\/list(\/(loading|error|empty))?$/.test(hash)) return NOTIFICATION_LIST
+  if (hash === '' || hash === '#/' || /^#\/list(\/(loading|error|empty|import-menu))?$/.test(hash)) return NOTIFICATION_LIST
   if (/^#\/list\/import(\/[a-z-]+)?$/.test(hash)) return IMPORT
   if (/^#\/import-template(\/(loading|error|empty|import|view\/[A-Z]+-[A-Z]?\d+(\/download)?))?$/.test(hash)) return IMPORT_TEMPLATE
   if (/^#\/create(\/[a-z]+)?$/.test(hash)) return CREATE_NOTIFICATION

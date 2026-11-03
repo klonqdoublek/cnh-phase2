@@ -5,6 +5,7 @@ import { Checkbox, type CheckboxSelection } from '@/bbl/checkbox'
 import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
 import { OutlineButton } from '@/bbl/outline-button'
+import { ImportMenuButton } from './ImportMenuButton'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { TableDataCell } from '@/bbl/table-data-cell'
 import { TableHeaderCell } from '@/bbl/table-header-cell'
@@ -49,6 +50,12 @@ export type DashboardProps = {
   onDownloadRequestHandled: () => void
   /** Present on `#/list/import[/<preset>]` — the Import dialog opens in that state. */
   importPreset?: ImportPreset
+  /** Import is a menu (Import file, Import Template) because the page has no sidebar item (requester, 2 Nov 2026). */
+  importMenu?: boolean
+  /** `#/list/import-menu`: the menu is open. */
+  importMenuHeld?: boolean
+  /** The menu's Import Template: opens the page of every import. */
+  onViewImports?: () => void
   /** File names imported before; importing one again asks first. */
   importedNames: string[]
   /** `replace`: the user chose to import over an earlier import of `fileName`. */
@@ -105,6 +112,9 @@ export function Dashboard({
   onImport,
   importJobs,
   importPreset,
+  importMenu = false,
+  importMenuHeld = false,
+  onViewImports,
   importedNames,
 }: DashboardProps) {
   const [query, setQuery] = useState('')
@@ -334,7 +344,11 @@ export function Dashboard({
         title="Notification management"
         actions={[
           <div key="actions" className="flex items-center gap-[var(--space-4)]">
-            <OutlineButton onClick={() => setImportOpen(true)}>Import</OutlineButton>
+            {importMenu ? (
+              <ImportMenuButton onImportFile={() => setImportOpen(true)} onViewImports={() => onViewImports?.()} held={importMenuHeld} />
+            ) : (
+              <OutlineButton onClick={() => setImportOpen(true)}>Import</OutlineButton>
+            )}
             <Button onClick={onCreate}>
               Create notification
               <Icon slug="plus" size={16} color="currentColor" />
