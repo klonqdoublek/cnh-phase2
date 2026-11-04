@@ -242,6 +242,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 
 | Date | Ruling |
 |---|---|
+| 4 Nov 2026 | Broadcast list matched to Phase 1 (1:134486) and the Figma list: *Service code* column and filter added, filters 304 wide, counter with an en dash (`1–12 of 12`). |
 | 3 Nov 2026 | Import menu option: the **View import status** page carries a webds Breadcrumbs over its title, `Notification management › View import status`, as CMS's PageBand (gap 4, the 82 band unchanged), and Notification management stays active in the side nav (requester). Why: viewing import status is secondary to Notification management and Broadcast, because a finished import's templates land on Notification management anyway. The Sidebar item option is unchanged (no breadcrumb; the page is its own item). Composed: none (both labels exist). Figma not updated yet. |
 | 4 Nov 2026 | **Import Template is not in the sidebar** (requester; settles the two options of 2 Nov 2026 and reverses slide 8 of the BA & Dev deck). It opens from the Import button's menu and the upload panel's View, with a breadcrumb back. The Prototype control's entry switch and `?nav=` are gone. |
 | 4 Nov 2026 | **The BA approved the Import menu + breadcrumb entry** (reported by the requester), closing the PROPOSAL on the row above, which reversed slide 8 of the deck. Import on this page stays a PROPOSAL: the approval as reported does not name it. Figma: full task flow on the Import file, page Flow Ver.2, section `375:24152`. |
