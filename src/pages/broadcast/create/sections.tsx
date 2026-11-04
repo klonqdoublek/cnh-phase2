@@ -5,7 +5,7 @@ import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
-import { FieldLabel } from '@/bbl/field'
+import { FieldLabel, FieldRoot } from '@/bbl/field'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
@@ -730,8 +730,8 @@ function NeverSendsAlert({ error }: { error: boolean }) {
   )
 }
 
-/** One quiet period on one row: its days, its hours or All day, and — when
- *  there is more than one — a trash to remove it (draft 2.2, Figma 89:4665). */
+/** One quiet period on one row: its days, and its hours or All day (draft
+ *  2.2, Figma 89:4665). Its trash is the card's, in the top-right corner. */
 function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const off = !f.dnd.enabled
   const daysError = f.errors[`dndDays:${rule.id}`]
@@ -763,14 +763,16 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
         )}
       </div>
       <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
-        <div className="flex items-end gap-[var(--space-4)]">
+        <div className="flex items-start gap-[var(--space-4)]">
           <TimeInput
             label={`Quiet period from (${TIME_ZONES.find((z) => z.value === f.dnd.timeZone)?.offset ?? f.dnd.timeZone})`}
             value={rule.allDay ? '' : rule.from}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { from: v })}
           />
-          <span className="pb-[var(--space-4)] type-body-m text-[var(--color-text-secondary-default)]">to</span>
+          <BesideField>
+            <span className="type-body-m text-[var(--color-text-secondary-default)]">to</span>
+          </BesideField>
           {/* The original draws no label here, only the room for one, so the two
               boxes share a line. */}
           <TimeInput
@@ -778,19 +780,11 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
             value={rule.allDay ? '' : rule.to}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { to: v })}
+            /* The end falls on the next day (BA, 2026-10-19), said under the
+               box so the row keeps its width. */
+            hint={endsNextDay(rule) ? 'Next Day' : undefined}
           />
-          {/* The end falls on the next day (BA, 2026-10-19). */}
-          {endsNextDay(rule) && (
-            <span
-              className={cn(
-                'pb-[var(--space-4)] type-body-m',
-                off ? 'text-[var(--color-text-disabled-default)]' : 'text-[var(--color-text-secondary-default)]',
-              )}
-            >
-              Next day
-            </span>
-          )}
-          <span className="flex h-[56px] items-center">
+          <BesideField>
             <Choice
               kind="checkbox"
               label="All day"
@@ -799,23 +793,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
               on={rule.allDay}
               onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
             />
-          </span>
-          {f.dnd.rules.length > 1 && (
-            <span className="flex h-[56px] items-center pl-[var(--space-4)]">
-              <IconButton
-                label={`Remove quiet period${which}`}
-                disabled={off}
-                icon={
-                  <Icon
-                    slug="trash"
-                    size={24}
-                    color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'}
-                  />
-                }
-                onClick={() => f.removeDndRule(rule.id)}
-              />
-            </span>
-          )}
+          </BesideField>
         </div>
         {timeError && (
           <InlineMessage appearance="negative" size="xs">
@@ -824,6 +802,34 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
         )}
       </div>
     </div>
+  )
+}
+
+/** What sits beside the time boxes, set under an empty label on a 56-tall line
+ *  so it stays level with the boxes when the To box carries a hint under it. */
+function BesideField({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <FieldRoot className="w-auto shrink-0">
+      <FieldLabel> </FieldLabel>
+      <span className={cn('flex h-[56px] items-center', className)}>{children}</span>
+    </FieldRoot>
+  )
+}
+
+function RemoveRule({ f, id, which }: F & { id: string; which: string }) {
+  const off = !f.dnd.enabled
+  return (
+    <span className="ml-auto flex shrink-0">
+      <IconButton
+        size={24}
+        label={`Remove quiet period${which}`}
+        disabled={off}
+        icon={
+          <Icon slug="trash" size={24} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />
+        }
+        onClick={() => f.removeDndRule(id)}
+      />
+    </span>
   )
 }
 
@@ -855,6 +861,10 @@ export function DndCard({ f }: F) {
       {dnd.rules.map((rule, i) => (
         <CardSurface key={rule.id} className="h-auto items-start border border-[var(--color-border-primary-default)]">
           <DndRuleRow f={f} rule={rule} index={i} />
+          {/* When there is more than one, the trash sits in the card's top-right
+              corner (design critique with the lead design team, 3 Nov 2026; was
+              at the end of the hours row, after All day). */}
+          {dnd.rules.length > 1 && <RemoveRule f={f} id={rule.id} which={` ${i + 1}`} />}
         </CardSurface>
       ))}
       {f.neverSends && (
