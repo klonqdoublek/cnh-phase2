@@ -3,7 +3,7 @@ import { TablePagination } from '@/bbl/table-pagination'
 import { cn } from '@/lib/cn'
 
 /** The list's footer — 68, pad 16, a top rule, webds `TablePagination` with
- *  the counter and chevrons only, right-aligned: "1-6 of 6".
+ *  the counter and chevrons only, right-aligned: "1–6 of 6".
  *
  *  GAP (also in CMS, HANDOFF D6): the installed pagination has no disabled
  *  state. The chevrons are greyed from outside — `data-*` flags drive the
@@ -49,7 +49,7 @@ export function ListFooter({
     >
       <TablePagination
         showPageSize={false}
-        range={`${first}-${last}`}
+        range={`${first}–${last}`}
         count={String(total)}
         onPrevious={atFirst ? undefined : onPrevious}
         onNext={atLast ? undefined : onNext}

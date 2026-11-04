@@ -15,7 +15,7 @@ import {
   type BroadcastStatus as BroadcastStatusValue,
   type ListToast as ListToastValue,
 } from '@/data/broadcast'
-import { CHANNELS } from '@/data/templates'
+import { CHANNELS, SERVICE_CODE_LOV } from '@/data/templates'
 import { FilterSelect } from '../notifications/FilterSelect'
 import { ListSearch } from '../notifications/ListSearch'
 import { BroadcastStatus } from './list/BroadcastStatus'
@@ -73,13 +73,14 @@ function StatusCell({ broadcast, onDownload }: { broadcast: Broadcast; onDownloa
 }
 
 const columnsOf = (onDownload: (b: Broadcast) => void): ListColumn<Broadcast>[] => [
-  { key: 'name', label: 'Broadcast name', width: 500, cell: (b) => b.name },
-  { key: 'channel', label: 'Channel', width: 360, wrap: true, cell: (b) => b.channels.join(', ') },
-  { key: 'start', label: 'Broadcast start', width: 220, cell: (b) => fmtDateTime(new Date(b.start)) },
+  { key: 'name', label: 'Broadcast name', width: 406, cell: (b) => b.name },
+  { key: 'serviceCode', label: 'Service code', width: 300, cell: (b) => b.serviceCode },
+  { key: 'channel', label: 'Channel', width: 350, wrap: true, cell: (b) => b.channels.join(', ') },
+  { key: 'start', label: 'Broadcast start', width: 275, cell: (b) => fmtDateTime(new Date(b.start)) },
   {
     key: 'status',
     label: 'Status',
-    width: 200,
+    width: 269,
     slot: true,
     cell: (b) => <StatusCell broadcast={b} onDownload={onDownload} />,
   },
@@ -105,6 +106,7 @@ export function BroadcastList({
 }: BroadcastListProps) {
   const [requestedPage, setPage] = useState(0)
   const [query, setQuery] = useState('')
+  const [serviceCodes, setServiceCodes] = useState<string[]>([...SERVICE_CODE_LOV])
   const [channels, setChannels] = useState<string[]>([...CHANNELS])
   const [statuses, setStatuses] = useState<string[]>([...BROADCAST_STATUSES])
   const [reportFor, setReportFor] = useState<Broadcast | null>(reportOpen ?? null)
@@ -116,12 +118,14 @@ export function BroadcastList({
     const q = query.trim().toLowerCase()
     return broadcasts.filter((b) => {
       const matches = !q || b.name.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)
+      const serviceCode =
+        serviceCodes.length === SERVICE_CODE_LOV.length || serviceCodes.length === 0 || serviceCodes.includes(b.serviceCode)
       const channel =
         channels.length === CHANNELS.length || channels.length === 0 || b.channels.some((c) => channels.includes(c))
       const status = statuses.length === 0 || statuses.includes(b.status)
-      return matches && channel && status
+      return matches && serviceCode && channel && status
     })
-  }, [broadcasts, query, channels, statuses])
+  }, [broadcasts, query, serviceCodes, channels, statuses])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const page = Math.min(requestedPage, pageCount - 1)
@@ -133,19 +137,27 @@ export function BroadcastList({
     setPage(0)
   }
 
-  /* Notification management's filter band (Figma 336:112267: the published
-     Filtter set, Service code hidden) — search 520 · two 291 filters · Clear
-     72, gap 16, in a 105 band (pt 20 / pb 21) with its own rule; the table
+  /* Notification management's filter band (Phase 1 Figma 1:134486: the
+     published Filtter set) — search 520, three 304 filters, Clear 72, gap 16,
+     in a 105 band (pt 20 / pb 21) with its own rule; the table
      sits flush under it. */
   const filters = (
     <div className="flex h-[105px] w-full shrink-0 items-start gap-[var(--space-4)] px-[var(--space-4)] pt-[var(--space-5)] pb-[21px] shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]">
       <div className="min-w-[200px] flex-[0_1_520px]">
         <ListSearch label={BROADCAST_COPY.search} value={query} onChange={(v) => refilter(() => setQuery(v))} />
       </div>
-      <div className="min-w-[180px] flex-[0_1_291px]">
+      <div className="min-w-[180px] flex-[0_1_304px]">
+        <FilterSelect
+          label="Service code"
+          options={SERVICE_CODE_LOV}
+          value={serviceCodes}
+          onChange={(v) => refilter(() => setServiceCodes(v))}
+        />
+      </div>
+      <div className="min-w-[180px] flex-[0_1_304px]">
         <FilterSelect label="Channel" options={CHANNELS} value={channels} onChange={(v) => refilter(() => setChannels(v))} />
       </div>
-      <div className="min-w-[180px] flex-[0_1_291px]">
+      <div className="min-w-[180px] flex-[0_1_304px]">
         <FilterSelect
           label="Status"
           options={BROADCAST_STATUSES}
@@ -161,6 +173,7 @@ export function BroadcastList({
           onClick={() =>
             refilter(() => {
               setQuery('')
+              setServiceCodes([...SERVICE_CODE_LOV])
               setChannels([...CHANNELS])
               setStatuses([...BROADCAST_STATUSES])
             })

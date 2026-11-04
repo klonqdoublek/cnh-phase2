@@ -242,6 +242,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 
 | Date | Ruling |
 |---|---|
+| 4 Nov 2026 | Broadcast list matched to Phase 1 (1:134486) and the Figma list: *Service code* column and filter added, filters 304 wide, counter with an en dash (`1–12 of 12`). |
 | 4 Nov 2026 | *Type $ to add a dynamic field* is removed from the title of *Create broadcast message*: the shortcut is easy to learn, so the hint does not earn its place (requester). Typing `$` still opens the columns; the no-file note stays. Label change, recorded per the content rule. |
 | 4 Nov 2026 | Push preview: the Bangkok Bank mark comes out of the banner's app icon; the icon is a mock, a 40 tile in Surface/Accent/Brand (requester asked for a colour and left the choice open; the brand blue reads as the bank's app without drawing a logo). |
 | 4 Nov 2026 | File preview: only the first 5 rows show and the rows no longer scroll; every column still scrolls sideways (requester). Reverses *every row* in the 15 Oct 2026 entry. The label already read *Preview (first 5 rows)*. The whole file is still read on Submit. |
