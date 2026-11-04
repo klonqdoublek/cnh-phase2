@@ -68,12 +68,8 @@ type PreviewProps = { c: BroadcastContent; row: Row; off: boolean }
 function PushPreview({ c, row, off }: PreviewProps) {
   return (
     <div className={cn(SURFACE, 'flex w-full gap-[var(--space-3)] rounded-[var(--radius-4)] p-[var(--space-4)] shadow-raised')}>
-      {/* The app icon: the Bangkok Bank mark, the logo's first 34 units (the wordmark starts at 37.7). */}
-      <span className="flex size-[var(--space-10)] shrink-0 items-center justify-center rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]">
-        <svg viewBox="0 0 34 40" className="h-[var(--space-6)]" aria-hidden>
-          <image href="/bbl-logo.svg" width="161" height="40" />
-        </svg>
-      </span>
+      {/* The app icon is a mock: a tile in the brand colour, no logo (requester, 4 Nov 2026). */}
+      <span className="size-[var(--space-10)] shrink-0 rounded-[var(--radius-2)] bg-[var(--color-surface-accent-brand-default)]" aria-hidden />
       <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-1)]">
         <span className="flex items-center justify-between gap-[var(--space-2)]">
           <span className="type-label-s text-[var(--color-text-secondary-default)]">Bualuang mBanking</span>
