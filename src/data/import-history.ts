@@ -51,6 +51,8 @@ export const IMPORT_TEMPLATE_COPY = {
   /* Was "Import a template file from Notification management to see it here" until the page had its own Import (1 Nov 2026, composed). */
   emptyLine: 'Import a template file to see its result here',
   importAction: 'Import',
+  /* Composed (design critique, 3 Nov 2026). */
+  refreshAction: 'Refresh',
   noResults: 'No results found',
   loadFail: 'Unable to get information',
   resultTitle: 'Import result',
