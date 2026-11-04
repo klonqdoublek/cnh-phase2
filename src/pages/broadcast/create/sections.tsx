@@ -402,12 +402,15 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
 }
 
 /** The dynamic field button, in the toolbar of each `MessageEditor`, which
- *  opens the file's columns in `FieldMenu`. Core's Rich Text Editor toggle in
- *  its Selected look (24, radius 4, Highlight at 10%; hover 15%; its pressed 20%
- *  has no token, gap), on webds `icon-button` with the `{ }` icon drawn for CNH:
- *  the library ships none (gap). Requester, 4 Nov 2026; before, webds Contained
- *  Icon Button 44 in the box's top-right corner. The pop-up is composed (gap).
- *  With no audience file there is nothing to pick, so it stays and is disabled. */
+ *  opens the file's columns in `FieldMenu`. Core's Rich Text Editor toggle
+ *  (10923:13655) in its is Selected=Yes row, the look the requester drew: 24,
+ *  radius 4, Highlight at 10%, hovered 15%, clicked 20%, and disabled Surface
+ *  Disabled with a secondary icon. While the menu is open it holds clicked. On
+ *  webds `icon-button` with the `{ }` icon drawn for CNH: the library ships none
+ *  (gap). webds has no token for Highlight at 20% (gap), so it is mixed from
+ *  Surface/Highlight/Default. Requester, 4 Nov 2026; before, Contained Icon
+ *  Button 44 in the box's top-right corner. The pop-up is composed (gap). With
+ *  no audience file there is nothing to pick, so it stays and is disabled. */
 function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (token: string) => void; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
@@ -427,17 +430,16 @@ function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (toke
             'rounded-[var(--radius-1)]',
             off
               ? 'bg-[var(--color-surface-disabled-default)]'
-              : cn(
-                  'hover:bg-[var(--color-surface-highlight-subtle-inverse-default)]',
-                  open ? 'bg-[var(--color-surface-highlight-subtle-inverse-default)]' : 'bg-[var(--color-surface-highlight-subtle-default)]',
-                ),
+              : open
+                ? 'bg-[color-mix(in_srgb,var(--color-surface-highlight-default)_20%,transparent)]'
+                : 'bg-[var(--color-surface-highlight-subtle-default)] hover:bg-[var(--color-surface-highlight-subtle-inverse-default)] active:bg-[color-mix(in_srgb,var(--color-surface-highlight-default)_20%,transparent)]',
           )}
           icon={
             <Icon
               dir="cnh-icons"
               slug="field-braces"
               size={24}
-              color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'}
+              color={off ? 'var(--color-icon-secondary-default)' : 'var(--color-icon-highlight-default)'}
             />
           }
           onClick={() => setOpen(!open)}
