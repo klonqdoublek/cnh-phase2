@@ -727,18 +727,18 @@ function NeverSendsAlert({ error }: { error: boolean }) {
   )
 }
 
-/** One quiet period on one row: its days, and its hours or All day (draft
- *  2.2, Figma 89:4665). Its trash is the card's, in the top-right corner. */
+/** One quiet period on two rows: its days, then its hours or All day (Figma
+ *  310:7441). Its trash is the card's, in the top-right corner. */
 function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const off = !f.dnd.enabled
   const daysError = f.errors[`dndDays:${rule.id}`]
   const timeError = f.errors[`dndTime:${rule.id}`]
   const which = f.dnd.rules.length > 1 ? ` ${index + 1}` : ''
   return (
-    <div className="flex flex-wrap items-start gap-x-[var(--space-8)] gap-y-[var(--space-6)]">
-      <div data-error={daysError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
+    <div className="flex flex-col items-start gap-[var(--space-6)]">
+      <div data-error={daysError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-3)]">
         <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Weekdays</span>
-        <div className="flex h-[56px] flex-wrap items-center gap-[var(--space-6)]">
+        <div className="flex flex-wrap items-center gap-[var(--space-6)]">
           {DAYS.map(({ day, label }) => (
             <Choice
               key={day}
