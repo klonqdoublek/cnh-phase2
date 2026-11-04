@@ -39,7 +39,10 @@ export type ImportRecord = {
 }
 
 export const IMPORT_TEMPLATE_COPY = {
-  title: 'Import Template',
+  /* The sidebar item, the Import menu's row and this title read alike (requester, 2 Nov 2026; the deck's name was Import Template). */
+  title: 'View import status',
+  /* The breadcrumb's parent in the Import menu option: the side nav's label (3 Nov 2026). */
+  crumbParent: 'Notification management',
   search: 'Search by import file name',
   /* Was "Status" (Broadcast's) until the design critique of 3 Nov 2026: a bare "Queue" did not
      say what is queued. The column, the Status filter and the drawer name it (composed). */

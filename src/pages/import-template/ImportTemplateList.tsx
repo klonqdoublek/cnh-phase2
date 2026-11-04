@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Breadcrumbs } from '@/bbl/breadcrumbs'
 import { Button } from '@/bbl/button'
 import { GhostButton } from '@/bbl/ghost-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
@@ -26,6 +27,8 @@ export type ImportTemplateListProps = {
   /** `#/import-template/loading` · `#/import-template/error`. */
   state?: 'ready' | 'loading' | 'error'
   onRetry?: () => void
+  /** Import menu option: the page sits under Notification management, so a breadcrumb leads back (3 Nov 2026). */
+  breadcrumb?: boolean
 }
 
 const PAGE_SIZE = 50
@@ -48,7 +51,7 @@ const COLUMNS: ListColumn<ImportRecord>[] = [
  * header and the empty state as a second way in, beside Notification
  * management's (PROPOSAL, 1 Nov 2026, pending BA: the deck does not ask for it).
  */
-export function ImportTemplateList({ records, onOpen, onImport, state = 'ready', onRetry }: ImportTemplateListProps) {
+export function ImportTemplateList({ records, onOpen, onImport, state = 'ready', onRetry, breadcrumb = false }: ImportTemplateListProps) {
   const [requestedPage, setPage] = useState(0)
   const [query, setQuery] = useState('')
   const [statuses, setStatuses] = useState<string[]>([...IMPORT_STATUSES])
@@ -104,7 +107,19 @@ export function ImportTemplateList({ records, onOpen, onImport, state = 'ready',
   return (
     <div className="flex h-full min-h-px flex-col">
       <ConsolePage
-        title={COPY.title}
+        title={
+          breadcrumb ? (
+            /* Breadcrumb over the title, as CMS PageBand (gap 4): viewing import status is secondary to
+               Notification management, where imported templates land anyway (requester, 3 Nov 2026).
+               Fits the 82 band: 20 + 4 + 28. */
+            <span className="flex flex-col gap-[var(--space-1)]">
+              <Breadcrumbs items={[{ label: COPY.crumbParent, href: '#/list' }, { label: COPY.title }]} />
+              {COPY.title}
+            </span>
+          ) : (
+            COPY.title
+          )
+        }
         headerActions={<Button onClick={onImport}>{COPY.importAction}</Button>}
         columnWidth="fill"
         className="[&>[data-part=Body]]:bg-[var(--color-surface-primary-default)] [&>[data-part=Body]>div]:gap-0 [&>[data-part=Body]>div]:px-0 [&>[data-part=Body]>div]:pt-0 [&>[data-part=Body]>div]:pb-0 [&>[data-part=Header]]:px-[var(--space-4)]"
