@@ -117,7 +117,7 @@ A one-to-many send: the same notification to many recipients, from an uploaded a
 
 Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://www.figma.com/design/u2fZplMakSiBhP7H4shMeV/-CNH-Phase-2--Broadcast-Message?node-id=85-19401), 15 Oct 2026). The draft numbers its steps 1, 2, 5, 6; the build numbers them 1–3, with Do Not Disturb as its own card in the Delivery Date step (Figma 409:75574).
 
-1. **Basic information.** One card, "General information": Broadcast name\* (max 100) above Description (max 250).
+1. **Basic information.** One card, "General information": Broadcast name\* (max 100) above Description (max 250). Description starts one line tall and wraps down as the text grows; it stays one paragraph (Enter adds nothing, a pasted line break becomes a space).
 2. **Validate Audience file.** Two cards.
    - "Upload Audience file":
      - Service code\* (BA & Dev feedback, 30 Oct 2026): a dropdown at the top of the card, 456 wide as the ID column's, holding Phase 1's codes (NANOTI, NAOTP, NABATCH, NAMKTNOTI, NAMKTBATCH). One code per broadcast; label and placeholder (*Select service code*) are the Template form's, where it is a multi-select. Required (user's pick, 30 Oct 2026): Submit with none reads *This field is required*. The confirm dialog and the drawer's Broadcast details show it under the name / description.
@@ -344,6 +344,7 @@ Layout and step copy follow draft 2.2 webds-matched ([Figma 85:19401](https://ww
 | 29 Oct 2026 | Import zone hint: **Drag and drop 1 .jsonl file only. Max file size: 10 MB** (was *Drag and drop a .jsonl file here · Max file size: 10 MB*), so the one-file rule shows before a drag and the `·` join is gone. Composed copy, requester's call. Figma local component Import / Upload zone 57:464 updated the same day (not archived, minor). |
 | 30 Oct 2026 | The broadcast list drops its **Do Not Disturb** column (requester). The list reads Broadcast name, Channel, Broadcast start, Status; the freed 320 px goes to the other columns by ratio. Do Not Disturb, every period, shows in the drawer's Broadcast details and in the confirm dialog, unchanged. Supersedes the list's two-lines-and-`+N more` cell (14 Oct) and the unmerged `add/dnd-more-popover` options (Popover on `+N more`, XC-L1 chevron expand). Figma list updated the same day. |
 | 4 Nov 2026 | Create broadcast spacing (Korarit's comments, requester's call): the no-file hint sits 8 under *Create broadcast message* and 32 over the cards (was 32 and 24); a channel's name sits 24 over its first field (was 32); Deep link's helper text sits 8 under its box (was 4). The header and footer stay fixed while the form scrolls: code already did, Figma now draws it. |
+| 4 Nov 2026 | Description grows with its text instead of cutting it off: 56 for one line, 78 for two (Korarit's comment, requester tried it in code and approved it). Figma section archived as 940:486572. |
 
 ## BA MoM, 29 Oct 2026: what is built
 
