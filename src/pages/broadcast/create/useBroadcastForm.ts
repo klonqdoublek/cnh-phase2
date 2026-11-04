@@ -191,6 +191,15 @@ export function useBroadcastForm({
   const fields = useMemo(() => fieldsOf(audience, column), [audience, column])
   const checking = file !== null && read === null
   const dirty = !!(file || name || description || serviceCode || channels.length || Object.values(content).some(Boolean))
+  /* Edit: Save draft stays disabled until at least one value differs from the
+   * draft as opened, as CNH Phase 1 Update (requester, 4 Nov 2026). Submit stays
+   * enabled, so a complete draft can be submitted unchanged. */
+  const values = JSON.stringify([
+    name, description, serviceCode, file?.name ?? '', fileText, recipientType, column,
+    [...channels].sort(), content, mode, startDate, startTime, dnd,
+  ])
+  const [opened] = useState(values)
+  const changed = values !== opened
   /* CIS ID offers every channel on its own switch; Email and SMS send by that one channel. */
   const offered = recipientType === 'cis' ? [...CHANNELS] : [TYPE_CHANNEL[recipientType]]
 
@@ -455,6 +464,7 @@ export function useBroadcastForm({
     addDndRule,
     removeDndRule,
     dirty,
+    changed,
     leaveOpen,
     setLeaveOpen,
     confirmOpen,

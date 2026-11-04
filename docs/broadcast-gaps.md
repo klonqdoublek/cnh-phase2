@@ -81,6 +81,8 @@ Already aligned:
 - `detail-drawer` sections take rows only. `DrawerSection` adds a note under the rows and an action in the head.
 - No radio card. `ModeOption` is a bordered card around a webds Radio Button.
 - `TablePagination` has no disabled chevrons. `ListFooter` adds them.
+- No rich text editor (4 Nov 2026). Core has one (Rich Text Editor, MUI Tiptap), webds does not. `MessageEditor` in `create/fields.tsx` composes the box from Field parts and Divider. The toggle's selected Clicked (Highlight at 20%) has no webds token, so it is mixed from Surface/Highlight/Default.
+- No braces icon. `public/cnh-icons/field-braces-24.svg` is drawn for CNH.
 - No message preview (30 Oct 2026). `create/preview.tsx` composes it from Surface/Secondary, Card Surface and Ghost Button.
 
 **Recommended clean-ups, not done** (outside the BA's asks):
@@ -113,7 +115,7 @@ The original build has none of this copy. Change it here if the BA rules otherwi
 | Message fields (28 Oct, BA / Dev sync) | Labels `Push title`, `Push message`, `Email subject`, `Email content`, `SMS message` (were the Template form's `… (TH)`); placeholders `Enter push title`, `Enter push message`, `Enter SMS message` (were `… in Thai`). One broadcast, one language, Thai or English; no language select. |
 | Service code (30 Oct, BA & Dev feedback) | Label `Service code` and placeholder `Select service code` are the Template form's (transcribed). Confirm dialog and drawer row `Service code` (composed placement). Fixture codes composed. |
 | Deep link and sender (30 Oct, BA & Dev feedback) | Transcribed from the Template form: `Deep link`, its hint and placeholder; `Sender email address` and `Enter sender email address (optional)`. Adapted: `Sender name` / `Enter sender name` (was `Sender name (EN)` / `Enter sender name in English`). Drawer rows `Deep link`, `Sender name`, `Sender email address`. Fixture sender `Bangkok Bank` composed. |
-| Dynamic field (30 Oct, BA & Dev feedback) | Title-row note `Type $ to add a dynamic field` removed 4 Nov 2026 (requester). Token `${COLUMN}` (the deck's format). `+` screen-reader label `Add dynamic field to {channel}`. No-file note `Dynamic fields can be added once the audience file is uploaded.` (composed 21 Oct). |
+| Dynamic field (30 Oct, BA & Dev feedback) | Title-row note `Type $ to add a dynamic field` removed 4 Nov 2026 (requester). Token `${COLUMN}` (the deck's format). Box button screen-reader label `Add dynamic field to {field label}` (was `+` … `{channel}` until 3 Nov). No-file note `Dynamic fields can be added once the audience file is uploaded.` (composed 21 Oct). |
 | Message preview (30 Oct, BA & Dev feedback; 1 Nov) | `Preview` is the deck's. Since 1 Nov 2026 no `Hide preview` / `Show preview` and no `Type a message to see its preview.` (an empty part shows its field's label in tertiary text). Composed: Push's app name `Bualuang mBanking` and time `now`, Email's `to me` and `Today`, SMS's `Today`. |
 | Unknown dynamic field (1 Nov 2026) | `${OLD} is not a column in the audience file` (several: `${A}, ${B} are not columns in the audience file`), on Submit under the message box. Composed, requester's call. |
 | Message field conditions (2 Nov 2026) | Transcribed, not composed: *We allow Thai, English, Numeric 0-9, and special characters ~ ฿ ^ _ : . / ? only* and *Maximum N characters allowed.* from CNH Template Management V.4.3 (Figma 1309:52051). Not in the copy: the Phase 2 exception (`${COLUMN}`, comma). |
