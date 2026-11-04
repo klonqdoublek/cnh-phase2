@@ -23,6 +23,9 @@ export const FORM_PRESETS = [
   'dnd-all-week',
   'dnd-all-week-submit',
   'large-file',
+  'long-message',
+  'long-message-email',
+  'long-message-sms',
   'checking',
   'confirm',
   'confirm-invalid',
@@ -71,7 +74,7 @@ export const DIRECT_CSV = `MOBILE_NO,EMAIL,CUSTOMER_NAME,AMOUNT,PROMOTION_CODE
 `
 
 /** A file too big for the preview box: 100 recipients × 55 columns, so the
- *  preview scrolls both ways (`#/broadcast/create/large-file`). Made up,
+ *  preview shows its first 5 rows and scrolls sideways (`#/broadcast/create/large-file`). Made up,
  *  repeating from short lists. */
 const LARGE_COLUMNS = [
   'CIS_ID', 'CUSTOMER_NAME', 'ACCOUNT_NO', 'AMOUNT', 'PROMOTION_CODE', 'MOBILE_NO', 'EMAIL',
@@ -199,6 +202,39 @@ export const filled: FormSeed = {
   },
 }
 
+/* Messages near their maximum, so each preview scrolls inside its own area
+ * while the channel card keeps the fields' height (requester, 3 Nov 2026).
+ * Made up, inside the V.4.3 character list: a long word with no space (a
+ * URL) and a Thai SMS with no spaces between words, to show the wrap. */
+const LONG_BODY = `Dear \${CUSTOMER_NAME},
+
+Thank you for banking with Bangkok Bank. Your payment of THB \${AMOUNT} to account \${ACCOUNT_NO} was successful on \${DUE_DATE}.
+
+This October, Bualuang credit card members earn double points on every purchase at participating merchants nationwide. Your current balance is \${POINTS} points, valid until \${POINTS_EXPIRY}.
+
+Use promotion code \${PROMOTION_CODE} before the end of the month to receive an extra 500 points on your first online purchase of THB 1,000 or more.
+
+Your relationship manager, \${RM_NAME}, at our \${BRANCH} branch is happy to help you choose the card or product that fits your plans for the year ahead.
+
+Read the full terms and conditions at https://www.bangkokbank.com/en/personal/promotions/octobercustomercampaign2026/termsandconditions
+
+This message was sent to customers who agreed to receive news and offers from Bangkok Bank. Please do not reply to this message.
+
+Bangkok Bank`
+
+const LONG_SMS = `เรียน คุณ\${CUSTOMER_NAME} ธนาคารกรุงเทพขอขอบคุณที่ใช้บริการ รายการชำระเงิน THB \${AMOUNT} ของท่านสำเร็จแล้ว เดือนตุลาคมนี้รับคะแนนสะสมสองเท่าเมื่อใช้จ่ายผ่านบัตรเครดิตบัวหลวงที่ร้านค้าที่ร่วมรายการทั่วประเทศ ใช้รหัส \${PROMOTION_CODE} ก่อนสิ้นเดือนเพื่อรับคะแนนพิเศษ 500 คะแนน เมื่อซื้อสินค้าออนไลน์ครั้งแรกตั้งแต่ 1,000 บาทขึ้นไป อ่านเงื่อนไขที่ https://www.bangkokbank.com/th/personal/promotions/october2026 สอบถามเพิ่มเติมติดต่อสาขา\${BRANCH} หรือโทร 1333 ตลอด 24 ชั่วโมง`
+
+const LONG_CONTENT: BroadcastContent = {
+  ...(filled.content as BroadcastContent),
+  pushTitle: 'Double points all October for ${CUSTOMER_NAME}, plus an extra 500 points with your first online purchase of THB 1,000 or more',
+  pushBody: LONG_BODY,
+  emailSubject: 'Your payment of THB ${AMOUNT} was successful, and double points all October for Bualuang credit card members',
+  emailBody: LONG_BODY,
+  emailSenderName: 'Bangkok Bank Credit Card and Customer Loyalty Programme',
+  emailSenderAddress: 'creditcard.loyalty.programme@bangkokbank.com',
+  smsMessage: LONG_SMS,
+}
+
 /* Error behavior, CNH Phase 1's five steps (Figma JjvzdUwg5LlKHDQvo2fny0
  * 123:95723) on Broadcast: Step 1 filled → Submit marks the file and the
  * channels → a channel switched on and typed in, the marks stay → Submit
@@ -288,6 +324,12 @@ export function formSeed(preset: FormPreset): FormSeed {
       return { ...filled, dnd: ALL_WEEK_DND, errors: { dnd: BROADCAST_COPY.dndNeverSends } }
     case 'large-file':
       return { ...filled, file: { name: 'audience-cis-large.csv', text: LARGE_CSV } }
+    case 'long-message':
+      return { ...filled, channels: ['Push notification', 'Email', 'SMS'], content: LONG_CONTENT }
+    case 'long-message-email':
+      return { ...formSeed('email'), name: filled.name, content: LONG_CONTENT }
+    case 'long-message-sms':
+      return { ...formSeed('sms'), name: filled.name, content: LONG_CONTENT }
     case 'checking':
       return { ...filled, open: 'checking' }
     case 'confirm':

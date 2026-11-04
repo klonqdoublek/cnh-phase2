@@ -21,8 +21,8 @@ export const BROADCAST_COPY = {
   dropTitle: 'Upload audience file',
   /* Was `Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000
      recipients` (original build); reworded without the `·` joins, 28 Oct 2026;
-     "and 1,000 recipients" dropped by the BA's MoM, 29 Oct 2026. The 1,000
-     limit stays (`MAX_RECIPIENTS`, checked on Submit). */
+     "and 1,000 recipients" dropped by the BA's MoM, 29 Oct 2026. The file has
+     no row or column limit (requester, 4 Nov 2026). */
   dropHint: 'CSV or XLSX, up to 10 MB',
   /* Two or more files dropped at once (BA MoM, 29 Oct 2026): CMS's copy, as Import reads. */
   oneFile: '1 File Only',
@@ -34,7 +34,6 @@ export const BROADCAST_COPY = {
   fileFormat: 'Invalid file format. Only .csv and .xlsx files can be uploaded',
   xlsxNotInPrototype: 'This prototype can only read .csv. Save the sheet as .csv and upload it again',
   fileEmpty: 'The file has no recipients',
-  tooManyRows: 'The file has more than 1,000 recipients',
   checking: 'Checking file…',
   /* Composed (docs/broadcast-gaps.md): the original build has no dialog for a
      file that fails the full read on Submit. */
@@ -100,7 +99,6 @@ export const BROADCAST_COPY = {
 }
 
 export const MAX_FILE_BYTES = 10485760
-export const MAX_RECIPIENTS = 1000
 const MOBILE = /^\+?\d{9,15}$/
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -220,12 +218,11 @@ export function checkRecipients(audience: Audience, column: string, kind: IdKind
 
 export type AudienceCheck = { ok: true; check: RecipientCheck } | { ok: false; message: string }
 
-/** On Submit: the whole file is read. No rows, more than 1,000 or no valid
- *  recipient blocks the broadcast; invalid rows are otherwise skipped. */
+/** On Submit: the whole file is read. No rows or no valid recipient blocks
+ *  the broadcast; invalid rows are otherwise skipped. */
 export function checkAudience(audience: Audience, column: string, kind: IdKind): AudienceCheck {
   const total = audience.rows.length
   if (total === 0) return { ok: false, message: BROADCAST_COPY.fileEmpty }
-  if (total > MAX_RECIPIENTS) return { ok: false, message: BROADCAST_COPY.tooManyRows }
   const check = checkRecipients(audience, column, kind)
   if (check.valid === 0) return { ok: false, message: BROADCAST_COPY.noValidRows }
   return { ok: true, check }

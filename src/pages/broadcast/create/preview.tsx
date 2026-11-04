@@ -3,6 +3,7 @@ import { Icon } from '@/bbl/icon'
 import type { Audience, BroadcastContent } from '@/data/broadcast'
 import type { Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
+import { ScrollBox } from './scroll-box'
 
 /* The message preview beside each channel card's fields (BA & Dev feedback,
  * 30 Oct 2026: "Display preview all channel by first row data from audience
@@ -67,19 +68,15 @@ type PreviewProps = { c: BroadcastContent; row: Row; off: boolean }
 function PushPreview({ c, row, off }: PreviewProps) {
   return (
     <div className={cn(SURFACE, 'flex w-full gap-[var(--space-3)] rounded-[var(--radius-4)] p-[var(--space-4)] shadow-raised')}>
-      {/* The app icon: the Bangkok Bank mark, the logo's first 34 units (the wordmark starts at 37.7). */}
-      <span className="flex size-[var(--space-10)] shrink-0 items-center justify-center rounded-[var(--radius-2)] border border-[var(--color-border-primary-default)]">
-        <svg viewBox="0 0 34 40" className="h-[var(--space-6)]" aria-hidden>
-          <image href="/bbl-logo.svg" width="161" height="40" />
-        </svg>
-      </span>
+      {/* The app icon is a mock: a tile in the brand colour, no logo (requester, 4 Nov 2026). */}
+      <span className="size-[var(--space-10)] shrink-0 rounded-[var(--radius-2)] bg-[var(--color-surface-accent-brand-default)]" aria-hidden />
       <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-1)]">
         <span className="flex items-center justify-between gap-[var(--space-2)]">
           <span className="type-label-s text-[var(--color-text-secondary-default)]">Bualuang mBanking</span>
           <span className="type-body-xs text-[var(--color-text-tertiary-default)]">now</span>
         </span>
         <Part text={c.pushTitle} row={row} off={off} className="type-body-s-emphasized" label="Push title" />
-        <Part text={c.pushBody} row={row} off={off} className="type-body-s line-clamp-4" label="Push message" />
+        <Part text={c.pushBody} row={row} off={off} className="type-body-s" label="Push message" />
       </div>
     </div>
   )
@@ -158,11 +155,23 @@ export function MessagePreview({
   on: boolean
 }) {
   const Preview = PREVIEWS[channel]
+  /* The fields set the card's height; a message taller than them scrolls
+   * inside the grey area under webds' Scroll Bar (Thick), as the file preview
+   * above it does, so the card and its fields stay put (requester, 3 Nov
+   * 2026). The area is laid over its cell so it adds no height of its own;
+   * `my-auto` centres a short message and lets a long one start at the top. */
   return (
     <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
       <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Preview</span>
-      <div className="flex min-h-[240px] flex-1 flex-col justify-center rounded-[var(--radius-2)] bg-[var(--color-surface-secondary-default)] p-[var(--space-6)]">
-        <Preview c={content} row={firstRow(audience)} off={!on} />
+      <div className="relative min-h-[240px] flex-1">
+        <ScrollBox
+          className="absolute inset-0 grid-rows-[minmax(0,1fr)] border-0 bg-[var(--color-surface-secondary-default)]"
+          viewClassName="flex flex-col p-[var(--space-6)]"
+        >
+          <div className="my-auto flex w-full flex-col">
+            <Preview c={content} row={firstRow(audience)} off={!on} />
+          </div>
+        </ScrollBox>
       </div>
     </div>
   )
