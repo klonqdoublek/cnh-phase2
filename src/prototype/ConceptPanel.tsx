@@ -4,7 +4,6 @@ import { IconButton } from '@/bbl/icon-button'
 import { RadioButton } from '@/bbl/radio-button'
 import { SegmentedTab } from '@/bbl/segmented-tab'
 import { go, useHash } from '@/lib/hash'
-import { setImportAccess, useImportAccess, type ImportAccess } from './import-access'
 import { cn } from '@/lib/cn'
 import { FEW_FIELDS, setColumns, useColumns, type Columns } from './audience-fields'
 import { KINDS, screenOf, stateOf, type Kind } from './screen-states'
@@ -28,11 +27,6 @@ const COLUMNS: { value: Columns; label: string }[] = [
 
 
 /* Where the Import Template page is reached from (requester, 2 Nov 2026). */
-const ACCESS: { value: ImportAccess; label: string }[] = [
-  { value: 'side', label: 'Sidebar item' },
-  { value: 'menu', label: 'Import menu' },
-]
-
 /** A group's section: a heading over its controls. */
 function Section({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -73,7 +67,6 @@ const clamp = (x: number, y: number, el: HTMLElement | null) => {
 export function ConceptPanel() {
   const hash = useHash()
   const columns = useColumns()
-  const access = useImportAccess()
   const box = useRef<HTMLDivElement>(null)
   const saved = useRef(load()).current
   const [open, setOpen] = useState(saved.open ?? true)
@@ -107,7 +100,6 @@ export function ConceptPanel() {
   if (new URLSearchParams(location.search).get('panel') === '0') return null
   const screen = screenOf(hash)
   const broadcastForm = /^#\/broadcast\/(create|edit)/.test(hash)
-  const importEntry = screen?.name === 'Notification list' || screen?.name === 'Import templates' || screen?.name === 'Import Template'
   if (!screen && !broadcastForm) return null
   const state = screen && stateOf(screen, hash)
 
@@ -150,7 +142,6 @@ export function ConceptPanel() {
         {!open && (state || broadcastForm) && (
           <span className="type-label-m text-[var(--color-text-secondary-default)]">
             {state && <>· {state.label} </>}
-            {importEntry && <>· {access === 'side' ? 'Sidebar' : 'Import menu'} </>}
             {broadcastForm && <>· {columns === 'few' ? 'Few' : 'Many'} fields</>}
           </span>
         )}
@@ -175,21 +166,6 @@ export function ConceptPanel() {
                 />
                 <span className="type-body-s text-[var(--color-text-secondary-default)]">
                   Swaps the CIS preset's file, so the fields follow its columns. Resets what was typed.
-                </span>
-              </Section>
-            )}
-
-            {importEntry && (
-              <Section label="Import Template entry">
-                <SegmentedTab
-                  items={ACCESS.map((a) => a.label)}
-                  selectedIndex={ACCESS.findIndex((a) => a.value === access)}
-                  onSelect={(i) => setImportAccess(ACCESS[i].value)}
-                />
-                <span className="type-body-s text-[var(--color-text-secondary-default)]">
-                  {access === 'side'
-                    ? 'Its own item in the sidebar, under Notification management.'
-                    : 'No sidebar item: the Import button on Notification management opens Import file and View import status, whose page carries a breadcrumb back.'}
                 </span>
               </Section>
             )}

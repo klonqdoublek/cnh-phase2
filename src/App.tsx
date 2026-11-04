@@ -6,7 +6,6 @@ import { TEMPLATES, type Template, type TemplateStatus } from '@/data/templates'
 import { fromValues, stampImported, toValues, togglesOf, type FormValues, type Toggles } from '@/data/template-form'
 import { go, useHash } from '@/lib/hash'
 import { AppShell } from '@/shell/AppShell'
-import { useImportAccess } from '@/prototype/import-access'
 import { Login } from '@/pages/Login'
 import { Dashboard, type ListNotice, type ListState } from '@/pages/notifications/Dashboard'
 import { TemplateForm } from '@/pages/template/TemplateForm'
@@ -32,7 +31,6 @@ const HIGHLIGHT_MS = 24 * 60 * 60 * 1000
 
 export default function App() {
   const hash = useHash()
-  const importAccess = useImportAccess()
   const [openTemplate, setOpenTemplate] = useState<Template | null>(null)
   const [downloadRequest, setDownloadRequest] = useState<Template | null>(null)
   const [notice, setNotice] = useState<ListNotice | null>(null)
@@ -196,10 +194,9 @@ export default function App() {
   const onBroadcast = hash.startsWith('#/broadcast')
   /* Import Template (BA & Dev deck, 30 Oct 2026): this session's jobs on top of the seeded imports. */
   const onImportTemplate = hash.startsWith('#/import-template')
-  /* Where the Import Template page is reached from (requester, 2 Nov 2026): the sidebar, or the Import button's
-     menu on Notification management, which then has no sidebar item. `#/list/import-menu` shows the menu open. */
+  /* Import Template is reached from the Import button's menu on Notification management (requester, 4 Nov 2026).
+     `#/list/import-menu` shows the menu open. */
   const importMenuHeld = hash === '#/list/import-menu'
-  const importMenu = importAccess === 'menu' || importMenuHeld
   const importRecords: ImportRecord[] = importSnapshot ?? [...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS]
   const importView = hash.match(/^#\/import-template\/view\/([A-Z]+-[A-Z]?\d+)(\/download)?$/)
   const importViewId = openImport ?? importView?.[1]
@@ -215,13 +212,10 @@ export default function App() {
   const reportResult = reportPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
 
   return (
-    <AppShell
-      activeId={onBroadcast ? 'broadcast' : onImportTemplate && !importMenu ? 'import-template' : 'template-management'}
-      importInSidebar={!importMenu}
-    >
+    <AppShell activeId={onBroadcast ? 'broadcast' : 'template-management'}>
       {onImportTemplate ? (
         <ImportTemplateList
-          breadcrumb={importMenu}
+          breadcrumb
           records={hash === '#/import-template/empty' ? [] : importRecords}
           onOpen={(r) => setOpenImport(r.id)}
           onImport={() => setImportOpen(true)}
@@ -265,7 +259,6 @@ export default function App() {
           downloadRequest={downloadRequest}
           onDownloadRequestHandled={() => setDownloadRequest(null)}
           importPreset={importPreset}
-          importMenu={importMenu}
           importMenuHeld={importMenuHeld}
           onViewImports={() => go('/import-template')}
           importedNames={Object.keys(importHistory)}

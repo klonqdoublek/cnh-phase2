@@ -30,7 +30,7 @@ const NOTIFICATION_LIST: Screen = {
   name: 'Notification list',
   states: [
     s('#/list', 'Default', 'The list'),
-    s('#/list/import-menu', 'Dialog', 'Import menu open (sub-menu option)', true),
+    s('#/list/import-menu', 'Dialog', 'Import menu open', true),
     s('#/list/loading', 'Loading', 'Loading'),
     s('#/list/error', 'Error', 'Unable to get information'),
     s('#/list/empty', 'Empty', 'No templates'),

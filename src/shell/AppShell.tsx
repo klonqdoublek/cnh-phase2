@@ -6,17 +6,13 @@ import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { ProductShell, type ProductNavGroup } from '@/patterns/product-shell'
 import { ProfileMenu } from '@/patterns/profile-menu'
 import { go } from '@/lib/hash'
-import { IMPORT_COPY } from '@/data/import-spec'
 
-/** Import Template sits under Notification management (requester, 2 Nov 2026). In the menu option it has no
- *  item at all: the Import button on Notification management opens it. */
-export const navFor = (importInSidebar: boolean): ProductNavGroup[] => [
+/** Import Template has no item: the Import button on Notification management opens it (requester, 4 Nov 2026). */
+export const NAV: ProductNavGroup[] = [
   {
     label: 'Customer Notification Hub',
     items: [
       { id: 'template-management', label: 'Notification management' },
-      /* BA & Dev feedback deck Post MMP 2, slide 8 (30 Oct 2026). */
-      ...(importInSidebar ? [{ id: 'import-template', label: IMPORT_COPY.menuViewImports }] : []),
       { id: 'broadcast', label: 'Broadcast message' },
     ],
   },
@@ -29,7 +25,7 @@ export const USER = { initials: 'PR', shortName: 'Panisa R.', name: 'Panisa Rung
  * profile row in its footer and webds `profile-menu` as its overlay. Screens
  * author Layer 3 only.
  */
-export function AppShell({ activeId, importInSidebar = true, children }: { activeId: string; importInSidebar?: boolean; children: React.ReactNode }) {
+export function AppShell({ activeId, children }: { activeId: string; children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [logoutOpen, setLogoutOpen] = useState(false)
 
@@ -37,9 +33,9 @@ export function AppShell({ activeId, importInSidebar = true, children }: { activ
     <>
       <ProductShell
         logo={<img src="/bbl-logo.svg" alt="Bangkok Bank" width={161} height={40} />}
-        nav={navFor(importInSidebar)}
+        nav={NAV}
         activeId={activeId}
-        onSelect={(id) => go(id === 'broadcast' ? '/broadcast' : id === 'import-template' ? '/import-template' : '/list')}
+        onSelect={(id) => go(id === 'broadcast' ? '/broadcast' : '/list')}
         footer={<ProfileRow expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)} />}
         overlay={
           menuOpen ? (
