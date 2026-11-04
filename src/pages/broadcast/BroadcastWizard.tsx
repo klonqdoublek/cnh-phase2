@@ -64,7 +64,7 @@ function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: Broadc
         title={f.editing ? BROADCAST_COPY.edit : BROADCAST_COPY.create}
         actions={
           <>
-            <OutlineButton className="w-[177px]" disabled={loading} onClick={() => f.saveDraft(body.current)}>
+            <OutlineButton className="w-[177px]" disabled={loading || (f.editing && !f.changed)} onClick={() => f.saveDraft(body.current)}>
               Save draft
             </OutlineButton>
             <Button className="w-[177px]" disabled={loading} onClick={() => f.submit(body.current)}>
