@@ -36,7 +36,7 @@ const PAGE_SIZE = 50
 /* Slide 8's columns, in its order. Widths at 1920, as Broadcast's list. */
 const COLUMNS: ListColumn<ImportRecord>[] = [
   { key: 'file', label: 'Import file name', width: 560, cell: (r) => r.fileName },
-  { key: 'status', label: 'Status', width: 200, slot: true, cell: (r) => <BroadcastStatus status={r.status} /> },
+  { key: 'status', label: COPY.status, width: 200, slot: true, cell: (r) => <BroadcastStatus status={r.status} /> },
   { key: 'by', label: 'Created by', width: 300, cell: (r) => r.createdBy },
   { key: 'created', label: 'Created datetime', width: 270, cell: (r) => fmtImportTime(r.createdAt) },
   { key: 'updated', label: 'Updated datetime', width: 270, cell: (r) => fmtImportTime(r.updatedAt) || '–' },
@@ -80,7 +80,7 @@ export function ImportTemplateList({ records, onOpen, onImport, state = 'ready',
       </div>
       <div className="min-w-[180px] flex-[0_1_291px]">
         <FilterSelect
-          label="Status"
+          label={COPY.status}
           options={IMPORT_STATUSES}
           optionLabel={(s) => STATUS_LABEL[s as ImportStatus]}
           value={statuses}
