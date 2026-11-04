@@ -403,14 +403,14 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
 
 /** The dynamic field button, in the toolbar of each `MessageEditor`, which
  *  opens the file's columns in `FieldMenu`. Core's Rich Text Editor toggle
- *  (10923:13655) in its is Selected=Yes row, the look the requester drew: 24,
- *  radius 4, Highlight at 10%, hovered 15%, clicked 20%, and disabled Surface
- *  Disabled with a secondary icon. While the menu is open it holds clicked. On
- *  webds `icon-button` with the `{ }` icon drawn for CNH: the library ships none
- *  (gap). webds has no token for Highlight at 20% (gap), so it is mixed from
- *  Surface/Highlight/Default. Requester, 4 Nov 2026; before, Contained Icon
- *  Button 44 in the box's top-right corner. The pop-up is composed (gap). With
- *  no audience file there is nothing to pick, so it stays and is disabled. */
+ *  (10923:13655), on webds `icon-button`, which draws its is Selected=No row:
+ *  no fill and a secondary icon, hovered 5%, clicked 10%. While the menu is open
+ *  it is is Selected=Yes: Highlight at 10%, hovered 15%, clicked 20%, a highlight
+ *  icon. webds has no token for Highlight at 20% (gap), so it is mixed from
+ *  Surface/Highlight/Default. The `{ }` icon is drawn for CNH: the library ships
+ *  none (gap). Requester, 4 Nov 2026; before, Contained Icon Button 44 in the
+ *  box's top-right corner. The pop-up is composed (gap). With no audience file
+ *  there is nothing to pick, so it stays and is disabled. */
 function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (token: string) => void; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
@@ -421,25 +421,28 @@ function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (toke
       {/* mousedown would blur the message box and lose the caret first */}
       <span className="inline-flex" onMouseDown={(e) => e.preventDefault()}>
         <IconButton
-          appearance="highlight"
           size={24}
+          selected={open}
           label={label}
           aria-expanded={open}
           disabled={off}
           className={cn(
             'rounded-[var(--radius-1)]',
-            off
-              ? 'bg-[var(--color-surface-disabled-default)]'
-              : open
-                ? 'bg-[color-mix(in_srgb,var(--color-surface-highlight-default)_20%,transparent)]'
-                : 'bg-[var(--color-surface-highlight-subtle-default)] hover:bg-[var(--color-surface-highlight-subtle-inverse-default)] active:bg-[color-mix(in_srgb,var(--color-surface-highlight-default)_20%,transparent)]',
+            open &&
+              'hover:bg-[var(--color-surface-highlight-subtle-inverse-default)] active:bg-[color-mix(in_srgb,var(--color-surface-highlight-default)_20%,transparent)]',
           )}
           icon={
             <Icon
               dir="cnh-icons"
               slug="field-braces"
               size={24}
-              color={off ? 'var(--color-icon-secondary-default)' : 'var(--color-icon-highlight-default)'}
+              color={
+                off
+                  ? 'var(--color-icon-disabled-default)'
+                  : open
+                    ? 'var(--color-icon-highlight-default)'
+                    : 'var(--color-icon-secondary-default)'
+              }
             />
           }
           onClick={() => setOpen(!open)}

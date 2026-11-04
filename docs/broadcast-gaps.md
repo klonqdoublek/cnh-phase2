@@ -81,7 +81,7 @@ Already aligned:
 - `detail-drawer` sections take rows only. `DrawerSection` adds a note under the rows and an action in the head.
 - No radio card. `ModeOption` is a bordered card around a webds Radio Button.
 - `TablePagination` has no disabled chevrons. `ListFooter` adds them.
-- No rich text editor (4 Nov 2026). Core has one (Rich Text Editor, MUI Tiptap), webds does not. `MessageEditor` in `create/fields.tsx` composes the box from Field parts and Divider. The toggle's Clicked (Highlight at 20%) has no webds token, so it is mixed from Surface/Highlight/Default.
+- No rich text editor (4 Nov 2026). Core has one (Rich Text Editor, MUI Tiptap), webds does not. `MessageEditor` in `create/fields.tsx` composes the box from Field parts and Divider. The toggle's selected Clicked (Highlight at 20%) has no webds token, so it is mixed from Surface/Highlight/Default.
 - No braces icon. `public/cnh-icons/field-braces-24.svg` is drawn for CNH.
 - No message preview (30 Oct 2026). `create/preview.tsx` composes it from Surface/Secondary, Card Surface and Ghost Button.
 
