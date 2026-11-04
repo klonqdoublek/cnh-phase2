@@ -18,7 +18,6 @@ import { FormField } from '@/patterns/form-field'
 import { PICKER_DIALOG_COPY_EN } from '@/patterns/picker-dialog'
 import { SelectList } from '@/patterns/select-list'
 import { FormSectionCard } from '@/patterns/form-section-card'
-import { InfoNote } from '@/patterns/info-note'
 import { FormStep } from '@/patterns/console-page'
 import {
   BROADCAST_COPY,
@@ -39,7 +38,7 @@ import { Choice, LABEL, MessageEditor, ModeOption, NOTE, Select, Text } from './
 import { editBox, type Tint } from './highlight'
 import { MessagePreview } from './preview'
 import { ScrollBox } from './scroll-box'
-import { TRIGGER, useFieldShortcut } from './shortcut'
+import { useFieldShortcut } from './shortcut'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
 /* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
@@ -530,15 +529,10 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   return (
     <FormSectionCard
       className="[&_.webds-pattern-form-section-card-3]:flex-1"
-      title={
-        /* Every idea titled the card "Create broadcast message" (requester, 21
-           Oct 2026). The `$` note sits on the right of the title (requester,
-           28 Oct 2026): webds `info-note`, icon and text, no surface. */
-        <span className="flex min-h-[44px] items-center justify-between gap-[var(--space-4)]">
-          Create broadcast message
-          {hasFields && <InfoNote>Type {TRIGGER} to add a dynamic field</InfoNote>}
-        </span>
-      }
+      /* Every idea titled the card "Create broadcast message" (requester, 21
+         Oct 2026). No `$` note: the shortcut is easy to learn (requester, 4 Nov
+         2026). */
+      title={<span className="flex min-h-[44px] items-center">Create broadcast message</span>}
       rowGap={6}
     >
       {!hasFields && <p className={NOTE}>Dynamic fields can be added once the audience file is uploaded.</p>}
