@@ -144,8 +144,8 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
                 }, REFRESH_MS)
               }}
             >
-              <Icon slug="refresh" size={16} color="currentColor" />
               {COPY.refreshAction}
+              <Icon slug="refresh" size={16} color="currentColor" />
             </OutlineButton>
             <Button onClick={onImport}>{COPY.importAction}</Button>
           </span>
