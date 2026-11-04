@@ -125,13 +125,20 @@ export function useFieldShortcut(f: BroadcastForm) {
   /* The menu is placed once per keystroke; a page scroll or resize would
      leave it behind, so either one shuts it. The box's own scroll — a long
      one-line message sliding left as it is typed — moves the caret instead,
-     so the menu follows it. */
+     so the menu follows it. The menu's own scroll (the wheel over a long
+     list, or ↑ ↓ bringing a row into view) leaves it open: before 3 Nov
+     2026 it shut the menu, so a list longer than the menu could not be
+     scrolled. */
   const latest = useRef(sync)
   latest.current = sync
   useEffect(() => {
     if (!open) return
     const shut = () => setOpen(null)
-    const scrolled = (e: Event) => (e.target === open.el ? latest.current(open.el) : shut())
+    const scrolled = (e: Event) => {
+      if (e.target instanceof Node && list.current?.contains(e.target)) return
+      if (e.target === open.el) latest.current(open.el)
+      else shut()
+    }
     addEventListener('scroll', scrolled, true)
     addEventListener('resize', shut)
     return () => {

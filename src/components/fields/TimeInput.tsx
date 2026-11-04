@@ -71,6 +71,7 @@ export function TimeInput({
   value,
   onChange,
   error,
+  hint,
   required,
   disabled,
   placeholder = 'HH:mm',
@@ -82,6 +83,8 @@ export function TimeInput({
   value: string
   onChange: (value: string) => void
   error?: string
+  /** A note under the box, in the field's hint; an error takes its place. */
+  hint?: string
   required?: boolean
   disabled?: boolean
   placeholder?: string
@@ -219,7 +222,7 @@ export function TimeInput({
             </div>
           )}
         </div>
-        <FieldHint message={error} tone={tone} />
+        <FieldHint message={error ?? hint} tone={tone} />
       </FieldRoot>
     </div>
   )
