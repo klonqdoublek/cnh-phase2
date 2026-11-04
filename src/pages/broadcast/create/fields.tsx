@@ -1,7 +1,9 @@
 import { Checkbox } from '@/bbl/checkbox'
 import { RadioButton } from '@/bbl/radio-button'
+import { Divider } from '@/bbl/divider'
+import { FIELD_TEXT, FieldBox, FieldHint, FieldLabel, FieldRoot } from '@/bbl/field'
 import { FormField } from '@/patterns/form-field'
-import { useLayoutEffect, useRef } from 'react'
+import { useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { FieldTint, hasField, type Tint } from './highlight'
 
@@ -31,7 +33,6 @@ export function Text({
   disabled,
   hint,
   tint,
-  corner,
   className,
 }: {
   id: string
@@ -51,9 +52,6 @@ export function Text({
    *  and erased whole (./highlight.tsx). The box's own text goes transparent
    *  under the layer. */
   tint?: Tint
-  /** A control in the box's top-right corner (the dynamic field button). The
-   *  box's text stops short of it. */
-  corner?: React.ReactNode
   className?: string
 }) {
   const root = useRef<HTMLDivElement>(null)
@@ -69,9 +67,6 @@ export function Text({
         multiline && 'whitespace-pre-line',
         tinted &&
           '[&_input]:text-transparent [&_input]:[caret-color:var(--color-text-primary-default)] [&_textarea]:text-transparent [&_textarea]:[caret-color:var(--color-text-primary-default)]',
-        /* The 44 button sits 8 in from the box edge, so the text (16 in) stops
-           48 short: 12 clear of it. The tint layer mirrors this padding. */
-        corner && '[&_input]:pr-[var(--space-12)] [&_textarea]:pr-[var(--space-12)]',
         className,
       )}
     >
@@ -83,34 +78,89 @@ export function Text({
         onChange={onChange}
       />
       {tint && !disabled && <FieldTint root={root} value={value} tint={tint} onChange={onChange} />}
-      {corner && <BoxCorner root={root}>{corner}</BoxCorner>}
     </div>
   )
 }
 
-/** Pins its child 8 inside the box's top-right corner, so a 44 control is
- *  centred on the first line of text (16 padding + 24 line). The box sits under a
- *  label whose height the form field owns, so its place is measured. */
-function BoxCorner({ root, children }: { root: React.RefObject<HTMLDivElement | null>; children: React.ReactNode }) {
-  const corner = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => {
-    const box = root.current?.querySelector<HTMLElement>('.webds-text-field, .webds-text-area')
-    const out = corner.current
-    if (!box || !out || !root.current) return
-    const place = () => {
-      const at = box.getBoundingClientRect()
-      const host = root.current!.getBoundingClientRect()
-      out.style.top = `calc(${at.top - host.top}px + var(--space-2))`
-      out.style.right = `calc(${host.right - at.right}px + var(--space-2))`
-    }
-    place()
-    const seen = new ResizeObserver(place)
-    seen.observe(box)
-    return () => seen.disconnect()
-  })
+/** A message box that takes dynamic fields, composed after Core's Rich Text
+ *  Editor (Figma kAh4cyaNvmdz5yNYP2uv2i 11002:22606; webds ships none, gap): a
+ *  12-radius box with a 48 toolbar, a divider and the text. Only the toolbar and
+ *  the divider are borrowed. There is no formatting and the bottom 48 full-view
+ *  row is gone, so the text area takes that height (requester, 4 Nov 2026). The
+ *  label and the counter stay the fields' own. `data-field` wraps the text alone,
+ *  not the toolbar, so the tint layer, `$` and the button never take the pop-up's
+ *  search box for the message box. */
+export function MessageEditor({
+  id,
+  label,
+  value,
+  onChange,
+  max,
+  error,
+  placeholder,
+  required,
+  multiline,
+  disabled,
+  tint,
+  toolbar,
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (v: string) => void
+  max?: number
+  error?: string
+  placeholder?: string
+  required?: boolean
+  multiline?: boolean
+  disabled?: boolean
+  tint?: Tint
+  toolbar: React.ReactNode
+}) {
+  const root = useRef<HTMLDivElement>(null)
+  const [focused, setFocused] = useState(false)
+  const tinted = !!tint && !disabled && hasField(value, tint.columns)
+  const control = {
+    value,
+    disabled,
+    placeholder,
+    'aria-label': label,
+    'aria-required': required,
+    'aria-invalid': !!error,
+    onFocus: () => setFocused(true),
+    onBlur: () => setFocused(false),
+    /* The padding is the control's, so all of the text area takes the caret. */
+    className: cn(
+      'webds-text-area-2 min-h-0 resize-none rounded-b-[var(--radius-3)] p-[var(--space-4)]',
+      FIELD_TEXT[disabled ? 'disabled' : value ? 'primary' : 'placeholder'],
+      tinted && 'text-transparent [caret-color:var(--color-text-primary-default)]',
+    ),
+  }
+  const tone = disabled ? 'disabled' : error ? 'error' : focused ? 'focused' : 'default'
   return (
-    <div ref={corner} className="absolute flex">
-      {children}
+    <div data-error={error ? 'true' : undefined} className="min-w-0">
+      <FieldRoot>
+        <FieldLabel colour={disabled ? 'disabled' : 'tertiary'} required={required}>
+          {label}
+        </FieldLabel>
+        <FieldBox
+          part="Message editor"
+          tone={tone}
+          className={cn('flex-col gap-0 rounded-[var(--radius-3)]', multiline ? 'h-[218px]' : 'h-[105px]')}
+        >
+          <div className="flex shrink-0 items-center p-[var(--space-3)]">{toolbar}</div>
+          <Divider className="shrink-0" />
+          <div ref={root} data-field={id} className="relative flex min-h-0 flex-1 flex-col">
+            {multiline ? (
+              <textarea {...control} onChange={(e) => onChange(e.target.value)} />
+            ) : (
+              <input {...control} onChange={(e) => onChange(e.target.value)} />
+            )}
+            {tint && !disabled && <FieldTint root={root} value={value} tint={tint} onChange={onChange} />}
+          </div>
+        </FieldBox>
+        <FieldHint message={error} counter={max ? `${value.length}/${max}` : undefined} tone={tone} />
+      </FieldRoot>
     </div>
   )
 }

@@ -5,7 +5,6 @@ import { DateTimeInput } from '@/components/fields/DateTimeInput'
 import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
-import { ContainedIconButton } from '@/bbl/contained-icon-button'
 import { FieldLabel } from '@/bbl/field'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
@@ -36,12 +35,11 @@ import {
 } from '@/data/broadcast'
 import { SERVICE_CODE_LOV, type Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
+import { Choice, LABEL, MessageEditor, ModeOption, NOTE, Select, Text } from './fields'
 import { editBox, type Tint } from './highlight'
 import { MessagePreview } from './preview'
 import { ScrollBox } from './scroll-box'
 import { TRIGGER, useFieldShortcut } from './shortcut'
-import { fieldIcon } from '@/prototype/field-icon'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
 /* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
@@ -389,7 +387,7 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
   return (
     <SelectList
       width={240}
-      className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[360px] [&>.webds-pattern-select-list-3]:min-h-0 [&>.webds-pattern-select-list-3]:overflow-y-auto"
+      className="absolute left-0 top-full z-[10] mt-[var(--space-2)] max-h-[360px] [&>.webds-pattern-select-list-3]:min-h-0 [&>.webds-pattern-select-list-3]:overflow-y-auto"
       search={<FormField spec={{ label: PICKER_DIALOG_COPY_EN.search, kind: 'search', autoFocus: true }} value={query} onChange={setQuery} />}
       groups={[
         {
@@ -403,14 +401,13 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
   )
 }
 
-/** The dynamic field button, which opens the file's columns in `FieldMenu`.
- *  It sits in each message box's top-right corner, so the pointer does not
- *  travel to the card's title row (design critique with the lead design team,
- *  3 Nov 2026; was Idea 2.2's `+` on the card's title row, Figma 359:112101).
- *  webds `contained-icon-button` (44, highlight outline, white; requester
- *  asked for an outline, 3 Nov 2026) with a 24 syntax icon drawn for CNH, one of four
- *  (`?dficon=`, ../../../prototype/field-icon.ts): the library ships no
- *  braces or `</>` icon (gap). The pop-up is composed (gap). */
+/** The dynamic field button, in the toolbar of each `MessageEditor`, which
+ *  opens the file's columns in `FieldMenu`. Core's Rich Text Editor toggle in
+ *  its Selected look (24, radius 4, Highlight at 10%; hover 15%; its pressed 20%
+ *  has no token, gap), on webds `icon-button` with the `{ }` icon drawn for CNH:
+ *  the library ships none (gap). Requester, 4 Nov 2026; before, webds Contained
+ *  Icon Button 44 in the box's top-right corner. The pop-up is composed (gap).
+ *  With no audience file there is nothing to pick, so it stays and is disabled. */
 function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (token: string) => void; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
@@ -420,16 +417,25 @@ function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (toke
     <span ref={root} className="relative inline-flex">
       {/* mousedown would blur the message box and lose the caret first */}
       <span className="inline-flex" onMouseDown={(e) => e.preventDefault()}>
-        <ContainedIconButton
-          background
-          iconSize={24}
+        <IconButton
+          appearance="highlight"
+          size={24}
           label={label}
           aria-expanded={open}
           disabled={off}
+          className={cn(
+            'rounded-[var(--radius-1)]',
+            off
+              ? 'bg-[var(--color-surface-disabled-default)]'
+              : cn(
+                  'hover:bg-[var(--color-surface-highlight-subtle-inverse-default)]',
+                  open ? 'bg-[var(--color-surface-highlight-subtle-inverse-default)]' : 'bg-[var(--color-surface-highlight-subtle-default)]',
+                ),
+          )}
           icon={
             <Icon
               dir="cnh-icons"
-              slug={`field-${fieldIcon}`}
+              slug="field-braces"
               size={24}
               color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'}
             />
@@ -558,9 +564,26 @@ function ChannelFields({
     id: keyof BroadcastContent,
     label: string,
     placeholder: string,
-    extra?: { multiline?: boolean; boxHeight?: 77; optional?: boolean; hint?: string },
+    extra?: { multiline?: boolean; optional?: boolean; hint?: string },
   ) => {
     const { optional, ...rest } = extra ?? {}
+    if (isMessageBox(id))
+      return (
+        <MessageEditor
+          id={id}
+          label={label}
+          required={!optional}
+          disabled={!on}
+          value={f.content[id]}
+          max={CONTENT_MAX[id]}
+          error={f.fieldError(id, on)}
+          placeholder={placeholder}
+          onChange={f.setC(id)}
+          multiline={rest.multiline}
+          tint={tint}
+          toolbar={<FieldMenuButton f={f} label={`Add dynamic field to ${label}`} disabled={!on} onInsert={(t) => insert?.(t, id)} />}
+        />
+      )
     return (
       <Text
         id={id}
@@ -572,12 +595,6 @@ function ChannelFields({
         error={f.fieldError(id, on)}
         placeholder={placeholder}
         onChange={f.setC(id)}
-        tint={isMessageBox(id) ? tint : undefined}
-        corner={
-          insert && isMessageBox(id) ? (
-            <FieldMenuButton f={f} label={`Add dynamic field to ${label}`} disabled={!on} onInsert={(t) => insert(t, id)} />
-          ) : undefined
-        }
         {...rest}
       />
     )
@@ -585,10 +602,8 @@ function ChannelFields({
   if (channel === 'Push notification')
     return (
       <>
-        {/* One-line message boxes take the Template form's taller 77 box, so the
-            dynamic field button in the corner has room (design critique, 3 Nov 2026). */}
-        {box('pushTitle', 'Push title', 'Enter push title', { boxHeight: 77 })}
-        {box('pushBody', 'Push message', 'Enter push message', { boxHeight: 77 })}
+        {box('pushTitle', 'Push title', 'Enter push title')}
+        {box('pushBody', 'Push message', 'Enter push message')}
         {box('pushDeeplink', 'Deep link', 'Enter a deep link URL (optional)', {
           multiline: true,
           optional: true,
@@ -599,7 +614,7 @@ function ChannelFields({
   if (channel === 'Email')
     return (
       <>
-        {box('emailSubject', 'Email subject', 'Enter email subject', { boxHeight: 77 })}
+        {box('emailSubject', 'Email subject', 'Enter email subject')}
         {box('emailBody', 'Email content', 'Enter email content', { multiline: true })}
         {/* One under the other at one box height (the Template's Sender name is
             77 tall): the preview takes the card's right half, so a pair side by
