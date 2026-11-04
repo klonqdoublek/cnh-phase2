@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Breadcrumbs } from '@/bbl/breadcrumbs'
 import { Button } from '@/bbl/button'
 import { GhostButton } from '@/bbl/ghost-button'
 import { Icon } from '@/bbl/icon'
@@ -30,6 +31,8 @@ export type ImportTemplateListProps = {
   onRetry?: () => void
   /** Fetches the list again: every import's status as of now. */
   onRefresh: () => void
+  /** Import menu option: the page sits under Notification management, so a breadcrumb leads back (3 Nov 2026). */
+  breadcrumb?: boolean
 }
 
 const PAGE_SIZE = 50
@@ -39,7 +42,7 @@ const REFRESH_MS = 800
 /* Slide 8's columns, in its order. Widths at 1920, as Broadcast's list. */
 const COLUMNS: ListColumn<ImportRecord>[] = [
   { key: 'file', label: 'Import file name', width: 560, cell: (r) => r.fileName },
-  { key: 'status', label: 'Status', width: 200, slot: true, cell: (r) => <BroadcastStatus status={r.status} /> },
+  { key: 'status', label: COPY.status, width: 200, slot: true, cell: (r) => <BroadcastStatus status={r.status} /> },
   { key: 'by', label: 'Created by', width: 300, cell: (r) => r.createdBy },
   { key: 'created', label: 'Created datetime', width: 270, cell: (r) => fmtImportTime(r.createdAt) },
   { key: 'updated', label: 'Updated datetime', width: 270, cell: (r) => fmtImportTime(r.updatedAt) || '–' },
@@ -54,7 +57,7 @@ const COLUMNS: ListColumn<ImportRecord>[] = [
  * header and the empty state as a second way in, beside Notification
  * management's (PROPOSAL, 1 Nov 2026, pending BA: the deck does not ask for it).
  */
-export function ImportTemplateList({ records, onOpen, onImport, state: shownState = 'ready', onRetry, onRefresh }: ImportTemplateListProps) {
+export function ImportTemplateList({ records, onOpen, onImport, state: shownState = 'ready', onRetry, onRefresh, breadcrumb = false }: ImportTemplateListProps) {
   const [refreshing, setRefreshing] = useState(false)
   const state = refreshing ? 'loading' : shownState
   const [requestedPage, setPage] = useState(0)
@@ -85,7 +88,7 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
       </div>
       <div className="min-w-[180px] flex-[0_1_291px]">
         <FilterSelect
-          label="Status"
+          label={COPY.status}
           options={IMPORT_STATUSES}
           optionLabel={(s) => STATUS_LABEL[s as ImportStatus]}
           value={statuses}
@@ -112,11 +115,23 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
   return (
     <div className="flex h-full min-h-px flex-col">
       <ConsolePage
-        title={COPY.title}
+        title={
+          breadcrumb ? (
+            /* Breadcrumb over the title, as CMS PageBand (gap 4): viewing import status is secondary to
+               Notification management, where imported templates land anyway (requester, 3 Nov 2026).
+               Fits the 82 band: 20 + 4 + 28. */
+            <span className="flex flex-col gap-[var(--space-1)]">
+              <Breadcrumbs items={[{ label: COPY.crumbParent, href: '#/list' }, { label: COPY.title }]} />
+              {COPY.title}
+            </span>
+          ) : (
+            COPY.title
+          )
+        }
         /* Refresh fetches the page again (design critique with the lead design team, 3 Nov
            2026): the list shows each import's status as of when it was opened, so the user
-           pulls the newer ones. Filters, search and page stay. Composed: webds ships no
-           refresh pattern; Outline Button with the library's `refresh` icon. */
+           pulls the newer ones. Filters, search and page stay. Composed: Outline Button with
+           the library's `refresh` icon after the label, as webds `picker-dialog`'s Refresh. */
         headerActions={
           <span className="flex items-center gap-[var(--space-4)]">
             <OutlineButton
