@@ -39,7 +39,10 @@ export type ImportRecord = {
 }
 
 export const IMPORT_TEMPLATE_COPY = {
-  title: 'Import Template',
+  /* The sidebar item, the Import menu's row and this title read alike (requester, 2 Nov 2026; the deck's name was Import Template). */
+  title: 'View import status',
+  /* The breadcrumb's parent in the Import menu option: the side nav's label (3 Nov 2026). */
+  crumbParent: 'Notification management',
   search: 'Search by import file name',
   emptyTitle: 'No files imported yet',
   /* Was "Import a template file from Notification management to see it here" until the page had its own Import (1 Nov 2026, composed). */

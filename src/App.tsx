@@ -194,6 +194,9 @@ export default function App() {
   const onBroadcast = hash.startsWith('#/broadcast')
   /* Import Template (BA & Dev deck, 30 Oct 2026): this session's jobs on top of the seeded imports. */
   const onImportTemplate = hash.startsWith('#/import-template')
+  /* Import Template is reached from the Import button's menu on Notification management (requester, 4 Nov 2026).
+     `#/list/import-menu` shows the menu open. */
+  const importMenuHeld = hash === '#/list/import-menu'
   const importRecords: ImportRecord[] = importSnapshot ?? [...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS]
   const importView = hash.match(/^#\/import-template\/view\/([A-Z]+-[A-Z]?\d+)(\/download)?$/)
   const importViewId = openImport ?? importView?.[1]
@@ -209,9 +212,10 @@ export default function App() {
   const reportResult = reportPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
 
   return (
-    <AppShell activeId={onBroadcast ? 'broadcast' : onImportTemplate ? 'import-template' : 'template-management'}>
+    <AppShell activeId={onBroadcast ? 'broadcast' : 'template-management'}>
       {onImportTemplate ? (
         <ImportTemplateList
+          breadcrumb
           records={hash === '#/import-template/empty' ? [] : importRecords}
           onOpen={(r) => setOpenImport(r.id)}
           onImport={() => setImportOpen(true)}
@@ -255,6 +259,8 @@ export default function App() {
           downloadRequest={downloadRequest}
           onDownloadRequestHandled={() => setDownloadRequest(null)}
           importPreset={importPreset}
+          importMenuHeld={importMenuHeld}
+          onViewImports={() => go('/import-template')}
           importedNames={Object.keys(importHistory)}
           onImport={landImport}
           importJobs={importJobs}
