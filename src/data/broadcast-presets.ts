@@ -74,7 +74,7 @@ export const DIRECT_CSV = `MOBILE_NO,EMAIL,CUSTOMER_NAME,AMOUNT,PROMOTION_CODE
 `
 
 /** A file too big for the preview box: 100 recipients × 55 columns, so the
- *  preview scrolls both ways (`#/broadcast/create/large-file`). Made up,
+ *  preview shows its first 5 rows and scrolls sideways (`#/broadcast/create/large-file`). Made up,
  *  repeating from short lists. */
 const LARGE_COLUMNS = [
   'CIS_ID', 'CUSTOMER_NAME', 'ACCOUNT_NO', 'AMOUNT', 'PROMOTION_CODE', 'MOBILE_NO', 'EMAIL',

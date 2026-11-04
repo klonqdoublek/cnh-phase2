@@ -187,9 +187,9 @@ function FileResult({ f }: F) {
   )
 }
 
-/** The whole file in a box five rows tall at the column's width; the rest
- *  scrolls, both ways, under a header that stays put. The selected ID column
- *  is not marked (requirement update, 21 Oct 2026). */
+/** The file's first five rows at the column's width; the rows stop there
+ *  (requester, 4 Nov 2026), every column scrolls sideways. The selected ID
+ *  column is not marked (requirement update, 21 Oct 2026). */
 function Preview({ f }: F) {
   const a = f.audience!
   return (
@@ -221,7 +221,7 @@ export function MiniTable({
   widths: string
   negativeLast?: boolean
   maxHeight?: boolean
-  /** Show this many rows under the header and scroll the rest, both ways. */
+  /** Show only this many rows under the header; the columns scroll sideways. */
   visibleRows?: number
 }) {
   const cell =
@@ -249,7 +249,7 @@ export function MiniTable({
           {c}
         </TableHeaderCell>
       ))}
-      {rows.map((r, ri) =>
+      {(visibleRows ? rows.slice(0, visibleRows) : rows).map((r, ri) =>
         r.map((v, ci) => (
           <TableDataCell
             key={`${ri}-${ci}`}
@@ -265,12 +265,7 @@ export function MiniTable({
     </div>
   )
   if (!visibleRows) return table
-  /* A row is a Body S line, py 8 and a 1px rule; the header is one more row. */
-  return (
-    <ScrollBox maxHeight={`calc(${visibleRows + 1} * (var(--type-body-s-line-height) + 2 * var(--space-2) + 1px))`}>
-      {table}
-    </ScrollBox>
-  )
+  return <ScrollBox>{table}</ScrollBox>
 }
 
 /* Three types since the BA / Dev sync (28 Oct 2026), was CIS / Direct
