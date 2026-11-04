@@ -507,7 +507,8 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
         return (
           <FormSectionCard
             key={c}
-            className="min-w-0 border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
+            /* Name to first field 24, the pattern's 32 read too far (Korarit, 4 Nov 2026). */
+            className="min-w-0 gap-[var(--space-6)] border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
             title={c}
             toggle={single ? undefined : { on, onToggle: (v) => f.setChannel(c, v) }}
             invalid={invalid}
@@ -535,7 +536,12 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
       title={<span className="flex min-h-[44px] items-center">Create broadcast message</span>}
       rowGap={6}
     >
-      {!hasFields && <p className={NOTE}>Dynamic fields can be added once the audience file is uploaded.</p>}
+      {/* Sits 8 under the title and 32 over the cards (Korarit, 4 Nov 2026). */}
+      {!hasFields && (
+        <p className={cn(NOTE, 'mt-[calc(var(--space-2)-var(--space-8))] mb-[var(--space-2)]')}>
+          Dynamic fields can be added once the audience file is uploaded.
+        </p>
+      )}
       <ChannelAlert f={f} />
       {shortcut.menu}
       {cards}
@@ -558,7 +564,7 @@ function ChannelFields({
     id: keyof BroadcastContent,
     label: string,
     placeholder: string,
-    extra?: { multiline?: boolean; optional?: boolean; hint?: string },
+    extra?: { multiline?: boolean; optional?: boolean; hint?: string; className?: string },
   ) => {
     const { optional, ...rest } = extra ?? {}
     if (isMessageBox(id))
@@ -602,6 +608,8 @@ function ChannelFields({
           multiline: true,
           optional: true,
           hint: 'A deep link will take customers to your specific destination when tapping the push notification',
+          /* Box to helper text 8, webds's 4 read too tight (Korarit, 4 Nov 2026). */
+          className: '[&_.webds-field-hint]:pt-[var(--space-1)]',
         })}
       </>
     )
