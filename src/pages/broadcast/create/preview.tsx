@@ -163,9 +163,9 @@ export function MessagePreview({
    * 2026). The area is laid over its cell so it adds no height of its own;
    * `my-auto` centres a short message and lets a long one start at the top. */
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
+    <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-2)]">
       <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Preview</span>
-      <div className="relative min-h-[240px] flex-1">
+      <div className="relative flex-1">
         <ScrollBox
           className="absolute inset-0 grid-rows-[minmax(0,1fr)] border-0 bg-[var(--color-surface-secondary-default)]"
           viewClassName="flex flex-col p-[var(--space-6)]"

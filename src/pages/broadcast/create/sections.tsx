@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
@@ -515,12 +515,10 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
             rowGap={4}
           >
             {/* Fields left, the preview right, as the deck draws Email (30 Oct 2026). */}
-            <div className="grid grid-cols-2 items-stretch gap-[var(--space-6)]">
-              <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
-                <ChannelFields f={f} channel={c} on={on} tint={tint} insert={hasFields ? insert : undefined} />
-              </div>
+            <ChannelBody>
+              <ChannelFields f={f} channel={c} on={on} tint={tint} insert={hasFields ? insert : undefined} />
               <MessagePreview channel={c} content={f.content} audience={f.audience} on={on} />
-            </div>
+            </ChannelBody>
           </FormSectionCard>
         )
       })}
@@ -546,6 +544,39 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
       {shortcut.menu}
       {cards}
     </FormSectionCard>
+  )
+}
+
+/** A channel card's two columns. The preview ends level with the last field's
+ *  box; that field's counter and helper text hang below it (requester, 5 Nov
+ *  2026). The row under the box changes height with an error, so the box is
+ *  measured. The card keeps the 270 it had before (the SMS fields alone are 266),
+ *  so nothing below it moves. */
+function ChannelBody({ children }: { children: [React.ReactNode, React.ReactNode] }) {
+  const fields = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState<number>()
+  useLayoutEffect(() => {
+    const col = fields.current
+    if (!col) return
+    const measure = () => {
+      const hints = col.querySelectorAll('.webds-field-hint')
+      const box = hints[hints.length - 1]?.previousElementSibling
+      if (box) setHeight(box.getBoundingClientRect().bottom - col.getBoundingClientRect().top)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(col)
+    return () => observer.disconnect()
+  }, [])
+  return (
+    <div className="grid min-h-[270px] grid-cols-2 items-stretch gap-[var(--space-6)]">
+      <div ref={fields} className="flex min-w-0 flex-col gap-[var(--space-4)]">
+        {children[0]}
+      </div>
+      <div className="flex min-w-0 flex-col self-start" style={{ height }}>
+        {children[1]}
+      </div>
+    </div>
   )
 }
 
