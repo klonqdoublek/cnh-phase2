@@ -63,6 +63,10 @@ export const IMPORT_COPY = {
   processingNote: 'Takes about 10 minutes',
   /* A job waiting for the server to start it (composed, 30 Oct 2026). */
   queuedNote: 'Waiting to start',
+  /* The Import button's menu, when the Import Template page is a sub-menu of Import and not a sidebar item
+     (requester, 2 Nov 2026; composed). Import file is the wording the requester picked on 29 Oct 2026. */
+  menuImportFile: 'Import file',
+  menuViewImports: 'View import status',
   close: 'Close',
   /* Opens the import on the Import Template page (composed, 30 Oct 2026). */
   view: 'View',

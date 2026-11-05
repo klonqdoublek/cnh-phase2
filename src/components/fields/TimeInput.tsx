@@ -57,6 +57,10 @@ function Column({
   )
 }
 
+/** The hours row's label: 22 tall and 16 over its box (Figma 310:7441). The 4
+ *  the installed `FieldRoot` already sets is part of that 16. */
+export const QUIET_PERIOD_LABEL = 'h-[22px] mb-[var(--space-3)]'
+
 /**
  * A time field, `HH:mm`, for the Do Not Disturb quiet period. webds ships no
  * time-only field or picker (a gap), so this is the box of `DateTimeInput`
@@ -71,6 +75,7 @@ export function TimeInput({
   value,
   onChange,
   error,
+  hint,
   required,
   disabled,
   placeholder = 'HH:mm',
@@ -82,6 +87,8 @@ export function TimeInput({
   value: string
   onChange: (value: string) => void
   error?: string
+  /** A note under the box, in the field's hint; an error takes its place. */
+  hint?: string
   required?: boolean
   disabled?: boolean
   placeholder?: string
@@ -141,7 +148,7 @@ export function TimeInput({
   return (
     <div ref={rootRef} data-error={error ? 'true' : undefined} className={cn('relative w-[220px] min-w-0', className)}>
       <FieldRoot>
-        <FieldLabel colour={disabled ? 'disabled' : 'tertiary'} required={required}>
+        <FieldLabel className={QUIET_PERIOD_LABEL} colour={disabled ? 'disabled' : 'tertiary'} required={required}>
           {label}
         </FieldLabel>
         <div className="relative">
@@ -219,7 +226,7 @@ export function TimeInput({
             </div>
           )}
         </div>
-        <FieldHint message={error} tone={tone} />
+        <FieldHint message={error ?? hint} tone={tone} />
       </FieldRoot>
     </div>
   )

@@ -26,6 +26,7 @@ const COLUMNS: { value: Columns; label: string }[] = [
 ]
 
 
+/* Where the Import Template page is reached from (requester, 2 Nov 2026). */
 /** A group's section: a heading over its controls. */
 function Section({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (

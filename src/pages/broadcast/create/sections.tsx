@@ -2,11 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
-import { TimeInput } from '@/components/fields/TimeInput'
+import { QUIET_PERIOD_LABEL, TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
-import { ContainedIconButton } from '@/bbl/contained-icon-button'
-import { FieldLabel } from '@/bbl/field'
+import { FieldLabel, FieldRoot } from '@/bbl/field'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
@@ -19,7 +18,6 @@ import { FormField } from '@/patterns/form-field'
 import { PICKER_DIALOG_COPY_EN } from '@/patterns/picker-dialog'
 import { SelectList } from '@/patterns/select-list'
 import { FormSectionCard } from '@/patterns/form-section-card'
-import { InfoNote } from '@/patterns/info-note'
 import { FormStep } from '@/patterns/console-page'
 import {
   BROADCAST_COPY,
@@ -36,20 +34,20 @@ import {
 } from '@/data/broadcast'
 import { SERVICE_CODE_LOV, type Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import { Choice, LABEL, ModeOption, NOTE, Select, Text } from './fields'
+import { Choice, LABEL, MessageEditor, ModeOption, NOTE, Select, Text } from './fields'
 import { editBox, type Tint } from './highlight'
 import { MessagePreview } from './preview'
 import { ScrollBox } from './scroll-box'
-import { TRIGGER, useFieldShortcut } from './shortcut'
+import { useFieldShortcut } from './shortcut'
 import { CONTENT_MAX, ymd, type BroadcastForm } from './useBroadcastForm'
 
 /* The Create broadcast steps, laid out as draft 2.2 webds-matched (Figma
  * 85:19401, 15 Oct 2026): the audience step carries the message content —
- * the channel cards, each with its `+` for a dynamic field — and channels are
- * switched on their own cards. */
+ * the channel cards, each message box with its dynamic field button — and
+ * channels are switched on their own cards. */
 
 type F = { f: BroadcastForm }
-/** The message box the cursor was last in, so a card's `+` knows where to insert. */
+/** The message box the cursor was last in, so a picked field keeps its caret. */
 export type FocusRef = React.MutableRefObject<{ key: string; el: HTMLInputElement | HTMLTextAreaElement } | null>
 
 const sizeLabel = (bytes: number) =>
@@ -187,9 +185,9 @@ function FileResult({ f }: F) {
   )
 }
 
-/** The whole file in a box five rows tall at the column's width; the rest
- *  scrolls, both ways, under a header that stays put. The selected ID column
- *  is not marked (requirement update, 21 Oct 2026). */
+/** The file's first five rows at the column's width; the rows stop there
+ *  (requester, 4 Nov 2026), every column scrolls sideways. The selected ID
+ *  column is not marked (requirement update, 21 Oct 2026). */
 function Preview({ f }: F) {
   const a = f.audience!
   return (
@@ -221,7 +219,7 @@ export function MiniTable({
   widths: string
   negativeLast?: boolean
   maxHeight?: boolean
-  /** Show this many rows under the header and scroll the rest, both ways. */
+  /** Show only this many rows under the header; the columns scroll sideways. */
   visibleRows?: number
 }) {
   const cell =
@@ -249,7 +247,7 @@ export function MiniTable({
           {c}
         </TableHeaderCell>
       ))}
-      {rows.map((r, ri) =>
+      {(visibleRows ? rows.slice(0, visibleRows) : rows).map((r, ri) =>
         r.map((v, ci) => (
           <TableDataCell
             key={`${ri}-${ci}`}
@@ -265,12 +263,7 @@ export function MiniTable({
     </div>
   )
   if (!visibleRows) return table
-  /* A row is a Body S line, py 8 and a 1px rule; the header is one more row. */
-  return (
-    <ScrollBox maxHeight={`calc(${visibleRows + 1} * (var(--type-body-s-line-height) + 2 * var(--space-2) + 1px))`}>
-      {table}
-    </ScrollBox>
-  )
+  return <ScrollBox>{table}</ScrollBox>
 }
 
 /* Three types since the BA / Dev sync (28 Oct 2026), was CIS / Direct
@@ -342,35 +335,20 @@ function ColumnSelect({ f }: F) {
 
 /* ── Message content (under the audience step) ─────────────────────────── */
 
-/** Each channel's message boxes, in order — where the card's `+` inserts
- *  when the cursor is not in one of that channel's boxes. */
-const CHANNEL_BOXES: Record<Channel, (keyof BroadcastContent)[]> = {
-  'Push notification': ['pushTitle', 'pushBody'],
-  Email: ['emailSubject', 'emailBody'],
-  SMS: ['smsMessage'],
-}
-
-/** Inserts `${COLUMN}` at the caret of the channel's message box the cursor
- *  was last in, or into the channel's first box. */
+/** Inserts `${COLUMN}` into the message box whose button was pressed, at its
+ *  caret (the box keeps its selection while unfocused, so this is also where
+ *  the cursor last left it). */
 function useInsertField(f: BroadcastForm, focus: FocusRef) {
-  return (token: string, channel: Channel) => {
-    type Target = NonNullable<FocusRef['current']>
-    const usable = (t: Target | null): t is Target => !!t && !t.el.disabled && t.el.isConnected
-    let target = focus.current
-    if (!(usable(target) && CHANNEL_BOXES[channel].includes(target.key as keyof BroadcastContent))) {
-      const key = CHANNEL_BOXES[channel][0]
-      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-        `[data-field="${key}"] input, [data-field="${key}"] textarea`,
-      )
-      target = el ? { key, el } : null
-    }
-    if (!usable(target)) return
-    const { el, key } = target
+  return (token: string, key: keyof BroadcastContent) => {
+    const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      `[data-field="${key}"] input, [data-field="${key}"] textarea`,
+    )
+    if (!el || el.disabled) return
     const from = el.selectionStart ?? el.value.length
     const to = el.selectionEnd ?? el.value.length
     focus.current = { key, el }
     /* The browser's own edit, so ⌘Z takes the picked field back (./highlight.tsx). */
-    editBox(el, from, to, token, f.setC(key as keyof BroadcastContent))
+    editBox(el, from, to, token, f.setC(key))
   }
 }
 
@@ -389,7 +367,7 @@ function useDismiss(open: boolean, setOpen: (open: boolean) => void, root: React
   }, [open, setOpen, root])
 }
 
-/** The pop-up under a card's `+`: webds `select-list`, the pattern that puts
+/** The pop-up under a message box's dynamic field button: webds `select-list`, the pattern that puts
  *  the library's Search Field above a single-pick list (requester, 28 Oct
  *  2026; was Dropdown Menu, which has no search). The columns go in as one
  *  unlabelled group and only that group scrolls: scrolling the root moved the
@@ -403,7 +381,7 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
   return (
     <SelectList
       width={240}
-      className="absolute right-0 top-full z-[10] mt-[var(--space-2)] max-h-[360px] [&>.webds-pattern-select-list-3]:min-h-0 [&>.webds-pattern-select-list-3]:overflow-y-auto"
+      className="absolute left-0 top-full z-[10] mt-[var(--space-2)] max-h-[360px] [&>.webds-pattern-select-list-3]:min-h-0 [&>.webds-pattern-select-list-3]:overflow-y-auto"
       search={<FormField spec={{ label: PICKER_DIALOG_COPY_EN.search, kind: 'search', autoFocus: true }} value={query} onChange={setQuery} />}
       groups={[
         {
@@ -417,9 +395,16 @@ function FieldMenu({ options, onSelect }: { options: { value: string; label: str
   )
 }
 
-/** Idea 2.2's `+` on a card's title row (Figma 359:112101), which opens the
- *  file's columns in `FieldMenu`. The draft draws the button only; the
- *  pop-up is composed (gap). */
+/** The dynamic field button, in the toolbar of each `MessageEditor`, which
+ *  opens the file's columns in `FieldMenu`. Core's Rich Text Editor toggle
+ *  (10923:13655), on webds `icon-button`, which draws its is Selected=No row:
+ *  no fill and a secondary icon, hovered 5%, clicked 10%. While the menu is open
+ *  it is is Selected=Yes: Highlight at 10%, hovered 15%, clicked 20%, a highlight
+ *  icon. webds has no token for Highlight at 20% (gap), so it is mixed from
+ *  Surface/Highlight/Default. The `{ }` icon is drawn for CNH: the library ships
+ *  none (gap). Requester, 4 Nov 2026; before, Contained Icon Button 44 in the
+ *  box's top-right corner. The pop-up is composed (gap). With no audience file
+ *  there is nothing to pick, so it stays and is disabled. */
 function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (token: string) => void; disabled?: boolean; label: string }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLSpanElement>(null)
@@ -429,11 +414,31 @@ function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (toke
     <span ref={root} className="relative inline-flex">
       {/* mousedown would blur the message box and lose the caret first */}
       <span className="inline-flex" onMouseDown={(e) => e.preventDefault()}>
-        <ContainedIconButton
+        <IconButton
+          size={24}
+          selected={open}
           label={label}
           aria-expanded={open}
           disabled={off}
-          icon={<Icon slug="plus" size={16} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />}
+          className={cn(
+            'rounded-[var(--radius-1)]',
+            open &&
+              'hover:bg-[var(--color-surface-highlight-subtle-inverse-default)] active:bg-[color-mix(in_srgb,var(--color-surface-highlight-default)_20%,transparent)]',
+          )}
+          icon={
+            <Icon
+              dir="cnh-icons"
+              slug="field-braces"
+              size={24}
+              color={
+                off
+                  ? 'var(--color-icon-disabled-default)'
+                  : open
+                    ? 'var(--color-icon-highlight-default)'
+                    : 'var(--color-icon-secondary-default)'
+              }
+            />
+          }
           onClick={() => setOpen(!open)}
         />
       </span>
@@ -466,8 +471,9 @@ function ChannelAlert({ f }: F) {
 }
 
 /** The message area under the audience file. A dynamic field goes in two
- *  ways (BA & Dev feedback, 30 Oct 2026, "Option 2 + 3"): the `+` on each
- *  channel card's title row opens the file's columns (Idea 2.2), and typing
+ *  ways (BA & Dev feedback, 30 Oct 2026, "Option 2 + 3"): the button in each
+ *  message box's top-right corner opens the file's columns (Idea 2.2, moved
+ *  into the box 3 Nov 2026), and typing
  *  `$` in a message box opens them at the caret (Idea 4, ./shortcut.tsx). A
  *  picked field reads `${COLUMN}`, tinted as a chip (./highlight.tsx). The
  *  cards are stacked full width, as the CNH Template form (requester, 27 Oct
@@ -501,17 +507,9 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
         return (
           <FormSectionCard
             key={c}
-            className="min-w-0 border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
-            title={
-              hasFields ? (
-                <span className="flex items-center justify-between gap-[var(--space-4)]">
-                  {c}
-                  <FieldMenuButton f={f} label={`Add dynamic field to ${c}`} disabled={!on} onInsert={(t) => insert(t, c)} />
-                </span>
-              ) : (
-                c
-              )
-            }
+            /* Name to first field 24, the pattern's 32 read too far (Korarit, 4 Nov 2026). */
+            className="min-w-0 gap-[var(--space-6)] border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
+            title={c}
             toggle={single ? undefined : { on, onToggle: (v) => f.setChannel(c, v) }}
             invalid={invalid}
             rowGap={4}
@@ -519,7 +517,7 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
             {/* Fields left, the preview right, as the deck draws Email (30 Oct 2026). */}
             <div className="grid grid-cols-2 items-stretch gap-[var(--space-6)]">
               <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
-                <ChannelFields f={f} channel={c} on={on} tint={tint} />
+                <ChannelFields f={f} channel={c} on={on} tint={tint} insert={hasFields ? insert : undefined} />
               </div>
               <MessagePreview channel={c} content={f.content} audience={f.audience} on={on} />
             </div>
@@ -532,18 +530,18 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   return (
     <FormSectionCard
       className="[&_.webds-pattern-form-section-card-3]:flex-1"
-      title={
-        /* Every idea titled the card "Create broadcast message" (requester, 21
-           Oct 2026). The `$` note sits on the right of the title (requester,
-           28 Oct 2026): webds `info-note`, icon and text, no surface. */
-        <span className="flex min-h-[44px] items-center justify-between gap-[var(--space-4)]">
-          Create broadcast message
-          {hasFields && <InfoNote>Type {TRIGGER} to add a dynamic field</InfoNote>}
-        </span>
-      }
+      /* Every idea titled the card "Create broadcast message" (requester, 21
+         Oct 2026). No `$` note: the shortcut is easy to learn (requester, 4 Nov
+         2026). */
+      title={<span className="flex min-h-[44px] items-center">Create broadcast message</span>}
       rowGap={6}
     >
-      {!hasFields && <p className={NOTE}>Dynamic fields can be added once the audience file is uploaded.</p>}
+      {/* Sits 8 under the title and 32 over the cards (Korarit, 4 Nov 2026). */}
+      {!hasFields && (
+        <p className={cn(NOTE, 'mt-[calc(var(--space-2)-var(--space-8))] mb-[var(--space-2)]')}>
+          Dynamic fields can be added once the audience file is uploaded.
+        </p>
+      )}
       <ChannelAlert f={f} />
       {shortcut.menu}
       {cards}
@@ -555,14 +553,37 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
  *  (TH): one broadcast is written in one language, Thai or English (BA / Dev
  *  sync, 28 Oct 2026). Push's Deep link and Email's sender are the Template
  *  form's too (BA & Dev feedback, 30 Oct 2026); they take no dynamic field. */
-function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boolean; tint?: Tint }) {
+function ChannelFields({
+  f,
+  channel,
+  on,
+  tint,
+  insert,
+}: F & { channel: Channel; on: boolean; tint?: Tint; insert?: (token: string, key: keyof BroadcastContent) => void }) {
   const box = (
     id: keyof BroadcastContent,
     label: string,
     placeholder: string,
-    extra?: { multiline?: boolean; boxHeight?: 77; optional?: boolean; hint?: string },
+    extra?: { multiline?: boolean; optional?: boolean; hint?: string; className?: string },
   ) => {
     const { optional, ...rest } = extra ?? {}
+    if (isMessageBox(id))
+      return (
+        <MessageEditor
+          id={id}
+          label={label}
+          required={!optional}
+          disabled={!on}
+          value={f.content[id]}
+          max={CONTENT_MAX[id]}
+          error={f.fieldError(id, on)}
+          placeholder={placeholder}
+          onChange={f.setC(id)}
+          multiline={rest.multiline}
+          tint={tint}
+          toolbar={<FieldMenuButton f={f} label={`Add dynamic field to ${label}`} disabled={!on} onInsert={(t) => insert?.(t, id)} />}
+        />
+      )
     return (
       <Text
         id={id}
@@ -574,7 +595,6 @@ function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boo
         error={f.fieldError(id, on)}
         placeholder={placeholder}
         onChange={f.setC(id)}
-        tint={isMessageBox(id) ? tint : undefined}
         {...rest}
       />
     )
@@ -583,11 +603,13 @@ function ChannelFields({ f, channel, on, tint }: F & { channel: Channel; on: boo
     return (
       <>
         {box('pushTitle', 'Push title', 'Enter push title')}
-        {box('pushBody', 'Push message', 'Enter push message', { boxHeight: 77 })}
+        {box('pushBody', 'Push message', 'Enter push message')}
         {box('pushDeeplink', 'Deep link', 'Enter a deep link URL (optional)', {
           multiline: true,
           optional: true,
           hint: 'A deep link will take customers to your specific destination when tapping the push notification',
+          /* Box to helper text 8, webds's 4 read too tight (Korarit, 4 Nov 2026). */
+          className: '[&_.webds-field-hint]:pt-[var(--space-1)]',
         })}
       </>
     )
@@ -705,18 +727,18 @@ function NeverSendsAlert({ error }: { error: boolean }) {
   )
 }
 
-/** One quiet period on one row: its days, its hours or All day, and — when
- *  there is more than one — a trash to remove it (draft 2.2, Figma 89:4665). */
+/** One quiet period on two rows: its days, then its hours or All day (Figma
+ *  310:7441). Its trash is the card's, in the top-right corner. */
 function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const off = !f.dnd.enabled
   const daysError = f.errors[`dndDays:${rule.id}`]
   const timeError = f.errors[`dndTime:${rule.id}`]
   const which = f.dnd.rules.length > 1 ? ` ${index + 1}` : ''
   return (
-    <div className="flex flex-wrap items-start gap-x-[var(--space-8)] gap-y-[var(--space-6)]">
-      <div data-error={daysError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
+    <div className="flex flex-col items-start gap-[var(--space-6)]">
+      <div data-error={daysError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-3)]">
         <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Weekdays</span>
-        <div className="flex h-[56px] flex-wrap items-center gap-[var(--space-6)]">
+        <div className="flex flex-wrap items-center gap-[var(--space-6)]">
           {DAYS.map(({ day, label }) => (
             <Choice
               key={day}
@@ -738,14 +760,16 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
         )}
       </div>
       <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
-        <div className="flex items-end gap-[var(--space-4)]">
+        <div className="flex items-start gap-[var(--space-4)]">
           <TimeInput
             label={`Quiet period from (${TIME_ZONES.find((z) => z.value === f.dnd.timeZone)?.offset ?? f.dnd.timeZone})`}
             value={rule.allDay ? '' : rule.from}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { from: v })}
           />
-          <span className="pb-[var(--space-4)] type-body-m text-[var(--color-text-secondary-default)]">to</span>
+          <BesideField>
+            <span className="type-body-m text-[var(--color-text-secondary-default)]">to</span>
+          </BesideField>
           {/* The original draws no label here, only the room for one, so the two
               boxes share a line. */}
           <TimeInput
@@ -753,19 +777,11 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
             value={rule.allDay ? '' : rule.to}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { to: v })}
+            /* The end falls on the next day (BA, 2026-10-19), said under the
+               box so the row keeps its width. */
+            hint={endsNextDay(rule) ? 'Next Day' : undefined}
           />
-          {/* The end falls on the next day (BA, 2026-10-19). */}
-          {endsNextDay(rule) && (
-            <span
-              className={cn(
-                'pb-[var(--space-4)] type-body-m',
-                off ? 'text-[var(--color-text-disabled-default)]' : 'text-[var(--color-text-secondary-default)]',
-              )}
-            >
-              Next day
-            </span>
-          )}
-          <span className="flex h-[56px] items-center">
+          <BesideField>
             <Choice
               kind="checkbox"
               label="All day"
@@ -774,23 +790,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
               on={rule.allDay}
               onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
             />
-          </span>
-          {f.dnd.rules.length > 1 && (
-            <span className="flex h-[56px] items-center pl-[var(--space-4)]">
-              <IconButton
-                label={`Remove quiet period${which}`}
-                disabled={off}
-                icon={
-                  <Icon
-                    slug="trash"
-                    size={24}
-                    color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'}
-                  />
-                }
-                onClick={() => f.removeDndRule(rule.id)}
-              />
-            </span>
-          )}
+          </BesideField>
         </div>
         {timeError && (
           <InlineMessage appearance="negative" size="xs">
@@ -799,6 +799,34 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
         )}
       </div>
     </div>
+  )
+}
+
+/** What sits beside the time boxes, set under an empty label on a 56-tall line
+ *  so it stays level with the boxes when the To box carries a hint under it. */
+function BesideField({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <FieldRoot className="w-auto shrink-0">
+      <FieldLabel className={QUIET_PERIOD_LABEL}> </FieldLabel>
+      <span className={cn('flex h-[56px] items-center', className)}>{children}</span>
+    </FieldRoot>
+  )
+}
+
+function RemoveRule({ f, id, which }: F & { id: string; which: string }) {
+  const off = !f.dnd.enabled
+  return (
+    <span className="ml-auto flex shrink-0">
+      <IconButton
+        size={24}
+        label={`Remove quiet period${which}`}
+        disabled={off}
+        icon={
+          <Icon slug="trash" size={24} color={off ? 'var(--color-icon-disabled-default)' : 'var(--color-icon-highlight-default)'} />
+        }
+        onClick={() => f.removeDndRule(id)}
+      />
+    </span>
   )
 }
 
@@ -830,6 +858,10 @@ export function DndCard({ f }: F) {
       {dnd.rules.map((rule, i) => (
         <CardSurface key={rule.id} className="h-auto items-start border border-[var(--color-border-primary-default)]">
           <DndRuleRow f={f} rule={rule} index={i} />
+          {/* When there is more than one, the trash sits in the card's top-right
+              corner (design critique with the lead design team, 3 Nov 2026; was
+              at the end of the hours row, after All day). */}
+          {dnd.rules.length > 1 && <RemoveRule f={f} id={rule.id} which={` ${i + 1}`} />}
         </CardSurface>
       ))}
       {f.neverSends && (
