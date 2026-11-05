@@ -728,7 +728,7 @@ function NeverSendsAlert({ error }: { error: boolean }) {
 }
 
 /** One quiet period on two rows: its days, then its hours or All day (Figma
- *  310:7441), 32 apart (requester, 5 Nov 2026; Figma draws 24). Its trash is
+ *  310:7441), 32 apart (requester, 5 Nov 2026). Its trash is
  *  the card's, in the top-right corner. */
 function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const off = !f.dnd.enabled

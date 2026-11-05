@@ -58,7 +58,7 @@ function Column({
 }
 
 /** The hours row's label: 22 tall and 12 over its box, the same as Weekdays over
- *  its days (requester, 5 Nov 2026; Figma 310:7441 draws 16). The 4 the installed
+ *  its days (requester, 5 Nov 2026; Figma 310:7441). The 4 the installed
  *  `FieldRoot` already sets is part of that 12. */
 export const QUIET_PERIOD_LABEL = 'h-[22px] mb-[var(--space-2)]'
 
