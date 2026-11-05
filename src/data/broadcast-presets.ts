@@ -21,6 +21,7 @@ export const FORM_PRESETS = [
   'quiet',
   'dnd-rules',
   'dnd-all-week',
+  'dnd-all-week-hours',
   'dnd-all-week-submit',
   'large-file',
   'long-message',
@@ -271,6 +272,17 @@ const ALL_WEEK_DND: Dnd = {
   timeZone: 'Asia/Bangkok',
 }
 
+/** The same state from hours alone, no All day: the check adds up the periods,
+ *  not the All day boxes (BA, 5 Nov 2026). */
+const ALL_WEEK_HOURS_DND: Dnd = {
+  enabled: true,
+  rules: [
+    { id: 'dnd-daytime', days: [1, 2, 3, 4, 5, 6, 0], allDay: false, from: '08:00', to: '18:00' },
+    { id: 'dnd-overnight', days: [1, 2, 3, 4, 5, 6, 0], allDay: false, from: '18:00', to: '08:00' },
+  ],
+  timeZone: 'Asia/Bangkok',
+}
+
 export function formSeed(preset: FormPreset): FormSeed {
   switch (preset) {
     case 'file-error':
@@ -319,6 +331,8 @@ export function formSeed(preset: FormPreset): FormSeed {
       return { ...filled, mode: 'schedule', start: { inDays: nextSaturday(), time: '10:00' }, dnd: BA_DND }
     case 'dnd-all-week':
       return { ...filled, dnd: ALL_WEEK_DND }
+    case 'dnd-all-week-hours':
+      return { ...filled, dnd: ALL_WEEK_HOURS_DND }
     /* Submit pressed: the Alert turns Negative and blocks it (BA MoM, 29 Oct 2026). */
     case 'dnd-all-week-submit':
       return { ...filled, dnd: ALL_WEEK_DND, errors: { dnd: BROADCAST_COPY.dndNeverSends } }
