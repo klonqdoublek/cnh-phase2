@@ -64,10 +64,12 @@ const SURFACE = 'border border-[var(--color-border-primary-default)] bg-[var(--c
 
 type PreviewProps = { c: BroadcastContent; row: Row; off: boolean }
 
-/** Push: a notification banner from the app, as the phone shows it. */
+/** Push: a notification banner from the app, as the phone shows it. Flat,
+ *  the Border/Primary stroke only, as Email's mail (requester, 5 Nov 2026:
+ *  the shadow went). */
 function PushPreview({ c, row, off }: PreviewProps) {
   return (
-    <div className={cn(SURFACE, 'flex w-full gap-[var(--space-3)] rounded-[var(--radius-4)] p-[var(--space-4)] shadow-raised')}>
+    <div className={cn(SURFACE, 'flex w-full gap-[var(--space-3)] rounded-[var(--radius-4)] p-[var(--space-4)]')}>
       {/* The app icon, a mock: webds bell on a light tile (requester, 4 Nov 2026). */}
       <span className="flex size-[var(--space-10)] shrink-0 items-center justify-center rounded-[var(--radius-2)] bg-[var(--color-surface-highlight-subtle-default)]">
         <Icon slug="alert" size={24} color="var(--color-icon-highlight-default)" />
@@ -167,7 +169,8 @@ export function MessagePreview({
       <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Preview</span>
       <div className="relative flex-1">
         <ScrollBox
-          className="absolute inset-0 grid-rows-[minmax(0,1fr)] border-0 bg-[var(--color-surface-secondary-default)]"
+          /* Border/Primary round the area, ScrollBox's own (requester, 5 Nov 2026). */
+          className="absolute inset-0 grid-rows-[minmax(0,1fr)] bg-[var(--color-surface-secondary-default)]"
           viewClassName="flex flex-col p-[var(--space-6)]"
         >
           <div className="my-auto flex w-full flex-col">
