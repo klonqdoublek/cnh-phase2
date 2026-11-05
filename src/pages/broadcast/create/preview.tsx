@@ -68,8 +68,10 @@ type PreviewProps = { c: BroadcastContent; row: Row; off: boolean }
 function PushPreview({ c, row, off }: PreviewProps) {
   return (
     <div className={cn(SURFACE, 'flex w-full gap-[var(--space-3)] rounded-[var(--radius-4)] p-[var(--space-4)] shadow-raised')}>
-      {/* The app icon is a mock: a tile in the brand colour, no logo (requester, 4 Nov 2026). */}
-      <span className="size-[var(--space-10)] shrink-0 rounded-[var(--radius-2)] bg-[var(--color-surface-accent-brand-default)]" aria-hidden />
+      {/* The app icon, a mock: webds bell on a light tile (requester, 4 Nov 2026). */}
+      <span className="flex size-[var(--space-10)] shrink-0 items-center justify-center rounded-[var(--radius-2)] bg-[var(--color-surface-highlight-subtle-default)]">
+        <Icon slug="alert" size={24} color="var(--color-icon-highlight-default)" />
+      </span>
       <div className="flex min-w-0 flex-1 flex-col gap-[var(--space-1)]">
         <span className="flex items-center justify-between gap-[var(--space-2)]">
           <span className="type-label-s text-[var(--color-text-secondary-default)]">Bualuang mBanking</span>
