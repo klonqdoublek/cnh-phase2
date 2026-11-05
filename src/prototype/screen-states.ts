@@ -147,6 +147,7 @@ const CREATE_BROADCAST: Screen = {
     s('#/broadcast/create/quiet', 'Data', 'Start in the quiet period'),
     s('#/broadcast/create/dnd-rules', 'Data', 'Start on a weekend, BA DND rules'),
     s('#/broadcast/create/dnd-all-week', 'Data', 'DND every day, all day'),
+    s('#/broadcast/create/dnd-all-week-hours', 'Data', 'DND every day, all day: hours add up'),
     s('#/broadcast/create/dnd-all-week-submit', 'Data', 'DND every day, all day: Submit blocked'),
     s('#/broadcast/create/large-file', 'Data', 'Large file, 100 × 55'),
     s('#/broadcast/create/long-message', 'Data', 'Long messages, CIS ID'),
