@@ -6,7 +6,6 @@ import { Icon } from '@/bbl/icon'
 import { OutlineButton } from '@/bbl/outline-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConsolePage } from '@/patterns/console-page'
-import { EmptyState } from '@/patterns/empty-state'
 import { STATUS_LABEL } from '@/data/broadcast'
 import {
   IMPORT_STATUSES,
@@ -112,6 +111,20 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
     </div>
   )
 
+  /* CNH Phase 1's state card, as Notification management draws it: Surface/Primary/Hovered
+     at Radius 2, p 24 round a 765 slot, the block 100 from the slot's top. */
+  const card = (children: React.ReactNode) => (
+    <div className="w-full rounded-[var(--radius-2)] bg-[var(--color-surface-primary-hovered)] p-[var(--space-6)]">
+      <div className="flex h-[765px] w-full flex-col">{children}</div>
+    </div>
+  )
+  const centred = (children: React.ReactNode) => (
+    <div className="flex w-full flex-col items-center gap-[var(--space-6)] pt-[100px] text-center">{children}</div>
+  )
+  const stateLine = (text: string) => (
+    <p className="type-label-xl text-[var(--color-text-secondary-default)]">{text}</p>
+  )
+
   return (
     <div className="flex h-full min-h-px flex-col">
       <ConsolePage
@@ -153,49 +166,57 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
         columnWidth="fill"
         className="[&>[data-part=Body]]:bg-[var(--color-surface-primary-default)] [&>[data-part=Body]>div]:gap-0 [&>[data-part=Body]>div]:px-0 [&>[data-part=Body]>div]:pt-0 [&>[data-part=Body]>div]:pb-0 [&>[data-part=Header]]:px-[var(--space-4)]"
       >
-        {state === 'ready' && records.length === 0 ? (
-          <EmptyState
-            variant="idle"
-            title={<span className="type-heading-xs-emphasized">{COPY.emptyTitle}</span>}
-            action={<Button onClick={onImport}>{COPY.importAction}</Button>}
-            bodyMaxWidth="none"
-            className="mt-[var(--space-6)] h-[813px] justify-start gap-[var(--space-8)] pt-[124px] [&>div]:gap-[var(--space-8)] [&>div>span:last-child]:text-[var(--color-text-secondary-default)]"
-          >
-            {COPY.emptyLine}
-          </EmptyState>
-        ) : (
-          <div className="flex flex-col">
-            {filters}
-            {state === 'loading' ? (
-              <EmptyState variant="idle" icon={<SpinnerLoader size="l" />} className="h-[732px] justify-center" />
-            ) : state === 'error' ? (
-              <EmptyState
-                variant="idle"
-                icon={<img src="/illustrations/error.svg" alt="" width={124} height={124} />}
-                action={
-                  <Button onClick={onRetry} className="mt-[var(--space-2)]">
-                    Try again
-                  </Button>
-                }
-                bodyMaxWidth="none"
-                className="h-[732px] justify-start gap-[var(--space-6)] pt-[100px] [&>div>span:last-child]:text-[var(--color-text-secondary-default)]"
-              >
-                {COPY.loadFail}
-              </EmptyState>
-            ) : rows.length === 0 ? (
-              <EmptyState
-                variant="idle"
-                icon={<img src="/illustrations/no-results.svg" alt="" width={124} height={124} />}
-                bodyMaxWidth="none"
-                className="h-[732px] justify-start gap-[var(--space-6)] pt-[100px] [&>div>span:last-child]:text-[var(--color-text-secondary-default)]"
-              >
-                {COPY.noResults}
-              </EmptyState>
-            ) : (
-              <ListTable label={COPY.title} columns={COLUMNS} rows={rows} rowKey={(r) => r.id} onOpen={onOpen} />
-            )}
-          </div>
-        )}
+        {/* Every state keeps the filter band and draws CNH Phase 1's state card
+            (Notification management, Dashboard.tsx; Phase 1 Figma 1:126486): the empty
+            state too, with its Empty page illustration (requester, 5 Nov 2026). */}
+        <div className="flex flex-col">
+          {filters}
+          {state === 'loading' ? (
+            card(
+              <div className="flex h-full w-full items-center justify-center">
+                <SpinnerLoader size="l" />
+              </div>,
+            )
+          ) : state === 'error' ? (
+            card(
+              centred(
+                <>
+                  <img src="/illustrations/error.svg" alt="" width={124} height={124} />
+                  <div className="flex flex-col items-center gap-[var(--space-8)]">
+                    {stateLine(COPY.loadFail)}
+                    <Button onClick={onRetry}>Try again</Button>
+                  </div>
+                </>,
+              ),
+            )
+          ) : records.length === 0 ? (
+            card(
+              centred(
+                <>
+                  <img src="/illustrations/empty.svg" alt="" width={124} height={124} />
+                  <div className="flex flex-col items-center gap-[var(--space-8)]">
+                    <p className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">
+                      {COPY.emptyTitle}
+                    </p>
+                    {stateLine(COPY.emptyLine)}
+                    <Button onClick={onImport}>{COPY.importAction}</Button>
+                  </div>
+                </>,
+              ),
+            )
+          ) : rows.length === 0 ? (
+            card(
+              centred(
+                <>
+                  <img src="/illustrations/no-results.svg" alt="" width={124} height={124} />
+                  {stateLine(COPY.noResults)}
+                </>,
+              ),
+            )
+          ) : (
+            <ListTable label={COPY.title} columns={COLUMNS} rows={rows} rowKey={(r) => r.id} onOpen={onOpen} />
+          )}
+        </div>
       </ConsolePage>
 
       {state === 'ready' && rows.length > 0 && (
