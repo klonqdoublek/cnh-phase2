@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
-import { TimeInput } from '@/components/fields/TimeInput'
+import { QUIET_PERIOD_LABEL, TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { FieldLabel, FieldRoot } from '@/bbl/field'
@@ -807,7 +807,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
 function BesideField({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
     <FieldRoot className="w-auto shrink-0">
-      <FieldLabel> </FieldLabel>
+      <FieldLabel className={QUIET_PERIOD_LABEL}> </FieldLabel>
       <span className={cn('flex h-[56px] items-center', className)}>{children}</span>
     </FieldRoot>
   )
