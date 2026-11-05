@@ -458,8 +458,9 @@ function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (toke
 }
 
 /** "Turn on at least one channel" has no field of its own: the cards carry
- *  the stroke and this Alert carries the message (webds `form-section-card`). */
-function ChannelAlert({ f }: F) {
+ *  the stroke and this Alert carries the message, under the step's title as
+ *  CNH Phase 1's Step 2 (webds `FormStep` alert). */
+export function ChannelAlert({ f }: F) {
   if (!f.errors.channels) return null
   return (
     <Alert
@@ -470,14 +471,23 @@ function ChannelAlert({ f }: F) {
   )
 }
 
-/** The message area under the audience file. A dynamic field goes in two
+/** Step 3's note before a file is uploaded: no column to add yet. No `$`
+ *  note: the shortcut is easy to learn (requester, 4 Nov 2026). */
+export const noFieldsNote = (f: BroadcastForm) =>
+  f.fields.length ? undefined : 'Dynamic fields can be added once the audience file is uploaded.'
+
+/** Step 3, the channel cards. A dynamic field goes in two
  *  ways (BA & Dev feedback, 30 Oct 2026, "Option 2 + 3"): the button in each
  *  message box's top-right corner opens the file's columns (Idea 2.2, moved
  *  into the box 3 Nov 2026), and typing
  *  `$` in a message box opens them at the caret (Idea 4, ./shortcut.tsx). A
- *  picked field reads `${COLUMN}`, tinted as a chip (./highlight.tsx). The
- *  cards are stacked full width, as the CNH Template form (requester, 27 Oct
- *  2026).
+ *  picked field reads `${COLUMN}`, tinted as a chip (./highlight.tsx).
+ *
+ *  Its own step since 5 Nov 2026 (requester: consistent with CNH Phase 1,
+ *  Figma JjvzdUwg5LlKHDQvo2fny0 1:181849): the cards stand on the page one
+ *  under the other, as Phase 1's channel cards, with no card around them and
+ *  no stroke of their own. Before, they sat in a *Create broadcast message*
+ *  card under the audience file.
  *
  *  Each card is switched on its own title row (webds `form-section-card`):
  *  off keeps what was typed and disables it. An Email or SMS broadcast has
@@ -491,10 +501,10 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   const columns = f.fields.map((field) => field.column).join('\n')
   const tint = useMemo<Tint>(() => ({ columns: new Set(columns.split('\n')) }), [columns])
 
-  const cards = (
+  return (
     <div
       data-error={invalid ? 'true' : undefined}
-      className="grid grid-cols-1 items-stretch gap-[var(--space-8)]"
+      className="flex flex-col gap-[var(--space-8)]"
       {...shortcut.handlers}
       onFocusCapture={(e) => {
         const el = e.target as HTMLInputElement | HTMLTextAreaElement
@@ -502,13 +512,14 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
         if (key && isMessageBox(key)) focus.current = { key, el }
       }}
     >
+      {shortcut.menu}
       {f.offered.map((c) => {
         const on = f.channels.includes(c)
         return (
           <FormSectionCard
             key={c}
             /* Name to first field 24, the pattern's 32 read too far (Korarit, 4 Nov 2026). */
-            className="min-w-0 gap-[var(--space-6)] border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
+            className="min-w-0 gap-[var(--space-6)] [&_.webds-pattern-form-section-card-3]:flex-1"
             title={c}
             toggle={single ? undefined : { on, onToggle: (v) => f.setChannel(c, v) }}
             invalid={invalid}
@@ -523,27 +534,6 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
         )
       })}
     </div>
-  )
-
-  return (
-    <FormSectionCard
-      className="[&_.webds-pattern-form-section-card-3]:flex-1"
-      /* Every idea titled the card "Create broadcast message" (requester, 21
-         Oct 2026). No `$` note: the shortcut is easy to learn (requester, 4 Nov
-         2026). */
-      title={<span className="flex min-h-[44px] items-center">Create broadcast message</span>}
-      rowGap={6}
-    >
-      {/* Sits 8 under the title and 32 over the cards (Korarit, 4 Nov 2026). */}
-      {!hasFields && (
-        <p className={cn(NOTE, 'mt-[calc(var(--space-2)-var(--space-8))] mb-[var(--space-2)]')}>
-          Dynamic fields can be added once the audience file is uploaded.
-        </p>
-      )}
-      <ChannelAlert f={f} />
-      {shortcut.menu}
-      {cards}
-    </FormSectionCard>
   )
 }
 
