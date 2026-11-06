@@ -266,7 +266,15 @@ export function BroadcastDrawer({
         facts={
           <>
             <Meta icon="user" label={`Created by: ${broadcast.createdBy}`} />
-            <Meta icon="transaction-history" label={`Created: ${fmtDateTime(new Date(broadcast.createdAt))}`} />
+            {/* Created by, Updated by, Last update, as CNH Phase 1's drawer (BA asked for
+                the update date, 6 Nov 2026). Last update replaces Created: four facts
+                wrap every label onto two lines in the 720 panel. Before any edit it
+                reads the creator and the creation time. */}
+            <Meta icon="edit-1" label={`Updated by: ${broadcast.updatedBy ?? broadcast.createdBy}`} />
+            <Meta
+              icon="transaction-history"
+              label={`Last update: ${fmtDateTime(new Date(broadcast.updatedAt ?? broadcast.createdAt))}`}
+            />
           </>
         }
         close={

@@ -491,6 +491,11 @@ export type Broadcast = {
   content: BroadcastContent
   createdBy: string
   createdAt: string
+  /** The last edit, as CNH Phase 1's drawer shows it (Updated by, Last update;
+   *  BA, 6 Nov 2026). Absent until someone edits the broadcast: the drawer then
+   *  reads the creator and the creation time. */
+  updatedBy?: string
+  updatedAt?: string
 }
 
 /* The deep link is the Template fixture's; the sender name is composed
@@ -664,6 +669,9 @@ export const BROADCASTS: Broadcast[] = [
     content: content('', 'Your November statement', ''),
     createdBy: 'Panisa R.',
     createdAt: '2026-10-06T09:40',
+    /* Composed (6 Nov 2026): edited after it was saved, so Last update differs. */
+    updatedBy: 'Somchai J.',
+    updatedAt: '2026-10-10T14:05',
   },
   {
     id: 'BC-0006',
