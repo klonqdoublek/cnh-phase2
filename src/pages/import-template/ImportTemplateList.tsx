@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { cn } from '@/lib/cn'
 import { Breadcrumbs } from '@/bbl/breadcrumbs'
 import { Button } from '@/bbl/button'
 import { GhostButton } from '@/bbl/ghost-button'
@@ -79,9 +80,10 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
     setPage(0)
   }
 
-  /* Broadcast's filter band: search 520 · a 291 filter · Clear 72, gap 16. */
+  /* Broadcast's filter band: search 520 · a 291 filter · Clear 72, gap 16. 24 above and below the
+     64 fields (UI 444:94796, 6 Nov 2026; was 20 / 21). */
   const filters = (
-    <div className="flex h-[105px] w-full shrink-0 items-start gap-[var(--space-4)] px-[var(--space-4)] pt-[var(--space-5)] pb-[21px] shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]">
+    <div className="flex h-[112px] w-full shrink-0 items-start gap-[var(--space-4)] px-[var(--space-4)] pt-[var(--space-6)] pb-[var(--space-6)] shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]">
       <div className="min-w-[200px] flex-[0_1_520px]">
         <ListSearch label={COPY.search} value={query} onChange={(v) => refilter(() => setQuery(v))} />
       </div>
@@ -115,7 +117,9 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
      at Radius 2, p 24 round a 765 slot, the block 100 from the slot's top. */
   const card = (children: React.ReactNode) => (
     <div className="w-full rounded-[var(--radius-2)] bg-[var(--color-surface-primary-hovered)] p-[var(--space-6)]">
-      <div className="flex h-[765px] w-full flex-col">{children}</div>
+      {/* 787 card (24 + 739 + 24) ends at the frame's foot under the 101 band and 112 filter band
+          (UI 444:94796, 6 Nov 2026); was 765 under the 82 + 105 bands. */}
+      <div className="flex h-[739px] w-full flex-col">{children}</div>
     </div>
   )
   const centred = (children: React.ReactNode) => (
@@ -130,10 +134,10 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
       <ConsolePage
         title={
           breadcrumb ? (
-            /* Breadcrumb over the title, as CMS PageBand (gap 4): viewing import status is secondary to
-               Notification management, where imported templates land anyway (requester, 3 Nov 2026).
-               Fits the 82 band: 20 + 4 + 28. */
-            <span className="flex flex-col gap-[var(--space-1)]">
+            /* Breadcrumb over the title: viewing import status is secondary to Notification
+               management, where imported templates land anyway (requester, 3 Nov 2026).
+               Gap 8 between them (UI 444:94796, 6 Nov 2026; was 4). */
+            <span className="flex flex-col gap-[var(--space-2)]">
               <Breadcrumbs items={[{ label: COPY.crumbParent, href: '#/list' }, { label: COPY.title }]} />
               {COPY.title}
             </span>
@@ -164,7 +168,12 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
           </span>
         }
         columnWidth="fill"
-        className="[&>[data-part=Body]]:bg-[var(--color-surface-primary-default)] [&>[data-part=Body]>div]:gap-0 [&>[data-part=Body]>div]:px-0 [&>[data-part=Body]>div]:pt-0 [&>[data-part=Body]>div]:pb-0 [&>[data-part=Header]]:px-[var(--space-4)]"
+        /* With the breadcrumb the band grows to 101: 24 above, the 60 crumb-and-title block, 16 below,
+           the rule. Actions centre on the block (UI 444:94796, 6 Nov 2026; was a fixed 82). */
+        className={cn(
+          '[&>[data-part=Body]]:bg-[var(--color-surface-primary-default)] [&>[data-part=Body]>div]:gap-0 [&>[data-part=Body]>div]:px-0 [&>[data-part=Body]>div]:pt-0 [&>[data-part=Body]>div]:pb-0 [&>[data-part=Header]]:px-[var(--space-4)]',
+          breadcrumb && '[&>[data-part=Header]]:h-auto [&>[data-part=Header]]:pt-[var(--space-6)] [&>[data-part=Header]]:pb-[calc(var(--space-4)+1px)]',
+        )}
       >
         {/* Every state keeps the filter band and draws CNH Phase 1's state card
             (Notification management, Dashboard.tsx; Phase 1 Figma 1:126486): the empty
