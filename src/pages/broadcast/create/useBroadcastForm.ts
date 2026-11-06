@@ -374,6 +374,8 @@ export function useBroadcastForm({
     content,
     createdBy: initial?.createdBy ?? 'Panisa R.',
     createdAt: initial?.createdAt ?? iso(new Date()),
+    /* Edit stamps the last update (6 Nov 2026); a new broadcast has none yet. */
+    ...(initial ? { updatedAt: iso(new Date()) } : {}),
   })
 
   const create = () => {
