@@ -277,9 +277,10 @@ export function Dashboard({
   /* The state card: Surface/Primary/Hovered at Radius 2 round a 765 slot, the
      block 100 from its top. webds' empty-state is a different measurement
      (py 48 · gap 16, Label XL title) — composed here. */
-  const card = (children: React.ReactNode) => (
+  const card = (children: React.ReactNode, tall = false) => (
     <div className="w-full rounded-[var(--radius-2)] bg-[var(--color-surface-primary-hovered)] p-[var(--space-6)]">
-      <div className="flex h-[765px] w-full flex-col">{children}</div>
+      {/* 870 with no filter band above (Landing loading): the card runs from the 82 header to the foot. */}
+      <div className={cn('flex w-full flex-col', tall ? 'h-[870px]' : 'h-[765px]')}>{children}</div>
     </div>
   )
   const centred = (children: React.ReactNode) => (
@@ -308,6 +309,7 @@ export function Dashboard({
       <div className="flex h-full w-full items-center justify-center">
         <SpinnerLoader size="l" />
       </div>,
+      true,
     )
   else if (state === 'error') body = errorState(onRetry)
   else if (state === 'empty')
@@ -351,7 +353,9 @@ export function Dashboard({
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {filters}
+        {/* CNH Phase 1 Landing loading (Phase 1 Figma 1:138461, 6 Nov 2026): no filter band while the
+            page first loads. */}
+        {(failing || state !== 'loading') && filters}
         {!isReady ? (
           <>
             {body}
