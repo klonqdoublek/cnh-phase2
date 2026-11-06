@@ -13,6 +13,7 @@ import {
   dndNeverSends,
   firstSend,
   idKind,
+  DND_MAX_PERIODS,
   TYPE_CHANNEL,
   readAudience,
   readAudienceFile,
@@ -267,7 +268,8 @@ export function useBroadcastForm({
   const setDndRule = (id: string, part: Partial<DndRule>) => {
     setDnd((d) => ({ ...d, rules: d.rules.map((r) => (r.id === id ? { ...r, ...part } : r)) }))
   }
-  const addDndRule = () => setDnd((d) => ({ ...d, rules: [...d.rules, dndRule()] }))
+  const addDndRule = () =>
+    setDnd((d) => (d.rules.length >= DND_MAX_PERIODS ? d : { ...d, rules: [...d.rules, dndRule()] }))
   const removeDndRule = (id: string) => {
     setDnd((d) => ({ ...d, rules: d.rules.filter((r) => r.id !== id) }))
     clear(`dndDays:${id}`, `dndTime:${id}`)
