@@ -26,8 +26,9 @@ export type ImportTemplateListProps = {
   onOpen: (r: ImportRecord) => void
   /** Opens the Import dialog from this page (PROPOSAL, 1 Nov 2026, pending BA). */
   onImport: () => void
-  /** `#/import-template/loading` · `#/import-template/error`. */
-  state?: 'ready' | 'loading' | 'error'
+  /** `#/import-template/loading` (the page opening) · `#/import-template/filter-loading` (a refetch
+   *  with the filters up) · `#/import-template/error`. */
+  state?: 'ready' | 'loading' | 'filter-loading' | 'error'
   onRetry?: () => void
   /** Fetches the list again: every import's status as of now. */
   onRefresh: () => void
@@ -59,7 +60,11 @@ const COLUMNS: ListColumn<ImportRecord>[] = [
  */
 export function ImportTemplateList({ records, onOpen, onImport, state: shownState = 'ready', onRetry, onRefresh, breadcrumb = false }: ImportTemplateListProps) {
   const [refreshing, setRefreshing] = useState(false)
-  const state = refreshing ? 'loading' : shownState
+  const state = refreshing ? 'filter-loading' : shownState
+  /* CNH Phase 1's two list loadings (Loading Behaviour, Phase 1 Figma 1:16879, 6 Nov 2026): the page
+     opening draws no filter band and the card runs from the header to the foot (Landing loading
+     1:138461); a refetch keeps the filters up (Filter loading 1:138591). */
+  const loading = state === 'loading' || state === 'filter-loading'
   const [requestedPage, setPage] = useState(0)
   const [query, setQuery] = useState('')
   const [statuses, setStatuses] = useState<string[]>([...IMPORT_STATUSES])
@@ -115,11 +120,12 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
 
   /* CNH Phase 1's state card, as Notification management draws it: Surface/Primary/Hovered
      at Radius 2, p 24 round a 765 slot, the block 100 from the slot's top. */
-  const card = (children: React.ReactNode) => (
+  const card = (children: React.ReactNode, tall = false) => (
     <div className="w-full rounded-[var(--radius-2)] bg-[var(--color-surface-primary-hovered)] p-[var(--space-6)]">
       {/* 787 card (24 + 739 + 24) ends at the frame's foot under the 101 band and 112 filter band
-          (UI 444:94796, 6 Nov 2026); was 765 under the 82 + 105 bands. */}
-      <div className="flex h-[739px] w-full flex-col">{children}</div>
+          (UI 444:94796, 6 Nov 2026); was 765 under the 82 + 105 bands. With no filter band
+          (Landing loading) it is 899: 24 + 851 + 24. */}
+      <div className={cn('flex w-full flex-col', tall ? 'h-[851px]' : 'h-[739px]')}>{children}</div>
     </div>
   )
   const centred = (children: React.ReactNode) => (
@@ -152,7 +158,7 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
         headerActions={
           <span className="flex items-center gap-[var(--space-4)]">
             <OutlineButton
-              disabled={state === 'loading'}
+              disabled={loading}
               onClick={() => {
                 setRefreshing(true)
                 setTimeout(() => {
@@ -179,12 +185,13 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
             (Notification management, Dashboard.tsx; Phase 1 Figma 1:126486): the empty
             state too, with its Empty page illustration (requester, 5 Nov 2026). */}
         <div className="flex flex-col">
-          {filters}
-          {state === 'loading' ? (
+          {state !== 'loading' && filters}
+          {loading ? (
             card(
               <div className="flex h-full w-full items-center justify-center">
                 <SpinnerLoader size="l" />
               </div>,
+              state === 'loading',
             )
           ) : state === 'error' ? (
             card(

@@ -3,6 +3,7 @@ import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
 import { InlineMessage } from '@/bbl/inline-message'
 import { OutlineButton } from '@/bbl/outline-button'
+import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { DetailDrawer } from '@/patterns/detail-drawer'
 import {
   IMPORT_TEMPLATE_COPY as COPY,
@@ -23,7 +24,12 @@ export type ImportTemplateDrawerProps = {
   onClose: () => void
   /** Open with the Download report dialog already up (its preset route). */
   confirmingDownload?: boolean
+  /** Hold the drawer's loading state (`#/import-template/view/<id>/loading`). */
+  holdLoading?: boolean
 }
+
+/** How long the drawer fetches the import before its details show, in the prototype. */
+const DRAWER_LOAD_MS = 600
 
 function sectionsOf(r: ImportRecord): DrawerSectionSpec[] {
   const read = r.total !== null
@@ -70,9 +76,17 @@ function sectionsOf(r: ImportRecord): DrawerSectionSpec[] {
  * again. Queue, Processing and Error keep an empty footer, as Broadcast's
  * Processing does.
  */
-export function ImportTemplateDrawer({ record, onClose, confirmingDownload }: ImportTemplateDrawerProps) {
+export function ImportTemplateDrawer({ record, onClose, confirmingDownload, holdLoading }: ImportTemplateDrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
+  /* CNH Phase 1's View detail loading (Phase 1 Figma 1:138888, 6 Nov 2026): the drawer opens on a
+     spinner, with only its close, then the import's details. */
+  const [fetching, setFetching] = useState(!confirmingDownload)
+  useEffect(() => {
+    if (holdLoading || !fetching) return
+    const timer = setTimeout(() => setFetching(false), DRAWER_LOAD_MS)
+    return () => clearTimeout(timer)
+  }, [holdLoading, fetching])
   const [reporting, setReporting] = useState(!!confirmingDownload && record.reportReady)
   const dialogUp = useRef(reporting)
   dialogUp.current = reporting
@@ -133,6 +147,20 @@ export function ImportTemplateDrawer({ record, onClose, confirmingDownload }: Im
         shown ? 'translate-x-0' : 'translate-x-full',
       )}
     >
+      {fetching ? (
+        <DetailDrawer
+          title=""
+          close={
+            <IconButton size={24} label="Close" icon={<Icon slug="sidebar-collapse" size={24} />} onClick={onClose} />
+          }
+          /* Phase 1 draws no rule under the close while it loads. */
+          className="[&>[data-part=Header]]:shadow-none"
+        >
+          <div className="flex h-full min-h-[400px] w-full items-center justify-center">
+            <SpinnerLoader size="l" />
+          </div>
+        </DetailDrawer>
+      ) : (
       <DetailDrawer
         title={record.fileName}
         status={
@@ -176,6 +204,7 @@ export function ImportTemplateDrawer({ record, onClose, confirmingDownload }: Im
           <DrawerSection key={section.title} section={section} first={i === 0} />
         ))}
       </DetailDrawer>
+      )}
 
       <ReportDownload
         file={reporting ? { name: importReportName(record), text: () => importReportCsv(record) } : null}
