@@ -198,7 +198,7 @@ export default function App() {
      `#/list/import-menu` shows the menu open. */
   const importMenuHeld = hash === '#/list/import-menu'
   const importRecords: ImportRecord[] = importSnapshot ?? [...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS]
-  const importView = hash.match(/^#\/import-template\/view\/([A-Z]+-[A-Z]?\d+)(\/download)?$/)
+  const importView = hash.match(/^#\/import-template\/view\/([A-Z]+-[A-Z]?\d+)(\/download|\/loading)?$/)
   const importViewId = openImport ?? importView?.[1]
   const viewingImport = importViewId ? importRecords.find((r) => r.id === importViewId) : undefined
   const preset = listPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
@@ -219,7 +219,15 @@ export default function App() {
           records={hash === '#/import-template/empty' ? [] : importRecords}
           onOpen={(r) => setOpenImport(r.id)}
           onImport={() => setImportOpen(true)}
-          state={hash === '#/import-template/loading' ? 'loading' : hash === '#/import-template/error' ? 'error' : 'ready'}
+          state={
+            hash === '#/import-template/loading'
+              ? 'loading'
+              : hash === '#/import-template/filter-loading'
+                ? 'filter-loading'
+                : hash === '#/import-template/error'
+                  ? 'error'
+                  : 'ready'
+          }
           onRetry={() => go('/import-template')}
           onRefresh={() => setImportSnapshot([...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS])}
         />
@@ -316,7 +324,8 @@ export default function App() {
         <ImportTemplateDrawer
           key={`${viewingImport.id}${importView?.[2] ?? ''}`}
           record={viewingImport}
-          confirmingDownload={!!importView?.[2]}
+          confirmingDownload={importView?.[2] === '/download'}
+          holdLoading={importView?.[2] === '/loading'}
           onClose={() => {
             setOpenImport(null)
             if (importView) go('/import-template')
