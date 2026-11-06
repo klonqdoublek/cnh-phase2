@@ -11,7 +11,7 @@ import type { Template } from '@/data/templates'
  * upload). Queue and Published follow Broadcast's statuses (BA & Dev deck, 30 Oct
  * 2026). A Published job's report is generated after it turns Published (slide 9),
  * so `reportReady` comes a little later. App.tsx owns the jobs so they outlive a
- * visit to another page; the upload panel and the Import Template page draw them. */
+ * visit to another page; the Import Template page draws them. */
 
 export type JobStatus = 'queued' | 'processing' | 'done' | 'failed'
 export type ImportJob = {
@@ -25,20 +25,14 @@ export type ImportJob = {
   finishedAt?: number
   /** Published, and its report generated: Download report is ready. */
   reportReady?: boolean
-  /** Closed out of the upload panel; it stays on the Import Template page. */
-  dismissed?: boolean
   /** A preset route's job: it holds its status and runs no timer. */
   held?: boolean
 }
 
 export type ImportJobs = {
-  /** The upload panel's jobs: this session's, less the ones its close cleared. */
-  jobs: ImportJob[]
   /** Every job submitted, for the Import Template page. */
   history: ImportJob[]
   submit: (templates: Template[], fileName: string, replace: boolean) => void
-  retry: (id: number) => void
-  dismiss: (id: number) => void
   /** Replaces the jobs with one held job, for `#/list/import/<job preset>`. */
   seed: (job: Omit<ImportJob, 'id' | 'startedAt' | 'held'>) => void
 }
@@ -46,8 +40,6 @@ export type ImportJobs = {
 /** `land` puts a finished job's templates on the list (App's import, unchanged). */
 export function useImportJobs(land: (templates: Template[], fileName: string, replace: boolean) => void): ImportJobs {
   const [history, setJobs] = useState<ImportJob[]>([])
-  const jobsRef = useRef(history)
-  jobsRef.current = history
   const nextId = useRef(1)
   const timers = useRef(new Map<number, number>())
   const landRef = useRef(land)
@@ -90,19 +82,6 @@ export function useImportJobs(land: (templates: Template[], fileName: string, re
     [run],
   )
 
-  const retry = useCallback<ImportJobs['retry']>(
-    (id) => {
-      const job = jobsRef.current.find((j) => j.id === id)
-      if (!job) return
-      const again: ImportJob = { ...job, status: 'queued', startedAt: Date.now(), finishedAt: undefined, held: false }
-      setJobs((list) => list.map((j) => (j.id === id ? again : j)))
-      run(again)
-    },
-    [run],
-  )
-
-  const dismiss = useCallback<ImportJobs['dismiss']>((id) => patch(id, { dismissed: true }), [])
-
   const seed = useCallback<ImportJobs['seed']>((job) => {
     timers.current.forEach((t) => window.clearTimeout(t))
     timers.current.clear()
@@ -111,14 +90,7 @@ export function useImportJobs(land: (templates: Template[], fileName: string, re
     setJobs([{ ...job, id: nextId.current++, startedAt: now, finishedAt: finished ? now : undefined, held: true }])
   }, [])
 
-  const jobs = history.filter((j) => !j.dismissed)
-  return { jobs, history, submit, retry, dismiss, seed }
-}
-
-/** Templates in file, Imported and Failed for a Completed job. */
-export const resultOf = (job: ImportJob) => {
-  const { imported, failed } = serverResult(job.templates)
-  return { total: job.templates.length, imported: imported.length, failed }
+  return { history, submit, seed }
 }
 
 /** The job's id on the Import Template page. */
