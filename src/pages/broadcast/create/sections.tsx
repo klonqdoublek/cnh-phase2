@@ -22,6 +22,7 @@ import { FormStep } from '@/patterns/console-page'
 import {
   BROADCAST_COPY,
   DAYS,
+  DND_MAX_PERIODS,
   ID_LABEL,
   RECIPIENT_TYPE_LABEL,
   TIME_ZONES,
@@ -867,14 +868,16 @@ export function DndCard({ f }: F) {
           <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
           <span className="flex flex-col">
             <span>Do Not Disturb (DND)</span>
-            <span className={NOTE}>Prevent sending messages during quiet hours.</span>
+            {/* The maximum joins the note (requester, 6 Nov 2026, after the BA's 3-period limit). */}
+            <span className={NOTE}>Prevent sending messages during quiet hours. Maximum {DND_MAX_PERIODS} periods.</span>
           </span>
         </span>
       }
     >
-      {/* Any number of quiet periods (BA, 2026-10-14): each its own days and
-          hours, on its own bordered card (requester, 22 Oct 2026; Figma
-          436:243478); a day may sit in more than one. Card Surface draws no
+      {/* Up to three quiet periods (BA, 6 Nov 2026; any number since
+          2026-10-14): each its own days and hours, on its own bordered card
+          (requester, 22 Oct 2026; Figma 436:243478); a day may sit in more
+          than one. Card Surface draws no
           stroke at rest, so the border is the Figma override. */}
       {dnd.rules.map((rule, i) => (
         <CardSurface key={rule.id} className="h-auto items-start border border-[var(--color-border-primary-default)]">
@@ -890,12 +893,16 @@ export function DndCard({ f }: F) {
           <NeverSendsAlert error={!!f.errors.dnd} />
         </div>
       )}
-      <span className="flex">
-        <OutlineButton disabled={!dnd.enabled} onClick={f.addDndRule}>
-          Add more period
-          <Icon slug="plus" size={16} color="currentColor" />
-        </OutlineButton>
-      </span>
+      {/* Gone at the maximum, three periods (BA, 6 Nov 2026; requester picked
+          hiding over a disabled button, the note above says why). */}
+      {dnd.rules.length < DND_MAX_PERIODS && (
+        <span className="flex">
+          <OutlineButton disabled={!dnd.enabled} onClick={f.addDndRule}>
+            Add more period
+            <Icon slug="plus" size={16} color="currentColor" />
+          </OutlineButton>
+        </span>
+      )}
     </FormSectionCard>
   )
 }

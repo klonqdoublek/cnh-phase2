@@ -315,18 +315,9 @@ export const THREE_PERIOD_DND: Dnd = {
   ],
   timeZone: 'Asia/Bangkok',
 }
-/** Composed (29 Oct 2026): four periods, a lunch break as well as nights and
- *  a weekend kept as two days. */
-export const FOUR_PERIOD_DND: Dnd = {
-  enabled: true,
-  rules: [
-    { id: 'dnd-lunch', days: [1, 2, 3, 4, 5], allDay: false, from: '12:00', to: '13:00' },
-    { id: 'dnd-weeknights', days: [1, 2, 3, 4, 5], allDay: false, from: '20:00', to: '08:00' },
-    { id: 'dnd-saturday', days: [6], allDay: true, from: '00:00', to: '00:00' },
-    { id: 'dnd-sunday', days: [0], allDay: true, from: '00:00', to: '00:00' },
-  ],
-  timeZone: 'Asia/Bangkok',
-}
+/** At most three quiet periods (BA, 6 Nov 2026; was no maximum since 5 Nov):
+ *  Add more period goes away once there are three. */
+export const DND_MAX_PERIODS = 3
 /** `offset` follows the quiet period's time label (design critique, 27 Oct
  *  2026), in place of a Time zone row under the periods. */
 export const TIME_ZONES = [{ value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)', offset: 'GMT+7' }]
@@ -637,7 +628,16 @@ export const BROADCASTS: Broadcast[] = [
     ...cis,
     startMode: 'schedule',
     start: '2026-12-01T09:00',
-    dnd: FOUR_PERIOD_DND,
+    /* Four periods until 6 Nov 2026 (the lunch break dropped for the three-period maximum). */
+    dnd: {
+      enabled: true,
+      rules: [
+        { id: 'dnd-weeknights', days: [1, 2, 3, 4, 5], allDay: false, from: '20:00', to: '08:00' },
+        { id: 'dnd-saturday', days: [6], allDay: true, from: '00:00', to: '00:00' },
+        { id: 'dnd-sunday', days: [0], allDay: true, from: '00:00', to: '00:00' },
+      ],
+      timeZone: 'Asia/Bangkok',
+    },
     status: 'Cancelled',
     success: 0,
     failed: 0,
