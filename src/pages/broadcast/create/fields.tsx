@@ -18,7 +18,9 @@ export const LABEL = 'type-label-l-emphasized text-[var(--color-text-primary-def
 
 /** One text or text-area field. `data-field` lets the field chips find the
  *  message box the cursor was last in; `data-error` is what Submit scrolls to.
- *  `boxHeight` is the Template form's taller one-line box (Push message). */
+ *  `boxHeight` is the Template form's taller one-line box (Push message).
+ *  `grow` starts one line tall and wraps downward instead of cutting the text
+ *  off (Korarit, 4 Nov 2026); it stays one paragraph, so Enter adds nothing. */
 export function Text({
   id,
   label,
@@ -29,6 +31,7 @@ export function Text({
   placeholder,
   required,
   multiline,
+  grow,
   boxHeight,
   disabled,
   hint,
@@ -44,6 +47,7 @@ export function Text({
   placeholder?: string
   required?: boolean
   multiline?: boolean
+  grow?: boolean
   boxHeight?: 77
   disabled?: boolean
   /** Helper text under the box, where an error is not. */
@@ -61,21 +65,30 @@ export function Text({
       ref={root}
       data-field={id}
       data-error={error ? 'true' : undefined}
+      onKeyDownCapture={
+        grow
+          ? (e) => {
+              if (e.key === 'Enter') e.preventDefault()
+            }
+          : undefined
+      }
       /* A disabled text area renders its value as a span; keep its line breaks. */
       className={cn(
         'relative min-w-0',
         multiline && 'whitespace-pre-line',
+        grow &&
+          '[&_.webds-text-area]:h-auto [&_.webds-text-area]:min-h-[56px] [&_.webds-text-area-2]:h-auto [&_.webds-text-area-2]:[field-sizing:content]',
         tinted &&
           '[&_input]:text-transparent [&_input]:[caret-color:var(--color-text-primary-default)] [&_textarea]:text-transparent [&_textarea]:[caret-color:var(--color-text-primary-default)]',
         className,
       )}
     >
       <FormField
-        spec={{ label, kind: multiline ? 'textarea' : 'text', required, max, boxHeight, hint, placeholder: placeholder ?? '' }}
+        spec={{ label, kind: multiline || grow ? 'textarea' : 'text', required, max, boxHeight, hint, placeholder: placeholder ?? '' }}
         value={value}
         error={error}
         disabled={disabled}
-        onChange={onChange}
+        onChange={grow ? (v) => onChange(v.replace(/\s*\n\s*/g, ' ')) : onChange}
       />
       {tint && !disabled && <FieldTint root={root} value={value} tint={tint} onChange={onChange} />}
     </div>

@@ -104,6 +104,7 @@ export function BasicInfo({ f }: F) {
       <Text
         id="description"
         label="Description"
+        grow
         value={f.description}
         max={250}
         error={f.errors.description}
