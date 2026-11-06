@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { cn } from '@/lib/cn'
 import { Breadcrumbs } from '@/bbl/breadcrumbs'
 import { Button } from '@/bbl/button'
 import { GhostButton } from '@/bbl/ghost-button'
@@ -6,7 +7,6 @@ import { Icon } from '@/bbl/icon'
 import { OutlineButton } from '@/bbl/outline-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConsolePage } from '@/patterns/console-page'
-import { EmptyState } from '@/patterns/empty-state'
 import { STATUS_LABEL } from '@/data/broadcast'
 import {
   IMPORT_STATUSES,
@@ -26,8 +26,9 @@ export type ImportTemplateListProps = {
   onOpen: (r: ImportRecord) => void
   /** Opens the Import dialog from this page (PROPOSAL, 1 Nov 2026, pending BA). */
   onImport: () => void
-  /** `#/import-template/loading` · `#/import-template/error`. */
-  state?: 'ready' | 'loading' | 'error'
+  /** `#/import-template/loading` (the page opening) · `#/import-template/filter-loading` (a refetch
+   *  with the filters up) · `#/import-template/error`. */
+  state?: 'ready' | 'loading' | 'filter-loading' | 'error'
   onRetry?: () => void
   /** Fetches the list again: every import's status as of now. */
   onRefresh: () => void
@@ -59,7 +60,11 @@ const COLUMNS: ListColumn<ImportRecord>[] = [
  */
 export function ImportTemplateList({ records, onOpen, onImport, state: shownState = 'ready', onRetry, onRefresh, breadcrumb = false }: ImportTemplateListProps) {
   const [refreshing, setRefreshing] = useState(false)
-  const state = refreshing ? 'loading' : shownState
+  const state = refreshing ? 'filter-loading' : shownState
+  /* CNH Phase 1's two list loadings (Loading Behaviour, Phase 1 Figma 1:16879, 6 Nov 2026): the page
+     opening draws no filter band and the card runs from the header to the foot (Landing loading
+     1:138461); a refetch keeps the filters up (Filter loading 1:138591). */
+  const loading = state === 'loading' || state === 'filter-loading'
   const [requestedPage, setPage] = useState(0)
   const [query, setQuery] = useState('')
   const [statuses, setStatuses] = useState<string[]>([...IMPORT_STATUSES])
@@ -80,9 +85,10 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
     setPage(0)
   }
 
-  /* Broadcast's filter band: search 520 · a 291 filter · Clear 72, gap 16. */
+  /* Broadcast's filter band: search 520 · a 291 filter · Clear 72, gap 16. 24 above and below the
+     64 fields (UI 444:94796, 6 Nov 2026; was 20 / 21). */
   const filters = (
-    <div className="flex h-[105px] w-full shrink-0 items-start gap-[var(--space-4)] px-[var(--space-4)] pt-[var(--space-5)] pb-[21px] shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]">
+    <div className="flex h-[112px] w-full shrink-0 items-start gap-[var(--space-4)] px-[var(--space-4)] pt-[var(--space-6)] pb-[var(--space-6)] shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]">
       <div className="min-w-[200px] flex-[0_1_520px]">
         <ListSearch label={COPY.search} value={query} onChange={(v) => refilter(() => setQuery(v))} />
       </div>
@@ -112,15 +118,32 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
     </div>
   )
 
+  /* CNH Phase 1's state card, as Notification management draws it: Surface/Primary/Hovered
+     at Radius 2, p 24 round a 765 slot, the block 100 from the slot's top. */
+  const card = (children: React.ReactNode, tall = false) => (
+    <div className="w-full rounded-[var(--radius-2)] bg-[var(--color-surface-primary-hovered)] p-[var(--space-6)]">
+      {/* 787 card (24 + 739 + 24) ends at the frame's foot under the 101 band and 112 filter band
+          (UI 444:94796, 6 Nov 2026); was 765 under the 82 + 105 bands. With no filter band
+          (Landing loading) it is 899: 24 + 851 + 24. */}
+      <div className={cn('flex w-full flex-col', tall ? 'h-[851px]' : 'h-[739px]')}>{children}</div>
+    </div>
+  )
+  const centred = (children: React.ReactNode) => (
+    <div className="flex w-full flex-col items-center gap-[var(--space-6)] pt-[100px] text-center">{children}</div>
+  )
+  const stateLine = (text: string) => (
+    <p className="type-label-xl text-[var(--color-text-secondary-default)]">{text}</p>
+  )
+
   return (
     <div className="flex h-full min-h-px flex-col">
       <ConsolePage
         title={
           breadcrumb ? (
-            /* Breadcrumb over the title, as CMS PageBand (gap 4): viewing import status is secondary to
-               Notification management, where imported templates land anyway (requester, 3 Nov 2026).
-               Fits the 82 band: 20 + 4 + 28. */
-            <span className="flex flex-col gap-[var(--space-1)]">
+            /* Breadcrumb over the title: viewing import status is secondary to Notification
+               management, where imported templates land anyway (requester, 3 Nov 2026).
+               Gap 8 between them (UI 444:94796, 6 Nov 2026; was 4). */
+            <span className="flex flex-col gap-[var(--space-2)]">
               <Breadcrumbs items={[{ label: COPY.crumbParent, href: '#/list' }, { label: COPY.title }]} />
               {COPY.title}
             </span>
@@ -135,7 +158,7 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
         headerActions={
           <span className="flex items-center gap-[var(--space-4)]">
             <OutlineButton
-              disabled={state === 'loading'}
+              disabled={loading}
               onClick={() => {
                 setRefreshing(true)
                 setTimeout(() => {
@@ -151,51 +174,65 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
           </span>
         }
         columnWidth="fill"
-        className="[&>[data-part=Body]]:bg-[var(--color-surface-primary-default)] [&>[data-part=Body]>div]:gap-0 [&>[data-part=Body]>div]:px-0 [&>[data-part=Body]>div]:pt-0 [&>[data-part=Body]>div]:pb-0 [&>[data-part=Header]]:px-[var(--space-4)]"
-      >
-        {state === 'ready' && records.length === 0 ? (
-          <EmptyState
-            variant="idle"
-            title={<span className="type-heading-xs-emphasized">{COPY.emptyTitle}</span>}
-            action={<Button onClick={onImport}>{COPY.importAction}</Button>}
-            bodyMaxWidth="none"
-            className="mt-[var(--space-6)] h-[813px] justify-start gap-[var(--space-8)] pt-[124px] [&>div]:gap-[var(--space-8)] [&>div>span:last-child]:text-[var(--color-text-secondary-default)]"
-          >
-            {COPY.emptyLine}
-          </EmptyState>
-        ) : (
-          <div className="flex flex-col">
-            {filters}
-            {state === 'loading' ? (
-              <EmptyState variant="idle" icon={<SpinnerLoader size="l" />} className="h-[732px] justify-center" />
-            ) : state === 'error' ? (
-              <EmptyState
-                variant="idle"
-                icon={<img src="/illustrations/error.svg" alt="" width={124} height={124} />}
-                action={
-                  <Button onClick={onRetry} className="mt-[var(--space-2)]">
-                    Try again
-                  </Button>
-                }
-                bodyMaxWidth="none"
-                className="h-[732px] justify-start gap-[var(--space-6)] pt-[100px] [&>div>span:last-child]:text-[var(--color-text-secondary-default)]"
-              >
-                {COPY.loadFail}
-              </EmptyState>
-            ) : rows.length === 0 ? (
-              <EmptyState
-                variant="idle"
-                icon={<img src="/illustrations/no-results.svg" alt="" width={124} height={124} />}
-                bodyMaxWidth="none"
-                className="h-[732px] justify-start gap-[var(--space-6)] pt-[100px] [&>div>span:last-child]:text-[var(--color-text-secondary-default)]"
-              >
-                {COPY.noResults}
-              </EmptyState>
-            ) : (
-              <ListTable label={COPY.title} columns={COLUMNS} rows={rows} rowKey={(r) => r.id} onOpen={onOpen} />
-            )}
-          </div>
+        /* With the breadcrumb the band grows to 101: 24 above, the 60 crumb-and-title block, 16 below,
+           the rule. Actions centre on the block (UI 444:94796, 6 Nov 2026; was a fixed 82). */
+        className={cn(
+          '[&>[data-part=Body]]:bg-[var(--color-surface-primary-default)] [&>[data-part=Body]>div]:gap-0 [&>[data-part=Body]>div]:px-0 [&>[data-part=Body]>div]:pt-0 [&>[data-part=Body]>div]:pb-0 [&>[data-part=Header]]:px-[var(--space-4)]',
+          breadcrumb && '[&>[data-part=Header]]:h-auto [&>[data-part=Header]]:pt-[var(--space-6)] [&>[data-part=Header]]:pb-[calc(var(--space-4)+1px)]',
         )}
+      >
+        {/* Every state keeps the filter band and draws CNH Phase 1's state card
+            (Notification management, Dashboard.tsx; Phase 1 Figma 1:126486): the empty
+            state too, with its Empty page illustration (requester, 5 Nov 2026). */}
+        <div className="flex flex-col">
+          {state !== 'loading' && filters}
+          {loading ? (
+            card(
+              <div className="flex h-full w-full items-center justify-center">
+                <SpinnerLoader size="l" />
+              </div>,
+              state === 'loading',
+            )
+          ) : state === 'error' ? (
+            card(
+              centred(
+                <>
+                  <img src="/illustrations/error.svg" alt="" width={124} height={124} />
+                  <div className="flex flex-col items-center gap-[var(--space-8)]">
+                    {stateLine(COPY.loadFail)}
+                    <Button onClick={onRetry}>Try again</Button>
+                  </div>
+                </>,
+              ),
+            )
+          ) : records.length === 0 ? (
+            card(
+              centred(
+                <>
+                  <img src="/illustrations/empty.svg" alt="" width={124} height={124} />
+                  <div className="flex flex-col items-center gap-[var(--space-8)]">
+                    <p className="type-heading-xs-emphasized text-[var(--color-text-primary-default)]">
+                      {COPY.emptyTitle}
+                    </p>
+                    {stateLine(COPY.emptyLine)}
+                    <Button onClick={onImport}>{COPY.importAction}</Button>
+                  </div>
+                </>,
+              ),
+            )
+          ) : rows.length === 0 ? (
+            card(
+              centred(
+                <>
+                  <img src="/illustrations/no-results.svg" alt="" width={124} height={124} />
+                  {stateLine(COPY.noResults)}
+                </>,
+              ),
+            )
+          ) : (
+            <ListTable label={COPY.title} columns={COLUMNS} rows={rows} rowKey={(r) => r.id} onOpen={onOpen} />
+          )}
+        </div>
       </ConsolePage>
 
       {state === 'ready' && rows.length > 0 && (

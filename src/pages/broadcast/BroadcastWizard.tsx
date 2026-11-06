@@ -7,7 +7,7 @@ import { ConsolePage } from '@/patterns/console-page'
 import { BROADCAST_COPY, type Broadcast } from '@/data/broadcast'
 import type { FormPreset } from '@/data/broadcast-presets'
 import { Dialogs } from './create/Dialogs'
-import { AudienceFile, BasicInfo, Delivery, DndCard, MessageContent, Section, type FocusRef } from './create/sections'
+import { AudienceFile, BasicInfo, ChannelAlert, Delivery, DndCard, MessageContent, Section, noFieldsNote, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
 import { seedWithColumns, useColumns } from '@/prototype/audience-fields'
 
@@ -25,14 +25,16 @@ export type BroadcastWizardProps = {
 }
 
 /**
- * Create / Edit broadcast — one page, three steps, the actions pinned below.
+ * Create / Edit broadcast — one page, four steps, the actions pinned below.
  * The frame is webds `console-page` (CNH's own: 82 header with a back mark,
  * a 1280 column scrolling in px 80 / py 32, a 76 footer); each step is its
  * `FormStep`. Layout and step copy are draft 2.2 webds-matched (Figma
  * 85:19401, 15 Oct 2026): the channels moved from checkboxes onto their own
  * cards' switches, and the message content sits under the audience step.
  * Do Not Disturb is its own card under Delivery Date, in the same step
- * (requester, 21 Oct 2026; Figma 409:75574).
+ * (requester, 21 Oct 2026; Figma 409:75574). The message moved out of the
+ * audience step into its own Step 3, the channel cards standing on the page
+ * as CNH Phase 1's Step 2 (requester, 5 Nov 2026); Delivery Date is Step 4.
  */
 export function BroadcastWizard(props: BroadcastWizardProps) {
   /* The Prototype control's file size reseeds the form, so it remounts. */
@@ -84,12 +86,12 @@ function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: Broadc
               <BasicInfo f={f} />
             </Section>
             <Section title="Step 2: Validate Audience file">
-              <div className="flex flex-col gap-[var(--space-8)]">
-                <AudienceFile f={f} />
-                <MessageContent f={f} focus={focus} />
-              </div>
+              <AudienceFile f={f} />
             </Section>
-            <Section title="Step 3: Delivery Date">
+            <Section title="Step 3: Create broadcast message" note={noFieldsNote(f)} alert={<ChannelAlert f={f} />}>
+              <MessageContent f={f} focus={focus} />
+            </Section>
+            <Section title="Step 4: Delivery Date">
               <div className="flex flex-col gap-[var(--space-8)]">
                 <Delivery f={f} />
                 <DndCard f={f} />

@@ -112,7 +112,7 @@
   {
    "id": "processing",
    "kind": "screen",
-   "label": "Submitted — importing on the server, about 10 minutes (direction A–D)",
+   "label": "Submitted — Import in progress toast; the server imports in about 10 minutes",
    "route": "#/list/import/processing",
    "section": "Import"
   },
@@ -125,7 +125,7 @@
   {
    "id": "process-failed",
    "kind": "screen",
-   "label": "Import fails on the server — Try again (PROPOSAL)",
+   "label": "Import fails on the server — Error on View import status (PROPOSAL)",
    "route": "#/list/import/process-failed",
    "section": "Import"
   },
@@ -658,12 +658,6 @@
    "to": "process-failed",
    "label": "No",
    "style": "dashed"
-  },
-  {
-   "from": "process-failed",
-   "to": "processing",
-   "label": "Try again",
-   "style": "back"
   },
   {
    "from": "uploaded",

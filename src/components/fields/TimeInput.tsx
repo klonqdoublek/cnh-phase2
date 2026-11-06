@@ -57,6 +57,11 @@ function Column({
   )
 }
 
+/** The hours row's label: 22 tall and 12 over its box, the same as Weekdays over
+ *  its days (requester, 5 Nov 2026; Figma 310:7441). The 4 the installed
+ *  `FieldRoot` already sets is part of that 12. */
+export const QUIET_PERIOD_LABEL = 'h-[22px] mb-[var(--space-2)]'
+
 /**
  * A time field, `HH:mm`, for the Do Not Disturb quiet period. webds ships no
  * time-only field or picker (a gap), so this is the box of `DateTimeInput`
@@ -144,7 +149,7 @@ export function TimeInput({
   return (
     <div ref={rootRef} data-error={error ? 'true' : undefined} className={cn('relative w-[220px] min-w-0', className)}>
       <FieldRoot>
-        <FieldLabel colour={disabled ? 'disabled' : 'tertiary'} required={required}>
+        <FieldLabel className={QUIET_PERIOD_LABEL} colour={disabled ? 'disabled' : 'tertiary'} required={required}>
           {label}
         </FieldLabel>
         <div className="relative">

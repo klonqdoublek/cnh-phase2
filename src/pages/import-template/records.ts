@@ -12,7 +12,7 @@ const STATUS: Record<JobStatus, ImportStatus> = {
 
 const iso = (ms: number) => new Date(ms).toISOString()
 
-/** A job from the upload panel as an Import Template row. The prototype's
+/** A submitted import job as an Import Template row. The prototype's
  *  stand-in checks (a template with no name fails, PROPOSAL) give its failed
  *  rows; the line numbers are the file's. */
 export function recordOfJob(job: ImportJob): ImportRecord {

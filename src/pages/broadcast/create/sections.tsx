@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
-import { TimeInput } from '@/components/fields/TimeInput'
+import { QUIET_PERIOD_LABEL, TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
 import { FieldLabel, FieldRoot } from '@/bbl/field'
@@ -22,6 +22,7 @@ import { FormStep } from '@/patterns/console-page'
 import {
   BROADCAST_COPY,
   DAYS,
+  DND_MAX_PERIODS,
   ID_LABEL,
   RECIPIENT_TYPE_LABEL,
   TIME_ZONES,
@@ -459,8 +460,9 @@ function FieldMenuButton({ f, onInsert, disabled, label }: F & { onInsert: (toke
 }
 
 /** "Turn on at least one channel" has no field of its own: the cards carry
- *  the stroke and this Alert carries the message (webds `form-section-card`). */
-function ChannelAlert({ f }: F) {
+ *  the stroke and this Alert carries the message, under the step's title as
+ *  CNH Phase 1's Step 2 (webds `FormStep` alert). */
+export function ChannelAlert({ f }: F) {
   if (!f.errors.channels) return null
   return (
     <Alert
@@ -471,14 +473,23 @@ function ChannelAlert({ f }: F) {
   )
 }
 
-/** The message area under the audience file. A dynamic field goes in two
+/** Step 3's note before a file is uploaded: no column to add yet. No `$`
+ *  note: the shortcut is easy to learn (requester, 4 Nov 2026). */
+export const noFieldsNote = (f: BroadcastForm) =>
+  f.fields.length ? undefined : 'Dynamic fields can be added once the audience file is uploaded.'
+
+/** Step 3, the channel cards. A dynamic field goes in two
  *  ways (BA & Dev feedback, 30 Oct 2026, "Option 2 + 3"): the button in each
  *  message box's top-right corner opens the file's columns (Idea 2.2, moved
  *  into the box 3 Nov 2026), and typing
  *  `$` in a message box opens them at the caret (Idea 4, ./shortcut.tsx). A
- *  picked field reads `${COLUMN}`, tinted as a chip (./highlight.tsx). The
- *  cards are stacked full width, as the CNH Template form (requester, 27 Oct
- *  2026).
+ *  picked field reads `${COLUMN}`, tinted as a chip (./highlight.tsx).
+ *
+ *  Its own step since 5 Nov 2026 (requester: consistent with CNH Phase 1,
+ *  Figma JjvzdUwg5LlKHDQvo2fny0 1:181849): the cards stand on the page one
+ *  under the other, as Phase 1's channel cards, with no card around them and
+ *  no stroke of their own. Before, they sat in a *Create broadcast message*
+ *  card under the audience file.
  *
  *  Each card is switched on its own title row (webds `form-section-card`):
  *  off keeps what was typed and disables it. An Email or SMS broadcast has
@@ -492,10 +503,10 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
   const columns = f.fields.map((field) => field.column).join('\n')
   const tint = useMemo<Tint>(() => ({ columns: new Set(columns.split('\n')) }), [columns])
 
-  const cards = (
+  return (
     <div
       data-error={invalid ? 'true' : undefined}
-      className="grid grid-cols-1 items-stretch gap-[var(--space-8)]"
+      className="flex flex-col gap-[var(--space-8)]"
       {...shortcut.handlers}
       onFocusCapture={(e) => {
         const el = e.target as HTMLInputElement | HTMLTextAreaElement
@@ -503,50 +514,61 @@ export function MessageContent({ f, focus }: F & { focus: FocusRef }) {
         if (key && isMessageBox(key)) focus.current = { key, el }
       }}
     >
+      {shortcut.menu}
       {f.offered.map((c) => {
         const on = f.channels.includes(c)
         return (
           <FormSectionCard
             key={c}
             /* Name to first field 24, the pattern's 32 read too far (Korarit, 4 Nov 2026). */
-            className="min-w-0 gap-[var(--space-6)] border border-[var(--color-border-primary-default)] [&_.webds-pattern-form-section-card-3]:flex-1"
+            className="min-w-0 gap-[var(--space-6)] [&_.webds-pattern-form-section-card-3]:flex-1"
             title={c}
             toggle={single ? undefined : { on, onToggle: (v) => f.setChannel(c, v) }}
             invalid={invalid}
             rowGap={4}
           >
             {/* Fields left, the preview right, as the deck draws Email (30 Oct 2026). */}
-            <div className="grid grid-cols-2 items-stretch gap-[var(--space-6)]">
-              <div className="flex min-w-0 flex-col gap-[var(--space-4)]">
-                <ChannelFields f={f} channel={c} on={on} tint={tint} insert={hasFields ? insert : undefined} />
-              </div>
+            <ChannelBody>
+              <ChannelFields f={f} channel={c} on={on} tint={tint} insert={hasFields ? insert : undefined} />
               <MessagePreview channel={c} content={f.content} audience={f.audience} on={on} />
-            </div>
+            </ChannelBody>
           </FormSectionCard>
         )
       })}
     </div>
   )
+}
 
+/** A channel card's two columns. The preview ends level with the last field's
+ *  box; that field's counter and helper text hang below it (requester, 5 Nov
+ *  2026). The row under the box changes height with an error, so the box is
+ *  measured. The card keeps the 270 it had before (the SMS fields alone are 266),
+ *  so nothing below it moves. */
+function ChannelBody({ children }: { children: [React.ReactNode, React.ReactNode] }) {
+  const fields = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState<number>()
+  useLayoutEffect(() => {
+    const col = fields.current
+    if (!col) return
+    const measure = () => {
+      const hints = col.querySelectorAll('.webds-field-hint')
+      const box = hints[hints.length - 1]?.previousElementSibling
+      if (box) setHeight(box.getBoundingClientRect().bottom - col.getBoundingClientRect().top)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(col)
+    return () => observer.disconnect()
+  }, [])
   return (
-    <FormSectionCard
-      className="[&_.webds-pattern-form-section-card-3]:flex-1"
-      /* Every idea titled the card "Create broadcast message" (requester, 21
-         Oct 2026). No `$` note: the shortcut is easy to learn (requester, 4 Nov
-         2026). */
-      title={<span className="flex min-h-[44px] items-center">Create broadcast message</span>}
-      rowGap={6}
-    >
-      {/* Sits 8 under the title and 32 over the cards (Korarit, 4 Nov 2026). */}
-      {!hasFields && (
-        <p className={cn(NOTE, 'mt-[calc(var(--space-2)-var(--space-8))] mb-[var(--space-2)]')}>
-          Dynamic fields can be added once the audience file is uploaded.
-        </p>
-      )}
-      <ChannelAlert f={f} />
-      {shortcut.menu}
-      {cards}
-    </FormSectionCard>
+    <div className="grid min-h-[270px] grid-cols-2 items-stretch gap-[var(--space-6)]">
+      <div ref={fields} className="flex min-w-0 flex-col gap-[var(--space-4)]">
+        {children[0]}
+      </div>
+      <div className="flex min-w-0 flex-col self-start" style={{ height }}>
+        {children[1]}
+      </div>
+    </div>
   )
 }
 
@@ -728,18 +750,19 @@ function NeverSendsAlert({ error }: { error: boolean }) {
   )
 }
 
-/** One quiet period on one row: its days, and its hours or All day (draft
- *  2.2, Figma 89:4665). Its trash is the card's, in the top-right corner. */
+/** One quiet period on two rows: its days, then its hours or All day (Figma
+ *  310:7441), 32 apart (requester, 5 Nov 2026). Its trash is
+ *  the card's, in the top-right corner. */
 function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const off = !f.dnd.enabled
   const daysError = f.errors[`dndDays:${rule.id}`]
   const timeError = f.errors[`dndTime:${rule.id}`]
   const which = f.dnd.rules.length > 1 ? ` ${index + 1}` : ''
   return (
-    <div className="flex flex-wrap items-start gap-x-[var(--space-8)] gap-y-[var(--space-6)]">
-      <div data-error={daysError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
+    <div className="flex flex-col items-start gap-[var(--space-8)]">
+      <div data-error={daysError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-3)]">
         <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Weekdays</span>
-        <div className="flex h-[56px] flex-wrap items-center gap-[var(--space-6)]">
+        <div className="flex flex-wrap items-center gap-[var(--space-6)]">
           {DAYS.map(({ day, label }) => (
             <Choice
               key={day}
@@ -808,7 +831,7 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
 function BesideField({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
     <FieldRoot className="w-auto shrink-0">
-      <FieldLabel> </FieldLabel>
+      <FieldLabel className={QUIET_PERIOD_LABEL}> </FieldLabel>
       <span className={cn('flex h-[56px] items-center', className)}>{children}</span>
     </FieldRoot>
   )
@@ -847,14 +870,16 @@ export function DndCard({ f }: F) {
           <ToggleSwitch toggled={dnd.enabled} aria-label="Do Not Disturb" onClick={() => f.setDndEnabled(!dnd.enabled)} />
           <span className="flex flex-col">
             <span>Do Not Disturb (DND)</span>
-            <span className={NOTE}>Prevent sending messages during quiet hours.</span>
+            {/* The maximum joins the note (requester, 6 Nov 2026, after the BA's 3-period limit). */}
+            <span className={NOTE}>Prevent sending messages during quiet hours. Maximum {DND_MAX_PERIODS} periods.</span>
           </span>
         </span>
       }
     >
-      {/* Any number of quiet periods (BA, 2026-10-14): each its own days and
-          hours, on its own bordered card (requester, 22 Oct 2026; Figma
-          436:243478); a day may sit in more than one. Card Surface draws no
+      {/* Up to three quiet periods (BA, 6 Nov 2026; any number since
+          2026-10-14): each its own days and hours, on its own bordered card
+          (requester, 22 Oct 2026; Figma 436:243478); a day may sit in more
+          than one. Card Surface draws no
           stroke at rest, so the border is the Figma override. */}
       {dnd.rules.map((rule, i) => (
         <CardSurface key={rule.id} className="h-auto items-start border border-[var(--color-border-primary-default)]">
@@ -870,12 +895,16 @@ export function DndCard({ f }: F) {
           <NeverSendsAlert error={!!f.errors.dnd} />
         </div>
       )}
-      <span className="flex">
-        <OutlineButton disabled={!dnd.enabled} onClick={f.addDndRule}>
-          Add more period
-          <Icon slug="plus" size={16} color="currentColor" />
-        </OutlineButton>
-      </span>
+      {/* Gone at the maximum, three periods (BA, 6 Nov 2026; requester picked
+          hiding over a disabled button, the note above says why). */}
+      {dnd.rules.length < DND_MAX_PERIODS && (
+        <span className="flex">
+          <OutlineButton disabled={!dnd.enabled} onClick={f.addDndRule}>
+            Add more period
+            <Icon slug="plus" size={16} color="currentColor" />
+          </OutlineButton>
+        </span>
+      )}
     </FormSectionCard>
   )
 }
