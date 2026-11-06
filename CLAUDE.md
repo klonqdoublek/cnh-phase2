@@ -25,8 +25,8 @@ Headless Chrome on this machine needs `--no-proxy-server`, or every request to t
 
 Hash routes, one per state, the same as the original build — the flow archive and the Task flow button point at them. `src/App.tsx` owns them all.
 
-- Notification management: `#/list`, `#/list/{loading,error,empty}`, `#/list/import[/<state>]` (job states `processing`, `process-failed`, `success` draw on the list in the upload panel, Import direction A), `#/create[/loading|/fail]`, `#/edit/<id>`
-- Import Template: `#/import-template`, `#/import-template/{loading,error,empty,import}`, `#/import-template/view/<id>[/download]` (seeded ids `IMP-0005`…`IMP-0012`; a job from the upload panel is `IMP-J<n>`)
+- Notification management: `#/list`, `#/list/{loading,error,empty}`, `#/list/import[/<state>]` (job states `processing`, `process-failed`, `success` draw on the list with the dialog closed: `processing` holds the Import in progress toast), `#/create[/loading|/fail]`, `#/edit/<id>`
+- Import Template: `#/import-template`, `#/import-template/{loading,error,empty,import}`, `#/import-template/view/<id>[/download]` (seeded ids `IMP-0005`…`IMP-0012`; a submitted job is `IMP-J<n>`)
 - Broadcast: `#/broadcast`, `#/broadcast/{loading,error,empty,submitted,draft-saved,cancelled,download-success,download-failed}`, `#/broadcast/download[/fail]`, `#/broadcast/create[/<preset>|/loading|/fail]`, `#/broadcast/view/<id>[/cancel|/cancel-fail|/download[/fail]]`, `#/broadcast/edit/<id>[/loading|/fail]`
 - `#/login`
 

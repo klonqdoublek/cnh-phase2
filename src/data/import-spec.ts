@@ -58,32 +58,16 @@ export const IMPORT_COPY = {
   failTitle: 'Unable to import templates',
   retry: 'Try again',
   /* Background processing (BA / Dev, 28 Oct 2026): Import that passes the dialog's checks
-     sends the file to a server; its templates reach the list about 10 minutes later.
-     Direction A's upload panel (design critique, 29 Oct 2026). Composed. */
-  processingNote: 'Takes about 10 minutes',
-  /* A job waiting for the server to start it (composed, 30 Oct 2026). */
-  queuedNote: 'Waiting to start',
+     sends the file to a server; its templates reach the list about 10 minutes later. The
+     list's toast says the file is submitted, not imported (requester, 6 Nov 2026, after
+     feedback that with no toast users could not tell the upload went through; replaces the
+     29 Oct upload panel). Composed: title from Import direction B (28 Oct 2026). */
+  submittedTitle: 'Import in progress',
+  submittedBody: 'Check its status in View import status.',
   /* The Import button's menu, when the Import Template page is a sub-menu of Import and not a sidebar item
      (requester, 2 Nov 2026; composed). Import file is the wording the requester picked on 29 Oct 2026. */
   menuImportFile: 'Import file',
   menuViewImports: 'View import status',
-  close: 'Close',
-  /* Opens the import on the Import Template page (composed, 30 Oct 2026). */
-  view: 'View',
-  /* An import's status, as Broadcast's (BA & Dev feedback deck Post MMP 2, 30 Oct 2026:
-     "Status – เหมือน Broadcast Message"): Queue, Processing, Published, Error. Was
-     Processing / Completed / Error (requester, 29 Oct 2026). */
-  statusQueued: 'Queue',
-  statusProcessing: 'Processing',
-  statusDone: 'Published',
-  statusFailed: 'Error',
-  panelTitle: (processing: number, failed: number) =>
-    processing ? `Importing ${processing} ${processing === 1 ? 'file' : 'files'}` : failed ? 'Import failed' : 'Import completed',
-  /* "Import Status" since 29 Oct 2026 (requester; was "Imports"). */
-  indicator: 'Import Status',
-  /* An import's result (requester, 29 Oct 2026, answering the BA's MoM: "imported row by
-     row"). The server checks each template on its own, so a file can import in part. */
-  resultLine: (imported: number, failed: number) => `${imported} imported, ${failed} failed`,
   /* Composed (requester, 15 Oct 2026): a file whose name was imported before asks
      before it imports over that file. Since the design critique (20 Oct 2026) it opens
      after the upload spinner, alone, not over the Import dialog. Reworded 21 Oct 2026

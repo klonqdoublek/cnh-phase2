@@ -11,7 +11,7 @@ import { TableHeaderCell } from '@/bbl/table-header-cell'
 import { TablePagination } from '@/bbl/table-pagination'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { PageHeader } from '@/patterns/page-header'
-import { isJobPreset, presetFileName, presetTemplates, serverResult, type ImportPreset } from '@/data/import-spec'
+import { IMPORT_COPY, isJobPreset, presetFileName, presetTemplates, serverResult, type ImportPreset } from '@/data/import-spec'
 import {
   CHANNELS,
   FILE_EXT,
@@ -27,7 +27,6 @@ import { FilterSelect } from './FilterSelect'
 import { ImportDialog } from './ImportDialog'
 import { ListSearch } from './ListSearch'
 import { ListToast } from './ListToast'
-import { ImportFeedback, useImportFeedback } from './import-status/ImportStatus'
 import type { ImportJobs } from './import-status/jobs'
 
 export type ListState = 'loading' | 'error' | 'empty' | 'ready'
@@ -67,6 +66,8 @@ const EMPTY = '–'
 /** Typing this into search draws the error state — the prototype's way to reach it. */
 const FAIL_QUERY = 'error'
 const PAGE_SIZE = 50
+/** Import in progress stays 3 s, as the original build's Templates imported toast did. */
+const SUBMITTED_TOAST_MS = 3000
 const SEARCH_LABEL = 'Search by notification name, description or product name'
 
 const NOTICES: Record<ListNotice, { title: string; description: string }> = {
@@ -130,11 +131,13 @@ export function Dashboard({
   onImportRef.current = onImport
   const seedJob = useRef(importJobs.seed)
   seedJob.current = importJobs.seed
-  const feedback = useImportFeedback(importJobs.jobs)
+  /* Import in progress: on after a submit, closing on its own; held on `#/list/import/processing`. */
+  const [submitted, setSubmitted] = useState<'auto' | 'held' | null>(null)
 
   /* `#/list/import/<preset>` opens the dialog in that state. A job preset
      (`processing`, `process-failed`, `success`) is on the list with the dialog
-     closed: it seeds one held job, and `success` lands the preset templates once. */
+     closed: it seeds one held job, `processing` holds the Import in progress
+     toast, and `success` lands the preset templates once. */
   useEffect(() => {
     if (!importPreset) return
     if (!isJobPreset(importPreset)) return setImportOpen(true)
@@ -142,6 +145,7 @@ export function Dashboard({
     const templates = presetTemplates()
     const status = importPreset === 'success' ? 'done' : importPreset === 'processing' ? 'processing' : 'failed'
     seedJob.current({ fileName: presetFileName(), templates, replace: false, status })
+    setSubmitted(status === 'processing' ? 'held' : null)
     if (status !== 'done' || landed.current) return
     landed.current = true
     onImportRef.current?.(serverResult(templates).imported)
@@ -555,9 +559,17 @@ export function Dashboard({
           setPage(0)
           clearSelection()
           importJobs.submit(list, fileName, replace)
+          setSubmitted('auto')
         }}
       />
-      <ImportFeedback feedback={feedback} jobs={importJobs.jobs} onRetry={importJobs.retry} onDismiss={importJobs.dismiss} />
+      <ListToast
+        open={submitted !== null}
+        appearance="positive"
+        title={IMPORT_COPY.submittedTitle}
+        description={IMPORT_COPY.submittedBody}
+        autoHideMs={submitted === 'auto' ? SUBMITTED_TOAST_MS : undefined}
+        onClose={() => setSubmitted(null)}
+      />
       <ListToast
         open={downloadFailed}
         appearance="negative"
