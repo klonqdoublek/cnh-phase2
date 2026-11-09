@@ -58,10 +58,6 @@ export const BROADCAST_COPY = {
   },
   noChannel: 'Please enable at least 1 notification channel',
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
-  /** CNH Template Management V.4.3 (Figma RcLZ8aSt9F1noVeS94yder 1309:52051),
-   *  the final design's wording (requester, 2 Nov 2026; Korn's build reads
-   *  "You can use these special characters only ~ ฿ ^ _ : . / ?"). */
-  msgCharset: 'We allow Thai, English, Numeric 0-9, and special characters ~ ฿ ^ _ : . / ? only',
   startPast: 'Start must be later than the current time',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
@@ -237,21 +233,6 @@ export function checkAudience(audience: Audience, column: string, kind: IdKind):
 
 export const fieldsOf = (audience: Audience | null | undefined, idColumn: string) =>
   (audience?.headers ?? []).filter((h) => h && h !== idColumn).map((column) => ({ column, token: `\${${column}}` }))
-
-/* The free-text rule of CNH Template Management V.4.3 (Figma 1309:52051):
- * Thai, English, 0-9, space and ~ ฿ ^ _ : . / ? only, and never a run that
- * opens with <# or <@ and closes with >, or opens with [= or [# and closes
- * with ]. Deep link and Sender email address skip the character list (URLs,
- * addresses) but not the runs, as the Template form's `rawFormat`.
- * Phase 2 exception (requester, 2 Nov 2026; PROPOSAL, pending BA): a
- * `${COLUMN}` dynamic field and the comma pass too — the deck's own message,
- * "Dear ${CUSTOMER_NAME},", would fail otherwise. A stray `$`, `{` or `}`
- * still fails. The error copy still names the V.4.3 list only. */
-const ALLOWED = /^[฀-๿ a-zA-Z0-9~฿^_:./?,\n\r]*$/
-const FORBIDDEN = [/<#[^>]*>/, /<@[^>]*>/, /\[=[^\]]*\]/, /\[#[^\]]*\]/]
-const ANY_TOKEN = /\$\{[^{}$\s]+\}/g
-export const charsetOk = (text: string, raw = false) =>
-  !FORBIDDEN.some((re) => re.test(text)) && (raw || ALLOWED.test(text.replace(ANY_TOKEN, '')))
 
 /** The `${…}` tokens in a message that name no field of the file, each once. */
 export const unknownTokens = (text: string, fields: { column: string }[]) => {
