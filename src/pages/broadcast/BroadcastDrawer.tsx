@@ -9,19 +9,15 @@ import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { DetailDrawer } from '@/patterns/detail-drawer'
 import {
   BROADCAST_COPY,
-  dndNeverSends,
-  firstSend,
   fmtDateTime,
   fmtDnd,
   fmtNumber,
   isCancellable,
-  quietUntil,
   RECIPIENT_TYPE_LABEL,
   reportOffered,
   reportReady,
   waitingOf,
   type Broadcast,
-  type BroadcastOwnStatus as Status,
 } from '@/data/broadcast'
 import { cn } from '@/lib/cn'
 import { BroadcastStatus } from './list/BroadcastStatus'
@@ -45,41 +41,12 @@ export type BroadcastDrawerProps = {
   downloadFailNext?: boolean
 }
 
-/** HH:mm the current quiet period ends, or the first rule's end when now is
- *  outside every rule (the fixtures are dated, the clock is not). */
-function resumesAt(b: Broadcast) {
-  const end = quietUntil(new Date(), b.dnd)
-  if (end) return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`
-  const rule = b.dnd.rules[0]
-  return rule && !rule.allDay ? rule.to : '00:00'
-}
-
-const STATUS_LINE: Record<Status, (b: Broadcast) => string> = {
-  Draft: () => 'Not submitted yet. Nothing is sent until the broadcast is submitted.',
-  Queued: (b) =>
-    dndNeverSends(b.dnd)
-      ? BROADCAST_COPY.dndNeverSends
-      : `The first message goes at ${fmtDateTime(firstSend(new Date(b.start), b.dnd))}.`,
-  /* The BA's Broadcast Job Lifecycle (29 Oct 2026, built 2 Nov 2026): Processing reads
-     the file, validates it and sends row by row, so the sending lines are back here
-     (28 Oct 2026 had moved them to Published); Published is the finished job. The
-     refresh line and Published's are composed. */
-  Processing: (b) =>
-    b.quiet
-      ? `Inside the quiet period. Sending resumes at ${resumesAt(b)}.`
-      : 'Messages are being sent. Open the broadcast again to refresh the result.',
-  Published: (b) =>
-    b.failed > 0
-      ? `The broadcast has finished. ${fmtNumber(b.failed)} recipients were not sent a message.`
-      : 'The broadcast has finished. Every recipient was sent a message.',
-  /* Failed and Cancelled (19 Oct 2026): composed, the original build has
-     neither. No report pointer (BA MoM, 29 Oct 2026: Download report only in
-     Published; the 28 Oct UX writer pointer is dropped). */
-  Failed: (b) =>
-    `A system error stopped the broadcast.${b.notSent ? ` ${fmtNumber(b.notSent)} recipients were not sent.` : ''}`,
-  /* "before sending started" since a Queued broadcast can be cancelled too (29 Oct 2026; was "before it was submitted"). */
-  Cancelled: () => 'Cancelled before sending started. Nothing was sent.',
-}
+/* Only Error carries a note (BA Natsinee, 7–9 Nov 2026: drop the blue notes,
+   keep the red box with the error's reason). Draft, Queued, Processing, Published
+   and Cancelled had a Brand note each until 9 Nov 2026; their copy is in
+   docs/broadcast-gaps.md. The Error line is composed (19 Oct 2026). */
+const errorNote = (b: Broadcast) =>
+  `A system error stopped the broadcast.${b.notSent ? ` ${fmtNumber(b.notSent)} recipients were not sent.` : ''}`
 
 function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
   const draft = b.status === 'Draft'
@@ -101,8 +68,7 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
               ...(b.notSent ? [['Not sent', fmtNumber(b.notSent)]] : []),
               ['Waiting to send', fmtNumber(waiting)],
             ] as [string, string][],
-            note: STATUS_LINE[b.status](b),
-            noteTone: b.status === 'Failed' ? ('negative' as const) : ('brand' as const),
+            ...(b.status === 'Failed' ? { note: errorNote(b), noteTone: 'negative' as const } : {}),
           },
         ]),
     {
@@ -122,7 +88,6 @@ function sectionsOf(b: Broadcast): DrawerSectionSpec[] {
         ],
         ['Do Not Disturb', fmtDnd(b.dnd)],
       ],
-      note: unsent ? STATUS_LINE[b.status](b) : undefined,
     },
     ...(b.channels.includes('Push notification')
       ? [
