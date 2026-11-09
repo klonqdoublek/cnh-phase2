@@ -21,6 +21,7 @@ import { FormSectionCard } from '@/patterns/form-section-card'
 import { FormStep } from '@/patterns/console-page'
 import {
   BROADCAST_COPY,
+  BROADCAST_SERVICE_CODES,
   DAYS,
   DND_MAX_PERIODS,
   ID_LABEL,
@@ -33,7 +34,7 @@ import {
   type DndRule,
   type RecipientType as RecipientTypeValue,
 } from '@/data/broadcast'
-import { SERVICE_CODE_LOV, type Channel } from '@/data/templates'
+import { type Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
 import { Choice, LABEL, MessageEditor, ModeOption, NOTE, Select, Text } from './fields'
 import { editBox, type Tint } from './highlight'
@@ -296,9 +297,10 @@ function RecipientType({ f }: F) {
   )
 }
 
-/** Service code (BA & Dev feedback, 30 Oct 2026): one of Phase 1's codes, a
- *  dropdown at the top of the card, as wide as the ID column's. Label and
- *  placeholder are the Template form's; there it is a multi-select. */
+/** Service code (BA & Dev feedback, 30 Oct 2026): one of Broadcast's own codes
+ *  (BROADCASTNOTI only since 9 Nov 2026), a dropdown at the top of the card, as
+ *  wide as the ID column's. Label and placeholder are the Template form's;
+ *  there it is a multi-select. */
 function ServiceCode({ f }: F) {
   return (
     <Select
@@ -306,7 +308,7 @@ function ServiceCode({ f }: F) {
       className="w-[456px]"
       required
       value={f.serviceCode}
-      options={SERVICE_CODE_LOV}
+      options={BROADCAST_SERVICE_CODES}
       error={f.errors.serviceCode}
       placeholder="Select service code"
       onChange={f.setServiceCode}

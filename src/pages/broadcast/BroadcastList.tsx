@@ -7,6 +7,7 @@ import { ConsolePage } from '@/patterns/console-page'
 import { EmptyState } from '@/patterns/empty-state'
 import {
   BROADCAST_COPY,
+  BROADCAST_SERVICE_CODES,
   BROADCAST_STATUSES,
   STATUS_LABEL,
   fmtDateTime,
@@ -15,7 +16,7 @@ import {
   type BroadcastStatus as BroadcastStatusValue,
   type ListToast as ListToastValue,
 } from '@/data/broadcast'
-import { CHANNELS, SERVICE_CODE_LOV } from '@/data/templates'
+import { CHANNELS } from '@/data/templates'
 import { FilterSelect } from '../notifications/FilterSelect'
 import { ListSearch } from '../notifications/ListSearch'
 import { BroadcastStatus } from './list/BroadcastStatus'
@@ -106,7 +107,7 @@ export function BroadcastList({
 }: BroadcastListProps) {
   const [requestedPage, setPage] = useState(0)
   const [query, setQuery] = useState('')
-  const [serviceCodes, setServiceCodes] = useState<string[]>([...SERVICE_CODE_LOV])
+  const [serviceCodes, setServiceCodes] = useState<string[]>([...BROADCAST_SERVICE_CODES])
   const [channels, setChannels] = useState<string[]>([...CHANNELS])
   const [statuses, setStatuses] = useState<string[]>([...BROADCAST_STATUSES])
   const [reportFor, setReportFor] = useState<Broadcast | null>(reportOpen ?? null)
@@ -119,7 +120,7 @@ export function BroadcastList({
     return broadcasts.filter((b) => {
       const matches = !q || b.name.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)
       const serviceCode =
-        serviceCodes.length === SERVICE_CODE_LOV.length || serviceCodes.length === 0 || serviceCodes.includes(b.serviceCode)
+        serviceCodes.length === BROADCAST_SERVICE_CODES.length || serviceCodes.length === 0 || serviceCodes.includes(b.serviceCode)
       const channel =
         channels.length === CHANNELS.length || channels.length === 0 || b.channels.some((c) => channels.includes(c))
       const status = statuses.length === 0 || statuses.includes(b.status)
@@ -149,7 +150,7 @@ export function BroadcastList({
       <div className="min-w-[180px] flex-[0_1_304px]">
         <FilterSelect
           label="Service code"
-          options={SERVICE_CODE_LOV}
+          options={BROADCAST_SERVICE_CODES}
           value={serviceCodes}
           onChange={(v) => refilter(() => setServiceCodes(v))}
         />
@@ -173,7 +174,7 @@ export function BroadcastList({
           onClick={() =>
             refilter(() => {
               setQuery('')
-              setServiceCodes([...SERVICE_CODE_LOV])
+              setServiceCodes([...BROADCAST_SERVICE_CODES])
               setChannels([...CHANNELS])
               setStatuses([...BROADCAST_STATUSES])
             })
