@@ -9,7 +9,6 @@ import {
   fieldsOf,
   isMessageBox,
   unknownTokens,
-  patternsOk,
   dndNeverSends,
   firstSend,
   idKind,
@@ -59,20 +58,15 @@ export const CONTENT_MAX: Record<keyof BroadcastContent, number> = {
   emailSenderAddress: 255,
 }
 
-/** What a message field's value breaks while it is typed — over its maximum,
- *  a forbidden run, or both, one message per line as V.4.3 writes them.
- *  Typing goes on; the error shows at once and Submit stays blocked. The
- *  allowed-character list is gone (BA, 9 Nov 2026: length only); the forbidden
- *  runs wait for the BA sync and still read the V.4.3 character message. */
+/** A message field over its maximum, shown while it is typed. Typing goes on;
+ *  the error shows at once and Submit stays blocked. Length is the only rule
+ *  (BA sync, 9 Nov 2026: every input field checks its max characters only; the
+ *  V.4.3 allowed list and forbidden runs are gone, to let users type any
+ *  character). */
 export function textProblem(key: keyof BroadcastContent, value: string) {
-  const over = value.length > CONTENT_MAX[key]
-  const charset = !patternsOk(value)
-  if (over && charset) return `${BROADCAST_COPY.msgCharset}\n${BROADCAST_COPY.msgMax(CONTENT_MAX[key])}`
-  if (over) return BROADCAST_COPY.msgMax(CONTENT_MAX[key])
-  if (charset) return BROADCAST_COPY.msgCharset
-  return undefined
+  return value.length > CONTENT_MAX[key] ? BROADCAST_COPY.msgMax(CONTENT_MAX[key]) : undefined
 }
-const LIVE = (message: string) => message.startsWith(BROADCAST_COPY.msgCharset) || /^Maximum \d+ characters allowed\.$/.test(message)
+const LIVE = (message: string) => /^Maximum \d+ characters allowed\.$/.test(message)
 
 export type FormErrors = Partial<
   Record<

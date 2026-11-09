@@ -53,10 +53,6 @@ export const BROADCAST_COPY = {
   },
   noChannel: 'Please enable at least 1 notification channel',
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
-  /** CNH Template Management V.4.3 (Figma RcLZ8aSt9F1noVeS94yder 1309:52051),
-   *  the final design's wording (requester, 2 Nov 2026; Korn's build reads
-   *  "You can use these special characters only ~ ฿ ^ _ : . / ?"). */
-  msgCharset: 'We allow Thai, English, Numeric 0-9, and special characters ~ ฿ ^ _ : . / ? only',
   startPast: 'Start must be later than the current time',
   dndNoDay: 'Select at least 1 day',
   dndSame: 'The quiet period cannot start and end at the same time',
@@ -232,16 +228,6 @@ export function checkAudience(audience: Audience, column: string, kind: IdKind):
 
 export const fieldsOf = (audience: Audience | null | undefined, idColumn: string) =>
   (audience?.headers ?? []).filter((h) => h && h !== idColumn).map((column) => ({ column, token: `\${${column}}` }))
-
-/* Broadcast checks a message field's length only (BA Natsinee, Figma comment
- * 1997615026, 6 Nov 2026: "input field ใดใด จะ validate แค่ limit character
- * เท่านั้น"; built 9 Nov 2026). The V.4.3 allowed list (Thai, English, 0-9,
- * space and ~ ฿ ^ _ : . / ?) and its Phase 2 exception for `${COLUMN}` and the
- * comma are gone. Held until the BA sync (requester, 9 Nov 2026): the forbidden
- * runs — a run that opens with <# or <@ and closes with >, or opens with [= or
- * [# and closes with ] — still fail, in every field. */
-const FORBIDDEN = [/<#[^>]*>/, /<@[^>]*>/, /\[=[^\]]*\]/, /\[#[^\]]*\]/]
-export const patternsOk = (text: string) => !FORBIDDEN.some((re) => re.test(text))
 
 /** The `${…}` tokens in a message that name no field of the file, each once. */
 export const unknownTokens = (text: string, fields: { column: string }[]) => {
