@@ -185,7 +185,7 @@ export type FormSeed = {
 export const filled: FormSeed = {
   /* The wide file, so every Create preset shows the preview scrolling both ways (requester, 15 Oct 2026). */
   file: { name: 'audience-cis-large.csv', text: LARGE_CSV },
-  serviceCode: 'NAMKTBATCH',
+  serviceCode: 'BROADCASTNOTI',
   recipientType: 'cis',
   column: 'CIS_ID',
   channels: ['Email', 'SMS'],

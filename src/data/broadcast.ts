@@ -5,6 +5,11 @@
 
 import type { Channel } from './templates'
 
+/** Broadcast's own service codes (requirement update, 9 Nov 2026): only
+ *  BROADCASTNOTI today. More may follow, likely named BROADCAST + the
+ *  service's name. Not Phase 1's template codes (SERVICE_CODE_LOV). */
+export const BROADCAST_SERVICE_CODES = ['BROADCASTNOTI']
+
 export const BROADCAST_COPY = {
   listTitle: 'Broadcast message',
   create: 'Create broadcast',
@@ -460,8 +465,8 @@ export type Broadcast = {
   id: string
   name: string
   description: string
-  /** One of Phase 1's service codes, picked from a dropdown on Step 2 (BA &
-   *  Dev feedback, 30 Oct 2026). Fixtures' codes are composed. */
+  /** One of Broadcast's own service codes, picked from a dropdown on Step 2
+   *  (BA & Dev feedback, 30 Oct 2026; Broadcast's own list since 9 Nov 2026). */
   serviceCode: string
   channels: Channel[]
   audienceFile: string
@@ -538,7 +543,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0012',
     name: 'Card delivery notice',
     description: 'Tell customers their new debit card is on its way.',
-    serviceCode: 'NABATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['SMS'],
     audienceFile: 'card-delivery-mobile.csv',
     audienceText: directFile(420),
@@ -559,7 +564,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0011',
     name: 'Fixed deposit maturity reminder',
     description: '',
-    serviceCode: 'NABATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['Email'],
     audienceFile: 'fixed-deposit-email.csv',
     recipients: 350,
@@ -579,7 +584,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0010',
     name: 'Mobile number update request',
     description: '',
-    serviceCode: 'NABATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['SMS'],
     audienceFile: 'mobile-update.csv',
     recipients: 150,
@@ -602,7 +607,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0009',
     name: 'Loan payment reminder',
     description: '',
-    serviceCode: 'NABATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['Email'],
     audienceFile: 'loan-due-october.csv',
     recipients: 500,
@@ -624,7 +629,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0008',
     name: 'Year-end promotion',
     description: '',
-    serviceCode: 'NAMKTBATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['SMS'],
     audienceFile: 'promotion-december.csv',
     recipients: 800,
@@ -652,7 +657,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0007',
     name: 'November statement notice',
     description: 'Draft for the November statement campaign.',
-    serviceCode: 'NABATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['Email'],
     audienceFile: 'statement-november.csv',
     audienceText: cisFile(640),
@@ -674,7 +679,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0006',
     name: 'October Customer Campaign',
     description: 'Send payment confirmation and special offer to selected customers in October.',
-    serviceCode: 'NAMKTBATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['Email', 'SMS', 'Push notification'],
     audienceFile: 'customer_list_october.csv',
     recipients: 1000,
@@ -696,7 +701,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0005',
     name: 'Interest rate update',
     description: '',
-    serviceCode: 'NABATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['SMS'],
     audienceFile: 'savings-mobile.csv',
     recipients: 1000,
@@ -720,7 +725,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0004',
     name: 'Branch closure notice',
     description: 'Branch BKK-12, closed 10 October.',
-    serviceCode: 'NABATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['Push notification', 'SMS'],
     audienceFile: 'branch-bkk-12.csv',
     recipients: 860,
@@ -742,7 +747,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0003',
     name: 'App maintenance',
     description: '',
-    serviceCode: 'NANOTI',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['Push notification'],
     audienceFile: 'mbanking-active.csv',
     recipients: 998,
@@ -763,7 +768,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0002',
     name: 'Credit card statement reminder',
     description: '',
-    serviceCode: 'NABATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['Email'],
     audienceFile: 'cc-statement.csv',
     recipients: 1000,
@@ -786,7 +791,7 @@ export const BROADCASTS: Broadcast[] = [
     id: 'BC-0001',
     name: 'Savings interest rate update',
     description: 'Tell savings customers about the new interest rate.',
-    serviceCode: 'NABATCH',
+    serviceCode: 'BROADCASTNOTI',
     channels: ['SMS'],
     audienceFile: 'savings-customers.csv',
     recipients: 1000,
