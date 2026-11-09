@@ -9,7 +9,7 @@ import {
   fieldsOf,
   isMessageBox,
   unknownTokens,
-  charsetOk,
+  patternsOk,
   dndNeverSends,
   firstSend,
   idKind,
@@ -59,16 +59,14 @@ export const CONTENT_MAX: Record<keyof BroadcastContent, number> = {
   emailSenderAddress: 255,
 }
 
-/** URLs and addresses: the character list does not apply, the forbidden runs do. */
-const RAW: (keyof BroadcastContent)[] = ['pushDeeplink', 'emailSenderAddress']
-
 /** What a message field's value breaks while it is typed — over its maximum,
- *  outside the allowed characters, or both, one message per line as V.4.3
- *  writes them. Typing goes on; the error shows at once and Submit stays
- *  blocked (CNH Template Management V.4.3, requester 2 Nov 2026). */
+ *  a forbidden run, or both, one message per line as V.4.3 writes them.
+ *  Typing goes on; the error shows at once and Submit stays blocked. The
+ *  allowed-character list is gone (BA, 9 Nov 2026: length only); the forbidden
+ *  runs wait for the BA sync and still read the V.4.3 character message. */
 export function textProblem(key: keyof BroadcastContent, value: string) {
   const over = value.length > CONTENT_MAX[key]
-  const charset = !charsetOk(value, RAW.includes(key))
+  const charset = !patternsOk(value)
   if (over && charset) return `${BROADCAST_COPY.msgCharset}\n${BROADCAST_COPY.msgMax(CONTENT_MAX[key])}`
   if (over) return BROADCAST_COPY.msgMax(CONTENT_MAX[key])
   if (charset) return BROADCAST_COPY.msgCharset

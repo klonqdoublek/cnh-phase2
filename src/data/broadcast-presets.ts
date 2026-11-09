@@ -205,7 +205,7 @@ export const filled: FormSeed = {
 
 /* Messages near their maximum, so each preview scrolls inside its own area
  * while the channel card keeps the fields' height (requester, 3 Nov 2026).
- * Made up, inside the V.4.3 character list: a long word with no space (a
+ * Made up: a long word with no space (a
  * URL) and a Thai SMS with no spaces between words, to show the wrap. */
 const LONG_BODY = `Dear \${CUSTOMER_NAME},
 
