@@ -157,7 +157,6 @@ const CREATE_BROADCAST: Screen = {
     s('#/broadcast/create/checking', 'Loading', 'Checking file…'),
     s('#/broadcast/create/submitting', 'Loading', 'Submitting'),
     s('#/broadcast/create/file-error', 'Error', 'File cannot be read'),
-    s('#/broadcast/create/wrong-column', 'Error', 'Wrong recipient column (proposal)'),
     s('#/broadcast/create/errors', 'Error', 'Every section marked'),
     s('#/broadcast/create/no-channel', 'Error', 'Step 1 filled, Submit pressed'),
     s('#/broadcast/create/channel-typing', 'Error', 'A channel on and typed in'),
@@ -167,8 +166,6 @@ const CREATE_BROADCAST: Screen = {
     s('#/broadcast/create/check-fail', 'Error', 'Unable to submit, file check failed', true),
     s('#/broadcast/create/fail', 'Error', 'Submit fails on the next press'),
     s('#/broadcast/create/fail-dialog', 'Error', 'Unable to submit'),
-    s('#/broadcast/create/confirm', 'Dialog', 'Submit this broadcast?'),
-    s('#/broadcast/create/confirm-invalid', 'Dialog', 'Submit this broadcast?, invalid rows skipped', true),
     s('#/broadcast/create/leave', 'Dialog', 'Leave this page?'),
   ],
 }
