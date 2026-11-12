@@ -1276,14 +1276,26 @@
   },
   {
    "from": "bc-report-fail",
-   "to": "bc-report-confirm",
-   "label": "Download again",
+   "to": "bc-report-ok",
+   "label": "Try again",
+   "style": "solid",
+   "touch": {
+    "x": 1144,
+    "y": 565,
+    "w": 100,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-report-fail",
+   "to": "bc-list",
+   "label": "Close",
    "style": "back",
    "touch": {
-    "x": 1831,
-    "y": 659,
-    "w": 24,
-    "h": 16
+    "x": 1061,
+    "y": 565,
+    "w": 75,
+    "h": 44
    }
   },
   {

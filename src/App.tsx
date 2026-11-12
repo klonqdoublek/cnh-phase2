@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BROADCASTS, deliveryReportName, type Broadcast, type ListToast } from '@/data/broadcast'
+import { BROADCASTS, deliveryReportCsv, deliveryReportName, type Broadcast, type ListToast } from '@/data/broadcast'
 import { LIST_TOAST, REPORT_DEMO_ID, formPreset, listPreset, reportPreset } from '@/data/broadcast-presets'
 import { IMPORT_HISTORY, IMPORT_PRESETS, type ImportPreset } from '@/data/import-spec'
 import { TEMPLATES, type Template, type TemplateStatus } from '@/data/templates'
@@ -244,7 +244,13 @@ export default function App() {
           reportFailNext={!!reportConfirm?.[1]}
           reportHeld={
             reportResult === 'download-failed'
-              ? { ok: false }
+              ? {
+                  ok: false,
+                  report: reportDemo && {
+                    name: deliveryReportName(reportDemo),
+                    text: () => deliveryReportCsv(reportDemo),
+                  },
+                }
               : reportResult && reportDemo
                 ? { ok: true, file: deliveryReportName(reportDemo) }
                 : undefined
