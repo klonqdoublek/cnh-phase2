@@ -110,7 +110,7 @@ const BROADCAST_LIST: Screen = {
     s('#/broadcast/draft-saved', 'Toast', 'Draft saved'),
     s('#/broadcast/cancelled', 'Toast', 'Broadcast cancelled'),
     s('#/broadcast/download-success', 'Toast', 'Download Success'),
-    s('#/broadcast/download-failed', 'Toast', 'Unable to download'),
+    s('#/broadcast/download-failed', 'Dialog', 'Unable to download'),
   ],
 }
 

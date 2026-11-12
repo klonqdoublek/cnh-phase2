@@ -336,6 +336,7 @@ export function BroadcastDrawer({
         broadcast={reporting ? broadcast : null}
         onDone={() => setReporting(false)}
         failNext={downloadFailNext}
+        failDialog
       />
     </div>
   )

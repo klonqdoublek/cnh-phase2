@@ -92,7 +92,9 @@ export const BROADCAST_COPY = {
   reportDoneTitle: 'Download Success',
   reportDoneBody: (file: string) => `${file} is saved`,
   /* "Be able to download?" No (requester 22 Oct 2026): Notification
-     management's failure toast, Figma 1:14740. */
+     management's failure copy, Figma 1:14740. Broadcast shows it as a modal
+     with Close / Try again since 12 Nov 2026 (BA Natsinee); Import Template
+     keeps the toast. */
   reportFailTitle: 'Unable to download',
   reportFailBody: 'Please try again',
   /* The status could not be updated: Submit's fail dialog, reworded. */

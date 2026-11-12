@@ -291,6 +291,7 @@ export function BroadcastList({
         broadcast={reportFor}
         onDone={() => setReportFor(null)}
         failNext={reportFailNext}
+        failDialog
         held={reportHeld}
       />
     </div>
