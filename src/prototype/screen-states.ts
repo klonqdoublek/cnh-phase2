@@ -154,6 +154,7 @@ const CREATE_BROADCAST: Screen = {
     s('#/broadcast/create/long-message-email', 'Data', 'Long message, Email'),
     s('#/broadcast/create/long-message-sms', 'Data', 'Long message, SMS'),
     s('#/broadcast/create/loading', 'Loading', 'Loading'),
+    s('#/broadcast/create/load-fail', 'Error', 'Unable to load information'),
     s('#/broadcast/create/checking', 'Loading', 'Checking file…'),
     s('#/broadcast/create/submitting', 'Loading', 'Submitting'),
     s('#/broadcast/create/file-error', 'Error', 'File cannot be read'),

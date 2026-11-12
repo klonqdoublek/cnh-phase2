@@ -140,6 +140,7 @@ export default function App() {
       <BroadcastWizard
         key={hash}
         loading={hash.endsWith('/loading')}
+        loadFailed={hash.endsWith('/load-fail')}
         failNext={hash.endsWith('/fail')}
         preset={formPreset(hash.match(/^#\/broadcast\/create\/([a-z-]+)$/)?.[1])}
         onBack={() => go('/broadcast')}

@@ -1,8 +1,9 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/bbl/button'
 import { Icon } from '@/bbl/icon'
 import { OutlineButton } from '@/bbl/outline-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
+import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { ConsolePage } from '@/patterns/console-page'
 import { BROADCAST_COPY, type Broadcast } from '@/data/broadcast'
 import type { FormPreset } from '@/data/broadcast-presets'
@@ -19,6 +20,9 @@ export type BroadcastWizardProps = {
   failNext?: boolean
   /** `…/loading`: the page while the form (or the draft) loads. */
   loading?: boolean
+  /** `…/load-fail`: the dropdown data could not be got ("Able to get data?"
+   *  No): the empty page under the Unable to load information dialog. */
+  loadFailed?: boolean
   preset?: FormPreset
   onBack: () => void
   onCreate: (broadcast: Omit<Broadcast, 'id'>, kind: SaveKind) => void
@@ -42,7 +46,26 @@ export function BroadcastWizard(props: BroadcastWizardProps) {
   return <Wizard key={columns} {...props} />
 }
 
-function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: BroadcastWizardProps) {
+/** How long Try again shows the loading page before the form (prototype). */
+const RELOAD_MS = 900
+
+function Wizard({ onBack, onCreate, failNext, loading: loadingRoute, loadFailed, preset, initial }: BroadcastWizardProps) {
+  /* The page load: `ready`, `loading` (spinner) or `failed` (empty page and
+     the dialog). Try again runs the load again; this time it succeeds. */
+  const [load, setLoad] = useState<'ready' | 'loading' | 'failed'>(
+    loadFailed ? 'failed' : loadingRoute ? 'loading' : 'ready',
+  )
+  const [retrying, setRetrying] = useState(false)
+  useEffect(() => {
+    if (!retrying) return
+    const t = window.setTimeout(() => {
+      setRetrying(false)
+      setLoad('ready')
+    }, RELOAD_MS)
+    return () => window.clearTimeout(t)
+  }, [retrying])
+  const loading = load !== 'ready'
+
   const columns = useColumns()
   const f = useBroadcastForm({ onCreate, failNext, preset, initial, adaptSeed: seedWithColumns(columns) })
   const body = useRef<HTMLDivElement>(null)
@@ -76,9 +99,10 @@ function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: Broadc
         }
       >
         {loading ? (
-          /* Create notification's loading body (#/create/loading). */
+          /* Create notification's loading body (#/create/loading); empty under
+             the load-fail dialog. */
           <div className="flex min-h-[60vh] items-center justify-center">
-            <SpinnerLoader size="l" appearance="brand" />
+            {load === 'loading' && <SpinnerLoader size="l" appearance="brand" />}
           </div>
         ) : (
           <>
@@ -101,6 +125,26 @@ function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: Broadc
         )}
       </ConsolePage>
       <Dialogs f={f} onBack={onBack} />
+      {load === 'failed' && (
+        <ConfirmDialog
+          anatomy="sectioned"
+          contentType="label-xl"
+          layer="fixed"
+          width={600}
+          title={BROADCAST_COPY.formLoadFailTitle}
+          cancelLabel="Back"
+          confirmLabel="Try again"
+          onCancel={onBack}
+          onDismiss={onBack}
+          onConfirm={() => {
+            setLoad('loading')
+            setRetrying(true)
+          }}
+          className="z-50"
+        >
+          {BROADCAST_COPY.formLoadFailBody}
+        </ConfirmDialog>
+      )}
     </div>
   )
 }

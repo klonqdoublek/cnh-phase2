@@ -144,6 +144,26 @@
    "section": "Broadcast"
   },
   {
+   "id": "bc-loading",
+   "kind": "screen",
+   "label": "Create broadcast — loading",
+   "route": "#/broadcast/create/loading",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-load-ok",
+   "kind": "decision",
+   "label": "Able to get data?",
+   "section": "Broadcast"
+  },
+  {
+   "id": "bc-load-fail",
+   "kind": "screen",
+   "label": "Unable to load information",
+   "route": "#/broadcast/create/load-fail",
+   "section": "Broadcast"
+  },
+  {
    "id": "bc-form",
    "kind": "screen",
    "label": "Create broadcast — empty",
@@ -691,13 +711,54 @@
   },
   {
    "from": "bc-list",
-   "to": "bc-form",
+   "to": "bc-loading",
    "label": "Create broadcast",
    "style": "solid",
    "touch": {
     "x": 1716,
     "y": 19,
     "w": 188,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-loading",
+   "to": "bc-load-ok",
+   "style": "solid"
+  },
+  {
+   "from": "bc-load-ok",
+   "to": "bc-form",
+   "label": "Yes",
+   "style": "solid"
+  },
+  {
+   "from": "bc-load-ok",
+   "to": "bc-load-fail",
+   "label": "No",
+   "style": "solid"
+  },
+  {
+   "from": "bc-load-fail",
+   "to": "bc-loading",
+   "label": "Try again",
+   "style": "solid",
+   "touch": {
+    "x": 1144,
+    "y": 565,
+    "w": 100,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-load-fail",
+   "to": "bc-list",
+   "label": "Back",
+   "style": "back",
+   "touch": {
+    "x": 1065,
+    "y": 565,
+    "w": 70,
     "h": 44
    }
   },

@@ -23,6 +23,11 @@ export const BROADCAST_COPY = {
   noResults: 'No results found',
   /* The list's load fail: Notification management's copy, reused (20 Oct 2026). */
   loadFail: 'Unable to get information',
+  /* Create broadcast cannot get its dropdown data ("Able to get data?" No):
+     the Figma flow's dialog (Broadcast file, 4 Nov - Create Broadcast,
+     12 Nov 2026). Back leaves for the list; Try again loads the page again. */
+  formLoadFailTitle: 'Unable to load information',
+  formLoadFailBody: 'Please try again',
   dropTitle: 'Upload audience file',
   /* Was `Supported file types: CSV, XLSX · Maximum 10 MB · Up to 1,000
      recipients` (original build); reworded without the `·` joins, 28 Oct 2026;
