@@ -171,8 +171,15 @@ export function ImportTemplateDrawer({ record, onClose, confirmingDownload, hold
         }
         facts={
           <>
+            {/* Created by / Updated by / Updated at, as the Broadcast drawer and
+                CNH Phase 1's (BA Natsinee, 12 Nov 2026: consistent across
+                sections). The Created date row is dropped on that request. */}
             <Meta icon="user" label={`Created by: ${record.createdBy}`} />
-            <Meta icon="transaction-history" label={`Created: ${fmtImportTime(record.createdAt)}`} />
+            <Meta icon="edit-1" label={`Updated by: ${record.updatedBy ?? record.createdBy}`} />
+            <Meta
+              icon="transaction-history"
+              label={`Updated at: ${fmtImportTime(record.updatedAt ?? record.createdAt)}`}
+            />
           </>
         }
         close={
