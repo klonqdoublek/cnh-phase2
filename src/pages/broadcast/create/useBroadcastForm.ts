@@ -366,8 +366,9 @@ export function useBroadcastForm({
     content,
     createdBy: initial?.createdBy ?? 'Panisa R.',
     createdAt: initial?.createdAt ?? iso(new Date()),
-    /* Edit stamps the last update (6 Nov 2026); a new broadcast has none yet. */
-    ...(initial ? { updatedAt: iso(new Date()) } : {}),
+    /* Edit stamps the last update and its author (6 and 12 Nov 2026); a new
+       broadcast has none yet. The signed-in user is the fixture's Panisa R. */
+    ...(initial ? { updatedAt: iso(new Date()), updatedBy: 'Panisa R.' } : {}),
   })
 
   const create = () => {
