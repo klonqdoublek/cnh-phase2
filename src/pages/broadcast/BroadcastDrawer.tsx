@@ -230,13 +230,16 @@ export function BroadcastDrawer({
         }
         facts={
           <>
+            {/* Created by / Updated by / Updated at, the same three facts and
+                icons as CNH Phase 1's drawer (BA Natsinee, 12 Nov 2026: "created
+                by, updated by, updated at", consistent across sections). The
+                Created date row is dropped on that request. Before any edit both
+                Updated facts read the creation. */}
             <Meta icon="user" label={`Created by: ${broadcast.createdBy}`} />
-            <Meta icon="transaction-history" label={`Created: ${fmtDateTime(new Date(broadcast.createdAt))}`} />
-            {/* Last update (BA asked for the update date, 6 Nov 2026; label as CNH
-                Phase 1's drawer). Before any edit it reads the creation time. */}
+            <Meta icon="edit-1" label={`Updated by: ${broadcast.updatedBy ?? broadcast.createdBy}`} />
             <Meta
               icon="transaction-history"
-              label={`Last update: ${fmtDateTime(new Date(broadcast.updatedAt ?? broadcast.createdAt))}`}
+              label={`Updated at: ${fmtDateTime(new Date(broadcast.updatedAt ?? broadcast.createdAt))}`}
             />
           </>
         }

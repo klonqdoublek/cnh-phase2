@@ -97,7 +97,7 @@ The original build has none of this copy. Change it here if the BA rules otherwi
 
 | Where | Copy |
 |---|---|
-| Drawer header (6 Nov 2026) | `Created by: {name}`, `Created: {date, time}`, `Last update: {date, time}`. *Last update* is transcribed from CNH Phase 1's drawer (Figma 1:205387), not composed. |
+| Drawer header (12 Nov 2026) | `Created by: {name}`, `Updated by: {name}`, `Updated at: {date, time}`. *Updated at* is the BA's wording (Natsinee, 12 Nov 2026); CNH Phase 1's drawer reads *Last update* (Figma 1:205387). Was Created by / Created / Last update (6 Nov 2026). |
 | Drawer footer | `Download report` |
 | Download confirm (22 Oct) | Title `Download the delivery report?` · body `The report will be saved as a CSV file` · `Cancel` / `Download`. After Notification management's `Download the selected items?` / `Each selected item will be saved as a separate JSON file`. |
 | Download toast (22 Oct) | `Download Success` · `{id}-delivery-report.csv is saved` (Notification management's toast reads `Please try again` under Download Success, a slip not copied). |

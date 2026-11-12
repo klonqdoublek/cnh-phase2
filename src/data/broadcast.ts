@@ -479,9 +479,13 @@ export type Broadcast = {
   content: BroadcastContent
   createdBy: string
   createdAt: string
-  /** The last edit, the drawer's Last update (BA, 6 Nov 2026). Absent until
-   *  someone edits the broadcast: the drawer then reads the creation time. */
+  /** The last edit, the drawer's Updated at (BA, 6 Nov 2026; label 12 Nov
+   *  2026). Absent until someone edits the broadcast: the drawer then reads
+   *  the creation time. */
   updatedAt?: string
+  /** Who made the last edit, the drawer's Updated by (BA Natsinee, 12 Nov
+   *  2026). Absent until someone edits: the drawer then reads createdBy. */
+  updatedBy?: string
 }
 
 /* The deep link is the Template fixture's; the sender name is composed
