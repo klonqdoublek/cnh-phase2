@@ -28,8 +28,12 @@ export type ImportRecord = {
   createdBy: string
   /** When the file was imported. */
   createdAt: string
-  /** The latest time the system imported a row; none while Queue. */
+  /** The latest time the system imported a row; none while Queue. The
+   *  drawer's Updated at (12 Nov 2026) then reads createdAt. */
   updatedAt: string | null
+  /** The drawer's Updated by (BA Natsinee, 12 Nov 2026). No person edits an
+   *  import (the server job runs it), so absent reads createdBy. */
+  updatedBy?: string
   /** Templates in file; unknown (null) until the server has read the file. */
   total: number | null
   imported: number
