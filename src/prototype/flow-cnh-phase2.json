@@ -253,7 +253,7 @@
   {
    "id": "bc-file-blocked",
    "kind": "screen",
-   "label": "The audience file cannot be used",
+   "label": "Unable to submit — file cannot be used",
    "route": "#/broadcast/create/file-blocked",
    "section": "Broadcast"
   },
@@ -843,13 +843,25 @@
   },
   {
    "from": "bc-file-blocked",
+   "to": "bc-checking",
+   "label": "Try again",
+   "style": "back",
+   "touch": {
+    "x": 1144,
+    "y": 565,
+    "w": 100,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-file-blocked",
    "to": "bc-filled",
    "label": "Close",
    "style": "back",
    "touch": {
-    "x": 1171,
+    "x": 1061,
     "y": 565,
-    "w": 73,
+    "w": 75,
     "h": 44
    }
   },

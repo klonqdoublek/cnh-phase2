@@ -40,9 +40,6 @@ export const BROADCAST_COPY = {
   xlsxNotInPrototype: 'This prototype can only read .csv. Save the sheet as .csv and upload it again',
   fileEmpty: 'The file has no recipients',
   checking: 'Checking file…',
-  /* Composed (docs/broadcast-gaps.md): the original build has no dialog for a
-     file that fails the full read on Submit. */
-  fileBlockedTitle: 'The audience file cannot be used',
   previewTitle: 'Preview (first 5 rows)',
   required: 'This field is required',
   /** Composed (requester, 1 Nov 2026): a `${…}` the audience file has no column

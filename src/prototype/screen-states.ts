@@ -162,7 +162,7 @@ const CREATE_BROADCAST: Screen = {
     s('#/broadcast/create/channel-typing', 'Error', 'A channel on and typed in'),
     s('#/broadcast/create/channel-errors', 'Error', 'Channel typed in, Submit pressed'),
     s('#/broadcast/create/draft-no-name', 'Error', 'Name needed for a draft'),
-    s('#/broadcast/create/file-blocked', 'Error', 'The audience file cannot be used'),
+    s('#/broadcast/create/file-blocked', 'Error', 'Unable to submit, file cannot be used'),
     s('#/broadcast/create/check-fail', 'Error', 'Unable to submit, file check failed', true),
     s('#/broadcast/create/fail', 'Error', 'Submit fails on the next press'),
     s('#/broadcast/create/fail-dialog', 'Error', 'Unable to submit'),

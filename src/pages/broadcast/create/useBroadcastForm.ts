@@ -332,6 +332,12 @@ export function useBroadcastForm({
     scrollToError(document.body)
   }
 
+  /** Try again on the blocked dialog: Submit's read runs again. */
+  const retryBlocked = () => {
+    setBlocked(null)
+    readFile()
+  }
+
   const submit = (root: HTMLElement | null) => {
     if (checking || readingFile) return
     const e = validate()
@@ -461,6 +467,7 @@ export function useBroadcastForm({
     readFile,
     blocked,
     closeBlocked,
+    retryBlocked,
     checkFailed,
     setCheckFailed,
     creating,

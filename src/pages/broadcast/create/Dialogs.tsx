@@ -1,4 +1,3 @@
-import { Button } from '@/bbl/button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConfirmDialog } from '@/patterns/confirm-dialog'
 import { BROADCAST_COPY } from '@/data/broadcast'
@@ -50,9 +49,14 @@ export function Dialogs({ f, onBack }: { f: BroadcastForm; onBack: () => void })
           contentType="label-xl"
           layer="fixed"
           width={600}
-          title={BROADCAST_COPY.fileBlockedTitle}
-          /* One filled answer, as the file's own Ok dialog draws it (1:201082). */
-          actions={<Button onClick={f.closeBlocked}>Close</Button>}
+          /* The job's own failure after Submit, the reason from dev: the system-fail
+             dialog with Close / Try again (BA Natsinee and requester, 12 Nov 2026;
+             was "The audience file cannot be used" with Close only). */
+          title={BROADCAST_COPY.submitFailTitle}
+          cancelLabel="Close"
+          confirmLabel="Try again"
+          onCancel={f.closeBlocked}
+          onConfirm={f.retryBlocked}
           onDismiss={f.closeBlocked}
           className="z-50"
         >
