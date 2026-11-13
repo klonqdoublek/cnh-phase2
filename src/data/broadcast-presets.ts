@@ -10,7 +10,6 @@ export const FORM_PRESETS = [
   'cis',
   'email',
   'sms',
-  'wrong-column',
   'errors',
   'step1-filled',
   'no-channel',
@@ -28,8 +27,6 @@ export const FORM_PRESETS = [
   'long-message-email',
   'long-message-sms',
   'checking',
-  'confirm',
-  'confirm-invalid',
   'file-blocked',
   'check-fail',
   'submitting',
@@ -175,7 +172,7 @@ export type FormSeed = {
   dnd?: Dnd
   /** A dialog open on arrival. `checking` is Submit's full read of the file,
    *  held; `blocked` is its result when the file cannot be used. */
-  open?: 'checking' | 'confirm' | 'blocked' | 'check-fail' | 'submitting' | 'fail' | 'leave'
+  open?: 'checking' | 'blocked' | 'check-fail' | 'submitting' | 'fail' | 'leave'
   /** A button pressed on arrival, to show what it does on this state. */
   press?: 'submit' | 'draft'
   /** Errors an earlier Submit left on the form, held while the user edits. */
@@ -301,16 +298,6 @@ export function formSeed(preset: FormPreset): FormSeed {
         recipientType: 'sms',
         channels: ['SMS'],
       }
-    case 'wrong-column':
-      // PROPOSAL, pending BA (Q15): SMS with the email column, Submit pressed.
-      return {
-        ...filled,
-        file: { name: 'audience-direct.csv', text: DIRECT_CSV },
-        recipientType: 'sms',
-        column: 'EMAIL',
-        channels: ['SMS'],
-        press: 'submit',
-      }
     case 'errors':
       return { press: 'submit' }
     case 'step1-filled':
@@ -346,17 +333,6 @@ export function formSeed(preset: FormPreset): FormSeed {
       return { ...formSeed('sms'), name: filled.name, content: LONG_CONTENT }
     case 'checking':
       return { ...filled, open: 'checking' }
-    case 'confirm':
-      return { ...filled, open: 'confirm' }
-    case 'confirm-invalid':
-      return {
-        ...filled,
-        file: { name: 'audience-direct.csv', text: DIRECT_CSV },
-        recipientType: 'sms',
-        column: 'MOBILE_NO',
-        channels: ['SMS'],
-        open: 'confirm',
-      }
     case 'file-blocked':
       return { ...filled, file: { name: 'audience-cis.csv', text: NO_VALID_CSV }, open: 'blocked' }
     case 'check-fail':

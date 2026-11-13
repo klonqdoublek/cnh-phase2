@@ -45,10 +45,6 @@ export const BROADCAST_COPY = {
   xlsxNotInPrototype: 'This prototype can only read .csv. Save the sheet as .csv and upload it again',
   fileEmpty: 'The file has no recipients',
   checking: 'Checking file…',
-  /* Composed (docs/broadcast-gaps.md): the original build has no dialog for a
-     file that fails the full read on Submit. */
-  fileBlockedTitle: 'The audience file cannot be used',
-  invalidNote: 'Invalid recipients are skipped. Only valid recipients will receive the broadcast.',
   previewTitle: 'Preview (first 5 rows)',
   required: 'This field is required',
   /** Composed (requester, 1 Nov 2026): a `${…}` the audience file has no column
@@ -56,11 +52,6 @@ export const BROADCAST_COPY = {
   unknownField: (tokens: string[]) =>
     `${tokens.join(', ')} ${tokens.length === 1 ? 'is not a column' : 'are not columns'} in the audience file`,
   noColumn: 'Select the column that identifies each recipient',
-  /** PROPOSAL, composed (not in the original build), pending BA (Q15). */
-  wrongColumn: (column: string, holds: 'mobile' | 'email', wanted: 'mobile' | 'email') => {
-    const plural = { mobile: 'mobile numbers', email: 'email addresses' }
-    return `${column} contains ${plural[holds]}. Select the column that contains ${plural[wanted]}`
-  },
   noChannel: 'Please enable at least 1 notification channel',
   msgMax: (n: number) => `Maximum ${n} characters allowed.`,
   startPast: 'Start must be later than the current time',
@@ -69,7 +60,6 @@ export const BROADCAST_COPY = {
   /** Composed (BA / Dev sync, 28 Oct 2026). A Caution while editing; on Submit an
    *  error that blocks it (BA MoM, 29 Oct 2026; was a warning only). */
   dndNeverSends: 'Do Not Disturb covers every day, all day. No message will be sent.',
-  submitTitle: 'Submit this broadcast?',
   submitFailTitle: 'Unable to submit the broadcast',
   createdTitle: 'Broadcast submitted',
   createdBody: (name: string) => `${name} will be sent outside the quiet period`,
@@ -187,19 +177,6 @@ const DUPLICATE: Record<IdKind, string> = {
   cis: 'Duplicate CIS ID',
   mobile: 'Duplicate mobile number',
   email: 'Duplicate email address',
-}
-
-/** What a column holds: mobile numbers or email addresses when more than half of
- * its filled values are, so a few bad rows do not hide it; null otherwise (a CIS
- * ID has no fixed format yet). PROPOSAL, pending BA (Q15). */
-export function columnHolds(audience: Audience, column: string): 'mobile' | 'email' | null {
-  const index = audience.headers.indexOf(column)
-  const values = audience.rows.map((row) => (row[index] ?? '').trim()).filter(Boolean)
-  if (index < 0 || !values.length) return null
-  const most = (test: (v: string) => boolean) => values.filter(test).length > values.length / 2
-  if (most((v) => EMAIL.test(v.toLowerCase()))) return 'email'
-  if (most((v) => MOBILE.test(v.replace(/[\s-]/g, '')))) return 'mobile'
-  return null
 }
 
 export type RecipientRow = { line: number; id: string; errors: string[] }
