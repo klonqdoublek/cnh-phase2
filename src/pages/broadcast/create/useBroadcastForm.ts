@@ -5,7 +5,6 @@ import {
   EMPTY_CONTENT,
   dndRule,
   checkAudience,
-  columnHolds,
   fieldsOf,
   isMessageBox,
   unknownTokens,
@@ -164,7 +163,6 @@ export function useBroadcastForm({
   // New broadcasts start with Do Not Disturb off; its default period waits, disabled, under the switch (requester, 22 Oct 2026).
   const [dnd, setDnd] = useState<Dnd>(seed.dnd ?? { ...DEFAULT_DND, enabled: false })
   const [leaveOpen, setLeaveOpen] = useState(seed.open === 'leave')
-  const [confirmOpen, setConfirmOpen] = useState(seed.open === 'confirm')
   const [creating, setCreating] = useState(seed.open === 'submitting')
   const [failed, setFailed] = useState(seed.open === 'fail')
   const [failPending, setFailPending] = useState(!!failNext)
@@ -173,7 +171,7 @@ export function useBroadcastForm({
   const kind = idKind(recipientType)
   /** The full read on Submit; a preset that opens on its result runs it on arrival. */
   const [arrival] = useState(() =>
-    (seed.open === 'confirm' || seed.open === 'blocked') && audience && column
+    seed.open === 'blocked' && audience && column
       ? checkAudience(audience, column, kind)
       : null,
   )
@@ -311,24 +309,19 @@ export function useBroadcastForm({
     )
 
   /** Read the whole file: a file that cannot be used blocks the broadcast,
-   *  otherwise its result goes into the confirm dialog. */
+   *  otherwise it is submitted at once. No confirm dialog and no wrong-column
+   *  check (BA, 12 Nov 2026): the file's data cannot be validated before Submit,
+   *  so Submit submits and the job reads the file after it. */
   const readFile = () => {
     if (!audience) return
     setCheck(null)
     setReadingFile(true)
     window.setTimeout(() => {
       setReadingFile(false)
-      /* PROPOSAL, pending BA (Q15): an Email or SMS column that holds the other
-       * channel's contacts, such as SMS with the email column, is a wrong column, not a bad file. */
-      const holds = columnHolds(audience, column)
-      if (holds && (kind === 'mobile' || kind === 'email') && holds !== kind) {
-        setErrors((prev) => ({ ...prev, column: BROADCAST_COPY.wrongColumn(column, holds, kind) }))
-        return scrollToError(document.body)
-      }
       const result = checkAudience(audience, column, kind)
       if (!result.ok) return setBlocked(result.message)
       setCheck(result.check)
-      setConfirmOpen(true)
+      create(result.check)
     }, CHECK_MS)
   }
 
@@ -339,6 +332,12 @@ export function useBroadcastForm({
     scrollToError(document.body)
   }
 
+  /** Try again on the blocked dialog: Submit's read runs again. */
+  const retryBlocked = () => {
+    setBlocked(null)
+    readFile()
+  }
+
   const submit = (root: HTMLElement | null) => {
     if (checking || readingFile) return
     const e = validate()
@@ -347,14 +346,14 @@ export function useBroadcastForm({
     readFile()
   }
 
-  const record = (status: BroadcastOwnStatus): Omit<Broadcast, 'id'> => ({
+  const record = (status: BroadcastOwnStatus, checked = check): Omit<Broadcast, 'id'> => ({
     name: name.trim(),
     description: description.trim(),
     serviceCode,
     channels: CHANNELS.filter((c) => channels.includes(c)),
     audienceFile: file?.name ?? '',
     audienceText: file ? fileText : undefined,
-    recipients: check?.valid ?? 0,
+    recipients: checked?.valid ?? 0,
     recipientType,
     recipientColumn: column,
     startMode: mode,
@@ -371,8 +370,8 @@ export function useBroadcastForm({
     ...(initial ? { updatedAt: iso(new Date()), updatedBy: 'Panisa R.' } : {}),
   })
 
-  const create = () => {
-    setConfirmOpen(false)
+  /** `checked` is the read Submit just made; Try again reuses the stored one. */
+  const create = (checked = check) => {
     setCreating(true)
     window.setTimeout(() => {
       setCreating(false)
@@ -384,7 +383,7 @@ export function useBroadcastForm({
       /* Submit is accepted into the queue (Queued); the job then reads the file,
          validates it and sends (Processing), and Published ends it (BA Broadcast Job
          Lifecycle, 29 Oct 2026; built 2 Nov 2026). Before, sending now went straight to Processing. */
-      onCreate(record('Queued'), 'submit')
+      onCreate(record('Queued', checked), 'submit')
     }, CREATE_MS)
   }
 
@@ -464,12 +463,11 @@ export function useBroadcastForm({
     changed,
     leaveOpen,
     setLeaveOpen,
-    confirmOpen,
-    setConfirmOpen,
     readingFile,
     readFile,
     blocked,
     closeBlocked,
+    retryBlocked,
     checkFailed,
     setCheckFailed,
     creating,

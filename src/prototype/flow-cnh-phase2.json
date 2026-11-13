@@ -245,19 +245,6 @@
    "section": "Broadcast"
   },
   {
-   "id": "bc-column-ok",
-   "kind": "decision",
-   "label": "Recipient column matches the channel? (proposal)",
-   "section": "Broadcast"
-  },
-  {
-   "id": "bc-wrong-column",
-   "kind": "screen",
-   "label": "Wrong recipient column (proposal)",
-   "route": "#/broadcast/create/wrong-column",
-   "section": "Broadcast"
-  },
-  {
    "id": "bc-usable",
    "kind": "decision",
    "label": "At least 1 valid recipient?",
@@ -266,28 +253,8 @@
   {
    "id": "bc-file-blocked",
    "kind": "screen",
-   "label": "The audience file cannot be used",
+   "label": "Unable to submit — file cannot be used",
    "route": "#/broadcast/create/file-blocked",
-   "section": "Broadcast"
-  },
-  {
-   "id": "bc-has-invalid",
-   "kind": "decision",
-   "label": "Any invalid rows?",
-   "section": "Broadcast"
-  },
-  {
-   "id": "bc-confirm",
-   "kind": "screen",
-   "label": "Submit this broadcast?",
-   "route": "#/broadcast/create/confirm",
-   "section": "Broadcast"
-  },
-  {
-   "id": "bc-confirm-invalid",
-   "kind": "screen",
-   "label": "Submit this broadcast? — invalid rows skipped",
-   "route": "#/broadcast/create/confirm-invalid",
    "section": "Broadcast"
   },
   {
@@ -828,33 +795,9 @@
   },
   {
    "from": "bc-check-ok",
-   "to": "bc-column-ok",
-   "label": "Yes",
-   "style": "solid"
-  },
-  {
-   "from": "bc-column-ok",
    "to": "bc-usable",
    "label": "Yes",
    "style": "solid"
-  },
-  {
-   "from": "bc-column-ok",
-   "to": "bc-wrong-column",
-   "label": "No",
-   "style": "dashed"
-  },
-  {
-   "from": "bc-wrong-column",
-   "to": "bc-valid",
-   "label": "Submit",
-   "style": "back",
-   "touch": {
-    "x": 1423,
-    "y": 1020,
-    "w": 177,
-    "h": 44
-   }
   },
   {
    "from": "bc-check-ok",
@@ -888,7 +831,7 @@
   },
   {
    "from": "bc-usable",
-   "to": "bc-has-invalid",
+   "to": "bc-submitting",
    "label": "Yes",
    "style": "solid"
   },
@@ -900,49 +843,25 @@
   },
   {
    "from": "bc-file-blocked",
+   "to": "bc-checking",
+   "label": "Try again",
+   "style": "back",
+   "touch": {
+    "x": 1144,
+    "y": 565,
+    "w": 100,
+    "h": 44
+   }
+  },
+  {
+   "from": "bc-file-blocked",
    "to": "bc-filled",
    "label": "Close",
    "style": "back",
    "touch": {
-    "x": 1171,
+    "x": 1061,
     "y": 565,
-    "w": 73,
-    "h": 44
-   }
-  },
-  {
-   "from": "bc-has-invalid",
-   "to": "bc-confirm",
-   "label": "No",
-   "style": "solid"
-  },
-  {
-   "from": "bc-has-invalid",
-   "to": "bc-confirm-invalid",
-   "label": "Yes",
-   "style": "solid"
-  },
-  {
-   "from": "bc-confirm-invalid",
-   "to": "bc-submitting",
-   "label": "Submit",
-   "style": "solid",
-   "touch": {
-    "x": 1159,
-    "y": 719,
-    "w": 85,
-    "h": 44
-   }
-  },
-  {
-   "from": "bc-confirm-invalid",
-   "to": "bc-filled",
-   "label": "Cancel",
-   "style": "back",
-   "touch": {
-    "x": 1066,
-    "y": 719,
-    "w": 86,
+    "w": 75,
     "h": 44
    }
   },
@@ -978,30 +897,6 @@
     "x": 1423,
     "y": 1020,
     "w": 177,
-    "h": 44
-   }
-  },
-  {
-   "from": "bc-confirm",
-   "to": "bc-submitting",
-   "label": "Submit",
-   "style": "solid",
-   "touch": {
-    "x": 1159,
-    "y": 625,
-    "w": 85,
-    "h": 44
-   }
-  },
-  {
-   "from": "bc-confirm",
-   "to": "bc-filled",
-   "label": "Cancel",
-   "style": "back",
-   "touch": {
-    "x": 1066,
-    "y": 625,
-    "w": 86,
     "h": 44
    }
   },
