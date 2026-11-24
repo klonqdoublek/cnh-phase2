@@ -41,7 +41,7 @@ export function recordOfJob(job: ImportJob): ImportRecord {
     createdBy: USER.shortName,
     createdAt: iso(job.startedAt),
     updatedAt: job.finishedAt ? iso(job.finishedAt) : null,
-    total: job.status === 'queued' ? null : job.templates.length,
+    total: job.templates.length,
     imported: done ? imported.length : 0,
     failed,
     reportReady: done && !!job.reportReady,

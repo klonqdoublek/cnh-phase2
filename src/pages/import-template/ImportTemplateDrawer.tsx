@@ -31,24 +31,21 @@ export type ImportTemplateDrawerProps = {
 /** How long the drawer fetches the import before its details show, in the prototype. */
 const DRAWER_LOAD_MS = 600
 
+/* As Broadcast's Delivery result (BA Natsinee, Figma comments 18 Nov 2026): the numbers show
+   in every status, Queue included (was blank until the server read the file), and only Error
+   carries a note, the red box (the blue notes of Queue, Processing and Published are gone;
+   their copy is in git history). */
 function sectionsOf(r: ImportRecord): DrawerSectionSpec[] {
-  const read = r.total !== null
   return [
     {
       title: COPY.resultTitle,
       icon: 'document',
       rows: [
-        [COPY.total, read ? fmtNumber(r.total!) : ''],
-        [COPY.imported, read ? fmtNumber(r.imported) : ''],
-        [COPY.failed, read ? fmtNumber(r.failed.length) : ''],
+        [COPY.total, fmtNumber(r.total)],
+        [COPY.imported, fmtNumber(r.imported)],
+        [COPY.failed, fmtNumber(r.failed.length)],
       ],
-      note:
-        r.status === 'Published'
-          ? COPY.note.Published(r.failed.length)
-          : r.status === 'Failed'
-            ? COPY.note.Failed
-            : COPY.note[r.status],
-      noteTone: r.status === 'Failed' ? 'negative' : 'brand',
+      ...(r.status === 'Failed' ? { note: COPY.failedNote, noteTone: 'negative' as const } : {}),
     },
     {
       title: COPY.detailsTitle,

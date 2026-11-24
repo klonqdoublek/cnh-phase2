@@ -30,8 +30,8 @@ export type ImportRecord = {
   createdAt: string
   /** The latest time the system imported a row; none while Queue. */
   updatedAt: string | null
-  /** Templates in file; unknown (null) until the server has read the file. */
-  total: number | null
+  /** Templates in file, known from the upload (as Broadcast's Total recipients). */
+  total: number
   imported: number
   failed: FailedRow[]
   /** Published, and the report generated (it starts when the status turns Published). */
@@ -62,16 +62,8 @@ export const IMPORT_TEMPLATE_COPY = {
   failed: 'Failed',
   reportTitle: 'Download the import report?',
   reportGenerating: 'The report is being generated. Download report is available once it is ready.',
-  /* One line per status, under the result (as Broadcast's Delivery result note). */
-  note: {
-    Queue: 'Waiting for the system to start. Nothing is imported yet.',
-    Processing: 'Importing the templates row by row. Imported templates are on Notification management as draft.',
-    Published: (failed: number) =>
-      failed
-        ? 'The import is finished. The templates that could not be imported are in the report.'
-        : 'The import is finished. Every template in the file was imported as draft.',
-    Failed: 'A system error stopped the import. Import the file again from Notification management.',
-  },
+  /* Error's red box under the result, the only note left (BA Natsinee, 18 Nov 2026, as Broadcast). */
+  failedNote: 'A system error stopped the import. Import the file again from Notification management.',
 }
 
 /* Slide 9's two rows: the report's error text is the backend's. */
@@ -100,7 +92,8 @@ export const IMPORT_RECORDS: ImportRecord[] = [
     createdBy: 'Panisa R.',
     createdAt: '2026-10-30T14:20:00',
     updatedAt: null,
-    total: null,
+    /* Composed fixture (24 Nov 2026): Queue now shows its count, as Broadcast. */
+    total: 18,
     imported: 0,
     failed: [],
     reportReady: false,
