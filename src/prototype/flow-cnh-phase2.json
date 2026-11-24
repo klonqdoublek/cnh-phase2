@@ -85,7 +85,7 @@
   {
    "id": "failure",
    "kind": "screen",
-   "label": "Import failure — in the file slot, Try again",
+   "label": "Unable to import templates — modal, Close / Try again",
    "route": "#/list/import/failure",
    "section": "Import"
   },
@@ -562,25 +562,7 @@
    "from": "failure",
    "to": "uploading",
    "label": "Try again",
-   "style": "back",
-   "touch": {
-    "x": 1085,
-    "y": 535,
-    "w": 68,
-    "h": 24
-   }
-  },
-  {
-   "from": "failure",
-   "to": "initial",
-   "label": "Remove",
-   "style": "back",
-   "touch": {
-    "x": 1137,
-    "y": 503,
-    "w": 16,
-    "h": 16
-   }
+   "style": "back"
   },
   {
    "from": "bc-list",
@@ -1142,6 +1124,12 @@
     "w": 177,
     "h": 44
    }
+  },
+  {
+   "from": "failure",
+   "to": "selected",
+   "label": "Close",
+   "style": "back"
   }
  ],
  "touchMeasured": "2026-10-05 — getBoundingClientRect of the control in the running build at 1920 x 1080 (#/list/import/<state>), screen px · Broadcast 2026-10-06, same method on #/broadcast/... (headless Chrome 1920 x 1080, ?panel=0); no touch where the control is below the 1080 fold (Schedule delivery, y 2043) or none fires the edge (the save itself) · Cancel a draft 2026-10-19, same method on a static build (#/broadcast/view/BC-0007[/cancel]) · Audience file read on Submit 2026-10-19, same method on a static build (#/broadcast/create/confirm-invalid, file-blocked, check-fail) · Download report 2026-10-22, same method on a static build (#/broadcast, #/broadcast/download) · Import redrawn 22 Oct 2026 (checks on Import), same method on a static build (#/list/import/<state>)"

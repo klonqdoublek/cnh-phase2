@@ -45,7 +45,7 @@ const IMPORT: Screen = {
     s('#/list/import/uploading', 'Loading', 'Uploading'),
     s('#/list/import/no-file', 'Error', 'Import pressed with no file'),
     s('#/list/import/too-large', 'Error', 'File over 10 MB'),
-    s('#/list/import/failure', 'Error', 'Import failure'),
+    s('#/list/import/failure', 'Dialog', 'Unable to import templates'),
     s('#/list/import/duplicate', 'Dialog', 'Replace imported templates?'),
     s('#/list/import/processing', 'Toast', 'Submitted: Import in progress toast'),
     s('#/list/import/process-failed', 'Error', 'Import fails on the server (proposal): Error on View import status'),

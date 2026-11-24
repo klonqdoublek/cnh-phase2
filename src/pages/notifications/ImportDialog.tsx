@@ -167,7 +167,7 @@ export function ImportDialog({
   return (
     <>
       <ConfirmDialog
-        open={open && phase !== 'replace'}
+        open={open && phase !== 'replace' && !failed}
         anatomy="sectioned"
         layer="fixed"
         width={444}
@@ -197,16 +197,13 @@ export function ImportDialog({
              UploadZone and UploadedFile), as the Import Figma places it: State=Default with Title
              Browse file, State=Error for no file with the message as its Description, State=Upload - Success
              for the picked file (metadata JSONL, no Preview), State=Upload - Error with the message as
-             its Inline Message for a file over 10 MB and for an upload that failed. Try again stays on
-             the failed upload (code since 20 Oct 2026; the Figma failure screen hides Has Action). */}
+             its Inline Message for a file over 10 MB. */}
           {picked ? (
             <FileUpload
-              state={problem || failed ? 'upload-error' : 'upload-success'}
+              state={problem ? 'upload-error' : 'upload-success'}
               fileName={picked.file.name}
               fileMetadata={typeLabel(picked.file.name)}
-              inlineMessage={failed ? IMPORT_COPY.failTitle : problem?.message}
-              actionLabel={IMPORT_COPY.retry}
-              onAction={failed ? () => upload(lastReplace.current) : undefined}
+              inlineMessage={problem?.message}
               onRemove={remove}
             />
           ) : (
@@ -227,6 +224,28 @@ export function ImportDialog({
           )}
         </div>
       </ConfirmDialog>
+
+      {failed && picked && (
+        /* An upload that fails: the common system-fail modal, alone on the list, as Broadcast's
+           Unable to submit (BA Natsinee, Figma comment 18 Nov 2026; was CMS's upload-failed slot
+           with Try again, 20 Oct 2026). Close goes back to the Import dialog with the file still
+           picked; Try again uploads it again. Copy: the original build's failure banner. */
+        <ConfirmDialog
+          anatomy="sectioned"
+          contentType="label-xl"
+          layer="fixed"
+          width={600}
+          title={IMPORT_COPY.failTitle}
+          cancelLabel="Close"
+          confirmLabel={IMPORT_COPY.retry}
+          onCancel={backToFile}
+          onConfirm={() => upload(lastReplace.current)}
+          onDismiss={backToFile}
+          className="relative z-50"
+        >
+          {IMPORT_COPY.failBody}
+        </ConfirmDialog>
+      )}
 
       {phase === 'replace' && picked && (
         /* Alone on the list: the Import dialog is closed by now (design critique, 20 Oct 2026). */
