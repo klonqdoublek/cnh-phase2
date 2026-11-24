@@ -51,7 +51,7 @@ const IMPORT: Screen = {
     s('#/list/import/duplicate', 'Dialog', 'Replace imported templates?'),
     s('#/list/import/processing', 'Toast', 'Submitted: Import in progress toast'),
     s('#/list/import/process-failed', 'Error', 'Import fails on the server (proposal): Error on View import status'),
-    s('#/list/import/success', 'Data', 'Import done, new templates highlighted on the list'),
+    s('#/list/import/success', 'Data', 'Import done, new templates on the list'),
   ],
 }
 
