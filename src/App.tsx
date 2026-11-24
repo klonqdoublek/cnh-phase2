@@ -229,7 +229,6 @@ export default function App() {
                   : 'ready'
           }
           onRetry={() => go('/import-template')}
-          onRefresh={() => setImportSnapshot([...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS])}
         />
       ) : onBroadcast ? (
         <BroadcastList
