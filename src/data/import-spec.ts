@@ -68,8 +68,12 @@ export const IMPORT_COPY = {
      (requester): was "Import over <name>?" with Import, which did not say what goes.
      Title and button share the verb, as "Submit this broadcast?" does. */
   replaceTitle: 'Replace imported templates?',
-  replaceBody: (name: string) =>
-    `${name} was imported before. The templates from that import will be deleted and replaced with the ones in this file.`,
+  /* Since 24 Nov 2026 the question is about records, not the file name (BA Natsinee: "Some record imported
+     before"; requester: the backend checks it, the front end only tells the user). Interim composed body,
+     no "replace" or "deleted" (the BA does not want the user told it replaces); the title, body and button
+     wait on writer Natdanai. Was "<file> was imported before. The templates from that import will be
+     deleted and replaced with the ones in this file." */
+  replaceBody: (name: string) => `Some templates in ${name} were imported before.`,
   replaceConfirm: 'Replace',
 }
 
@@ -222,9 +226,16 @@ export function presetFile(preset: ImportPreset): DemoFile | null {
   return VALID_FILES[0]
 }
 
-/** Files imported before this session, so `#/list/import/duplicate` has one to import over.
- *  Their templates are not on the seeded list, so importing over one replaces nothing. */
-export const IMPORT_HISTORY: Record<string, string[]> = { [VALID_FILES[2].name]: [] }
+/** The record key the prototype matches on: the template name, trimmed, case-insensitive. */
+export const recordKey = (name: string) => name.trim().toLowerCase()
+
+/** Records (templates) imported before this session, record key → its id on the list (null when it is
+ *  not on the seeded list), so `#/list/import/duplicate` (statements.jsonl) has records imported before.
+ *  The real check is the backend's (requester, 24 Nov 2026); this stands in for it. */
+export const IMPORTED_RECORDS: Record<string, string | null> = {
+  [recordKey('Monthly statement ready')]: null,
+  [recordKey('Insurance renewal')]: null,
+}
 
 /** The job presets' file: five templates, one with no name, so the result shows a part
  *  import (4 imported, 1 failed; requester, 29 Oct 2026). */

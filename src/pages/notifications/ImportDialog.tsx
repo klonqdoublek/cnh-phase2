@@ -9,6 +9,7 @@ import {
   isJsonl,
   parseTemplates,
   presetFile,
+  recordKey,
   sizeProblem,
   type FileCheck,
   type ImportPreset,
@@ -69,15 +70,15 @@ export function ImportDialog({
   open,
   onClose,
   onImported,
-  importedNames,
+  importedRecords,
   preset,
 }: {
   open: boolean
   onClose: () => void
-  /** `replace` is true when the user chose to import over an earlier import of the same file name. */
+  /** `replace` is true when the user went ahead over records imported before. */
   onImported: (templates: Template[], fileName: string, replace: boolean) => void
-  /** File names imported before — picking one of these asks before importing over it. */
-  importedNames: string[]
+  /** Records (template names, record keys) imported before — a file holding one asks first. */
+  importedRecords: string[]
   preset?: ImportPreset
 }) {
   const [picked, setPicked] = useState<Picked | null>(null)
@@ -148,7 +149,10 @@ export function ImportDialog({
     window.setTimeout(() => {
       void read.then((check) => {
         if (!check.ok) return setPhase('failed')
-        if (!replace && importedNames.includes(file.name)) return setPhase('replace')
+        /* Some record imported before? (BA Natsinee, 18 Nov 2026): any template in the file whose
+           name was imported before (24 Nov 2026; was the file name). The backend checks it; the
+           prototype stands in so the question shows. */
+        if (!replace && check.templates.some((t) => importedRecords.includes(recordKey(t.name)))) return setPhase('replace')
         if (fails) return setPhase('failed')
         reset()
         onImported(check.templates, file.name, replace)

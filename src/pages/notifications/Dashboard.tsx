@@ -53,8 +53,8 @@ export type DashboardProps = {
   importMenuHeld?: boolean
   /** The menu's Import Template: opens the page of every import. */
   onViewImports?: () => void
-  /** File names imported before; importing one again asks first. */
-  importedNames: string[]
+  /** Records (template names, record keys) imported before; a file holding one asks first. */
+  importedRecords: string[]
   /** `replace`: the user chose to import over an earlier import of `fileName`. */
   onImport: (templates: Template[], fileName?: string, replace?: boolean) => void
   /** The server's import jobs (BA / Dev, 28 Oct 2026): Import submits one; its templates land when it is done. */
@@ -113,7 +113,7 @@ export function Dashboard({
   importPreset,
   importMenuHeld = false,
   onViewImports,
-  importedNames,
+  importedRecords,
 }: DashboardProps) {
   const [query, setQuery] = useState('')
   const [serviceCodes, setServiceCodes] = useState<string[]>([...SERVICE_CODE_LOV])
@@ -551,7 +551,7 @@ export function Dashboard({
       <ImportDialog
         open={importOpen}
         preset={isJobPreset(importPreset) ? undefined : importPreset}
-        importedNames={importedNames}
+        importedRecords={importedRecords}
         onClose={() => setImportOpen(false)}
         onImported={(list, fileName, replace) => {
           /* Passing the dialog's checks submits the file to the server (BA / Dev, 28 Oct 2026). */
