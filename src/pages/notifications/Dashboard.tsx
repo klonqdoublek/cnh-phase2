@@ -41,8 +41,6 @@ export type DashboardProps = {
   onRetry: () => void
   onCreate: () => void
   onOpenTemplate: (t: Template) => void
-  /** Templates an import just added: their row is highlighted until it clears (PROPOSAL, 2 Nov 2026). */
-  highlightIds: ReadonlySet<string>
   /** Set by the drawer's Download; the list opens its download dialog for it. */
   downloadRequest: Template | null
   onDownloadRequestHandled: () => void
@@ -90,7 +88,6 @@ const COLUMNS: { label: string; width: number }[] = [
 const ROW_RULE = 'shadow-[inset_0_-1px_0_0_var(--color-border-primary-default)]'
 /* A just-imported row (PROPOSAL, 2 Nov 2026): Surface/Accent/Purple, because yellow is the Draft badge's
    fill, green the Published one's and Surface/Highlight/Subtle the selected row's. Hover and selection win. */
-const ROW_NEW = 'bg-[var(--color-surface-accent-purple-default)]!'
 
 /**
  * Notification management — the Phase 1 list, with Phase 2's Import beside
@@ -103,7 +100,6 @@ export function Dashboard({
   onRetry,
   onCreate,
   onOpenTemplate,
-  highlightIds,
   notice = null,
   onNoticeClose,
   downloadRequest = null,
@@ -435,7 +431,7 @@ export function Dashboard({
                       {rows.map((t) => {
                         const isSelected = selected.has(t.id)
                         const cellState = isSelected ? 'selected' : hovered === t.id ? 'hovered' : 'default'
-                        const rowRule = cn(ROW_RULE, cellState === 'default' && highlightIds.has(t.id) && ROW_NEW)
+                        const rowRule = ROW_RULE
                         const text = (value: React.ReactNode, wrap = false) => (
                           <TableDataCell type="slot" state={cellState} className={rowRule}>
                             <span
