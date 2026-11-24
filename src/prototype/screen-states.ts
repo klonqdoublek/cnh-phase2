@@ -70,6 +70,7 @@ const IMPORT_TEMPLATE: Screen = {
     s('#/import-template/error', 'Error', 'Unable to get information', true),
     s('#/import-template/view/IMP-0008', 'Error', 'Drawer: Error', true),
     s('#/import-template/view/IMP-0009/download', 'Dialog', 'Download the import report?', true),
+    s('#/import-template/view/IMP-0009/download/fail', 'Dialog', 'Unable to download', true),
     s('#/import-template/import', 'Dialog', 'Import (PROPOSAL)', true),
   ],
 }
@@ -174,7 +175,7 @@ const CREATE_BROADCAST: Screen = {
 export function screenOf(hash: string): Screen | null {
   if (hash === '' || hash === '#/' || /^#\/list(\/(loading|error|empty|import-menu))?$/.test(hash)) return NOTIFICATION_LIST
   if (/^#\/list\/import(\/[a-z-]+)?$/.test(hash)) return IMPORT
-  if (/^#\/import-template(\/(loading|error|empty|import|view\/[A-Z]+-[A-Z]?\d+(\/download)?))?$/.test(hash)) return IMPORT_TEMPLATE
+  if (/^#\/import-template(\/(loading|error|empty|import|view\/[A-Z]+-[A-Z]?\d+(\/download(\/fail)?)?))?$/.test(hash)) return IMPORT_TEMPLATE
   if (/^#\/create(\/[a-z]+)?$/.test(hash)) return CREATE_NOTIFICATION
   const edit = hash.match(/^#\/edit\/([^/]+)/)
   if (edit) return editNotification(edit[1])

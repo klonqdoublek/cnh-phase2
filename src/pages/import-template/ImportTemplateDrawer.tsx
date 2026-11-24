@@ -26,6 +26,8 @@ export type ImportTemplateDrawerProps = {
   confirmingDownload?: boolean
   /** Hold the drawer's loading state (`#/import-template/view/<id>/loading`). */
   holdLoading?: boolean
+  /** The next Download fails (`…/download/fail`). */
+  downloadFailNext?: boolean
 }
 
 /** How long the drawer fetches the import before its details show, in the prototype. */
@@ -73,10 +75,12 @@ function sectionsOf(r: ImportRecord): DrawerSectionSpec[] {
  * report is generated, which starts when the status turns Published. Until
  * then the button is disabled with a line saying so (composed, 30 Oct 2026).
  * The report holds the failed rows only, so the user can fix and import them
- * again. Queue, Processing and Error keep an empty footer, as Broadcast's
+ * again. A download that fails shows the common "Unable to download" modal with
+ * Close / Try again, as Broadcast (BA Natsinee, Figma comment 18 Nov 2026; was
+ * the Negative toast). Queue, Processing and Error keep an empty footer, as Broadcast's
  * Processing does.
  */
-export function ImportTemplateDrawer({ record, onClose, confirmingDownload, holdLoading }: ImportTemplateDrawerProps) {
+export function ImportTemplateDrawer({ record, onClose, confirmingDownload, holdLoading, downloadFailNext }: ImportTemplateDrawerProps) {
   const panel = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
   /* CNH Phase 1's View detail loading (Phase 1 Figma 1:138888, 6 Nov 2026): the drawer opens on a
@@ -209,6 +213,8 @@ export function ImportTemplateDrawer({ record, onClose, confirmingDownload, hold
       <ReportDownload
         file={reporting ? { name: importReportName(record), text: () => importReportCsv(record) } : null}
         title={COPY.reportTitle}
+        failNext={downloadFailNext}
+        failDialog
         onDone={() => setReporting(false)}
       />
     </div>
