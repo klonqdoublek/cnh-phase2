@@ -17,10 +17,8 @@ import {
 export const IMPORT_PRESETS = [
   'initial',
   'no-file',
-  'too-many',
   'too-large',
   'selected',
-  'drag-replace',
   'duplicate',
   'uploading',
   'failure',
@@ -36,20 +34,16 @@ export const IMPORT_COPY = {
      CMS's size hint, "Max file size: 10 MB", on the same line so the zone stays 84 tall.
      The original's second hint line, "You can import one or more template files at
      a time", is gone: the CMS drop zone carries one hint line (12 Oct 2026).
-     It says "1 .jsonl file only" up front so the one-file rule shows before a drag,
-     and drops the "·" join (requester, 29 Oct 2026; was "Drag and drop a .jsonl
-     file here · Max file size: 10 MB"). */
-  dropTitle: 'Drag and drop 1 .jsonl file only. Max file size: 10 MB',
+     It says "1 .jsonl file only" up front and drops the "·" join (requester, 29 Oct
+     2026; was "Drag and drop a .jsonl file here · Max file size: 10 MB"). No drag and
+     drop since 18 Nov 2026 (BA Natsinee), so "Drag and drop" is cut (requester,
+     24 Nov 2026; was "Drag and drop 1 .jsonl file only. Max file size: 10 MB"). */
+  dropTitle: '1 .jsonl file only. Max file size: 10 MB',
   browse: 'Browse file',
   /* CMS's slot hint (ASSET_COPY.sizeHint). Since 22 Oct 2026 (requester) it reads in the
      file's slot, CMS's upload-failed slot without Try again, when Import finds the file over
      the limit. 20–22 Oct it was the empty zone's hint and the file was not taken. */
   size: 'Max file size: 10 MB',
-  /* Composed (BA / Dev, 28 Oct 2026): a file dragged over the picked file replaces it on
-     the drop; this reads over the slot while the file is above it. */
-  dropReplace: 'Drop to replace',
-  /* CMS's two-files message in the drop zone (ASSET_COPY.tooMany). */
-  oneFile: '1 File Only',
   noFile: 'Select a .jsonl file to import',
   hasErrors: 'Remove the file and choose another to continue',
   uploading: 'Importing templates…',
@@ -221,7 +215,7 @@ const VALID_FILES: DemoFile[] = [
 
 /** One file per import (15 Oct 2026); `duplicate` picks a file the history already holds. */
 export function presetFile(preset: ImportPreset): DemoFile | null {
-  if (preset === 'initial' || preset === 'no-file' || preset === 'too-many') return null
+  if (preset === 'initial' || preset === 'no-file') return null
   /* A stand-in size: the route cannot carry a file over 10 MB. */
   if (preset === 'too-large') return { ...VALID_FILES[0], size: 14.2 * 1024 * 1024 }
   if (preset === 'duplicate') return VALID_FILES[2]

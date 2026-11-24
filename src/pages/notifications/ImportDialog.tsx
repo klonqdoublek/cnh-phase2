@@ -14,8 +14,7 @@ import {
   type ImportPreset,
 } from '@/data/import-spec'
 import type { Template } from '@/data/templates'
-import { UploadZone } from '@/components/upload/UploadZone'
-import { UploadedFile } from '@/components/upload/UploadedFile'
+import { FileUpload } from '@/components/upload/CoreFileUpload'
 
 type Problem = Extract<FileCheck, { ok: false }>
 /** `size` is `file.size`, except on a preset route that stands in for a large file.
@@ -36,17 +35,16 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * measured width) once it took one (review comment, 19 Oct 2026).
  *
  * One file per import (requester, 15 Oct 2026), the way a CMS asset slot
- * takes one: the 84-tall drop zone until a file is picked, then the file's
+ * takes one: the File Upload zone until a file is picked, then the file's
  * slot in its place, with no Preview: the users are not technical and will
- * not open the file to read it (BA, 22 Oct 2026). A drag of two or more files turns the
- * zone Negative with CMS's "1 File Only" while it is over the zone. Released
- * outside the zone, the zone goes back to default. Released on it, nothing is
- * taken and the error stays until the dialog is cancelled or one valid file
- * is dropped or chosen (Korarit's comment and the requester, 29 Oct 2026; was:
- * the drop was refused and the files flew back, design critique, 20 Oct 2026,
- * error back by the BA's MoM, 29 Oct 2026). The control takes .jsonl only: the chooser
- * filters by it and a dropped file of another type is not taken, so there is
- * no Invalid file format state (requester, 22 Oct 2026).
+ * not open the file to read it (BA, 22 Oct 2026). No drag and drop, as
+ * Broadcast (BA Natsinee, Figma comments 18 Nov 2026): files come from the
+ * chooser only, and the chooser takes one file, so "more than one file" and
+ * "drop to replace" cannot happen (was: a drag of two or more turned the zone
+ * Negative with "1 File Only", 29 Oct 2026; a file dropped on the slot
+ * replaced it, 28 Oct 2026). The chooser filters by .jsonl; a file of another
+ * type is not taken, so there is no Invalid file format state (requester,
+ * 22 Oct 2026).
  *
  * Picking a file only puts it in the slot. The checks run on Import
  * (requester, 22 Oct 2026; was: the moment the file was picked): a file, then
@@ -66,10 +64,6 @@ const typeLabel = (name: string) => (name.includes('.') ? name.slice(name.lastIn
  * still in its slot, for the user to remove (BA, 22 Oct 2026; was: closed it
  * and stayed on the list).
  *
- * A file dropped on the picked file replaces it at once, with no question
- * (BA / Dev, 28 Oct 2026): the slot reads "Drop to replace" while the file is
- * over it, and the drop goes through the same `add` as the zone, so it takes
- * one .jsonl only and clears the old file's error.
  */
 export function ImportDialog({
   open,
@@ -89,11 +83,7 @@ export function ImportDialog({
   const [picked, setPicked] = useState<Picked | null>(null)
   const [phase, setPhase] = useState<Phase>('idle')
   const [message, setMessage] = useState<string | null>(null)
-  /* A drop of two or more files on the zone, or the `too-many` route. Cleared by Cancel or one valid file. */
-  const [tooMany, setTooMany] = useState(false)
   const nextKey = useRef(0)
-  /* `#/list/import/drag-replace` holds the slot's drag look until the file changes. */
-  const [heldDrag, setHeldDrag] = useState(false)
   /* Whether the last upload was an import over: Try again repeats it without asking again. */
   const lastReplace = useRef(false)
   const uploading = phase === 'uploading'
@@ -109,8 +99,6 @@ export function ImportDialog({
     } else setPicked(null)
     setPhase(preset === 'uploading' ? 'uploading' : preset === 'failure' ? 'failed' : preset === 'duplicate' ? 'replace' : 'idle')
     setMessage(preset === 'no-file' ? IMPORT_COPY.noFile : null)
-    setHeldDrag(preset === 'drag-replace')
-    setTooMany(preset === 'too-many')
   }, [open, preset])
 
   const failed = phase === 'failed'
@@ -121,7 +109,6 @@ export function ImportDialog({
     setPicked(null)
     setPhase('idle')
     setMessage(null)
-    setTooMany(false)
   }
   const close = () => {
     if (uploading) return
@@ -131,24 +118,16 @@ export function ImportDialog({
 
   const add = (list: FileList | null) => {
     if (!list?.length) return
-    /* Two or more dropped on the zone: take none and hold "1 File Only". The chooser takes one. */
-    if (list.length > 1) {
-      setMessage(null)
-      setTooMany(true)
-      return
-    }
+    /* The chooser takes one file (no `multiple`). */
     const file = list[0]
-    /* The chooser offers .jsonl only; a dropped file of another type is not taken. */
+    /* The chooser offers .jsonl only; a file of another type is not taken. */
     if (!isJsonl(file.name)) return
     setMessage(null)
     setPhase('idle')
-    setHeldDrag(false)
-    setTooMany(false)
     setPicked({ key: nextKey.current++, file, size: file.size, problem: null })
   }
 
   const remove = () => {
-    setHeldDrag(false)
     setPicked(null)
     setMessage(null)
     setPhase('idle')
@@ -214,34 +193,28 @@ export function ImportDialog({
             </div>
           )}
 
+          {/* Core Website Design Library's File Upload (requester, 24 Nov 2026; was the CMS prototype's
+             UploadZone and UploadedFile), as the Import Figma places it: State=Default with Title
+             Browse file, State=Error for no file with the message as its Description, State=Upload - Success
+             for the picked file (metadata JSONL, no Preview), State=Upload - Error with the message as
+             its Inline Message for a file over 10 MB and for an upload that failed. Try again stays on
+             the failed upload (code since 20 Oct 2026; the Figma failure screen hides Has Action). */}
           {picked ? (
-            /* CMS's upload-failed slot (design request, 20 Oct 2026) for an upload that failed, with
-               Try again, and for a file over 10 MB, without it (requester, 22 Oct 2026). */
-            <UploadedFile
-              name={picked.file.name}
-              meta={typeLabel(picked.file.name)}
-              error={!!problem || failed}
-              errorMessage={failed ? IMPORT_COPY.failTitle : problem?.message}
-              errorPlacement="slot"
-              retryLabel={IMPORT_COPY.retry}
-              onRetry={failed ? () => upload(lastReplace.current) : undefined}
+            <FileUpload
+              state={problem || failed ? 'upload-error' : 'upload-success'}
+              fileName={picked.file.name}
+              fileMetadata={typeLabel(picked.file.name)}
+              inlineMessage={failed ? IMPORT_COPY.failTitle : problem?.message}
+              actionLabel={IMPORT_COPY.retry}
+              onAction={failed ? () => upload(lastReplace.current) : undefined}
               onRemove={remove}
-              onDropFiles={add}
-              dropLabel={IMPORT_COPY.dropReplace}
-              maxFiles={1}
-              dragOver={heldDrag}
             />
           ) : (
-            /* The CMS prototype's upload zone (components/upload) — webds ships none. */
-            <UploadZone
-              buttonLabel={IMPORT_COPY.browse}
-              hint={IMPORT_COPY.dropTitle}
+            <FileUpload
+              state={noFile ? 'error' : 'default'}
+              title={IMPORT_COPY.browse}
+              description={noFile ? IMPORT_COPY.noFile : IMPORT_COPY.dropTitle}
               accept=".jsonl"
-              maxFiles={1}
-              tooManyHint={IMPORT_COPY.oneFile}
-              error={tooMany || noFile}
-              /* Inside the zone, as "1 File Only" reads (requester, 29 Oct 2026; was an Inline Message under it). */
-              errorHint={tooMany ? IMPORT_COPY.oneFile : noFile ? IMPORT_COPY.noFile : undefined}
               onFiles={add}
             />
           )}

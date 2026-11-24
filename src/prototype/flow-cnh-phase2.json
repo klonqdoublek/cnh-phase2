@@ -24,30 +24,10 @@
    "section": "Import"
   },
   {
-   "id": "more-than-one",
-   "kind": "decision",
-   "label": "More than one file?",
-   "section": "Import"
-  },
-  {
-   "id": "too-many",
-   "kind": "screen",
-   "label": "More than one file dragged over — drop refused",
-   "route": "#/list/import/too-many",
-   "section": "Import"
-  },
-  {
    "id": "selected",
    "kind": "screen",
    "label": "File selected",
    "route": "#/list/import/selected",
-   "section": "Import"
-  },
-  {
-   "id": "drag-replace",
-   "kind": "screen",
-   "label": "New file dragged over the file — Drop to replace",
-   "route": "#/list/import/drag-replace",
    "section": "Import"
   },
   {
@@ -401,8 +381,8 @@
   },
   {
    "from": "initial",
-   "to": "more-than-one",
-   "label": "Browse file or drop a file",
+   "to": "selected",
+   "label": "Browse file",
    "style": "solid",
    "touch": {
     "x": 754,
@@ -433,30 +413,6 @@
     "y": 596,
     "w": 86,
     "h": 44
-   }
-  },
-  {
-   "from": "more-than-one",
-   "to": "too-many",
-   "label": "Yes",
-   "style": "dashed"
-  },
-  {
-   "from": "more-than-one",
-   "to": "selected",
-   "label": "No",
-   "style": "solid"
-  },
-  {
-   "from": "too-many",
-   "to": "more-than-one",
-   "label": "Browse file or drop one file",
-   "style": "back",
-   "touch": {
-    "x": 754,
-    "y": 488,
-    "w": 412,
-    "h": 84
    }
   },
   {
@@ -485,24 +441,6 @@
   },
   {
    "from": "selected",
-   "to": "drag-replace",
-   "label": "Drag a .jsonl file onto the file",
-   "style": "solid",
-   "touch": {
-    "x": 754,
-    "y": 488,
-    "w": 412,
-    "h": 84
-   }
-  },
-  {
-   "from": "drag-replace",
-   "to": "selected",
-   "label": "Drop — the new file replaces it",
-   "style": "solid"
-  },
-  {
-   "from": "selected",
    "to": "list",
    "label": "Cancel",
    "style": "back",
@@ -524,18 +462,6 @@
    "to": "size",
    "label": "Yes",
    "style": "solid"
-  },
-  {
-   "from": "no-file",
-   "to": "more-than-one",
-   "label": "Browse file or drop a file",
-   "style": "back",
-   "touch": {
-    "x": 754,
-    "y": 472,
-    "w": 412,
-    "h": 84
-   }
   },
   {
    "from": "size",
