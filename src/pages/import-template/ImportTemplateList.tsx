@@ -3,8 +3,6 @@ import { cn } from '@/lib/cn'
 import { Breadcrumbs } from '@/bbl/breadcrumbs'
 import { Button } from '@/bbl/button'
 import { GhostButton } from '@/bbl/ghost-button'
-import { Icon } from '@/bbl/icon'
-import { OutlineButton } from '@/bbl/outline-button'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { ConsolePage } from '@/patterns/console-page'
 import { STATUS_LABEL } from '@/data/broadcast'
@@ -30,15 +28,11 @@ export type ImportTemplateListProps = {
    *  with the filters up) · `#/import-template/error`. */
   state?: 'ready' | 'loading' | 'filter-loading' | 'error'
   onRetry?: () => void
-  /** Fetches the list again: every import's status as of now. */
-  onRefresh: () => void
   /** Import menu option: the page sits under Notification management, so a breadcrumb leads back (3 Nov 2026). */
   breadcrumb?: boolean
 }
 
 const PAGE_SIZE = 50
-/** How long the refetch shows the list's loading state in the prototype. */
-const REFRESH_MS = 800
 
 /* Slide 8's columns, in its order. Widths at 1920, as Broadcast's list. */
 const COLUMNS: ListColumn<ImportRecord>[] = [
@@ -58,9 +52,7 @@ const COLUMNS: ListColumn<ImportRecord>[] = [
  * header and the empty state as a second way in, beside Notification
  * management's (PROPOSAL, 1 Nov 2026, pending BA: the deck does not ask for it).
  */
-export function ImportTemplateList({ records, onOpen, onImport, state: shownState = 'ready', onRetry, onRefresh, breadcrumb = false }: ImportTemplateListProps) {
-  const [refreshing, setRefreshing] = useState(false)
-  const state = refreshing ? 'filter-loading' : shownState
+export function ImportTemplateList({ records, onOpen, onImport, state = 'ready', onRetry, breadcrumb = false }: ImportTemplateListProps) {
   /* CNH Phase 1's two list loadings (Loading Behaviour, Phase 1 Figma 1:16879, 6 Nov 2026): the page
      opening draws no filter band and the card runs from the header to the foot (Landing loading
      1:138461); a refetch keeps the filters up (Filter loading 1:138591). */
@@ -151,28 +143,10 @@ export function ImportTemplateList({ records, onOpen, onImport, state: shownStat
             COPY.title
           )
         }
-        /* Refresh fetches the page again (design critique with the lead design team, 3 Nov
-           2026): the list shows each import's status as of when it was opened, so the user
-           pulls the newer ones. Filters, search and page stay. Composed: Outline Button with
-           the library's `refresh` icon after the label, as webds `picker-dialog`'s Refresh. */
-        headerActions={
-          <span className="flex items-center gap-[var(--space-4)]">
-            <OutlineButton
-              disabled={loading}
-              onClick={() => {
-                setRefreshing(true)
-                setTimeout(() => {
-                  onRefresh()
-                  setRefreshing(false)
-                }, REFRESH_MS)
-              }}
-            >
-              {COPY.refreshAction}
-              <Icon slug="refresh" size={16} color="currentColor" />
-            </OutlineButton>
-            <Button onClick={onImport}>{COPY.importAction}</Button>
-          </span>
-        }
+        /* No Refresh (BA Natsinee, Figma comment 18 Nov 2026: "remove, align with any
+           feature"; was an Outline Button left of Import from the design critique of 3 Nov
+           2026). The list shows each import's status as of when the page opened. */
+        headerActions={<Button onClick={onImport}>{COPY.importAction}</Button>}
         columnWidth="fill"
         /* With the breadcrumb the band grows to 101: 24 above, the 60 crumb-and-title block, 16 below,
            the rule. Actions centre on the block (UI 444:94796, 6 Nov 2026; was a fixed 82). */
