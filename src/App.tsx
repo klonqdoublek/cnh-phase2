@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { BROADCASTS, deliveryReportCsv, deliveryReportName, type Broadcast, type ListToast } from '@/data/broadcast'
 import { LIST_TOAST, REPORT_DEMO_ID, formPreset, listPreset, reportPreset } from '@/data/broadcast-presets'
-import { IMPORT_HISTORY, IMPORT_PRESETS, type ImportPreset } from '@/data/import-spec'
+import { IMPORTED_RECORDS, IMPORT_PRESETS, recordKey, type ImportPreset } from '@/data/import-spec'
 import { TEMPLATES, type Template, type TemplateStatus } from '@/data/templates'
 import { fromValues, stampImported, toValues, togglesOf, type FormValues, type Toggles } from '@/data/template-form'
 import { go, useHash } from '@/lib/hash'
@@ -35,8 +35,8 @@ export default function App() {
   const [downloadRequest, setDownloadRequest] = useState<Template | null>(null)
   const [notice, setNotice] = useState<ListNotice | null>(null)
   const [templates, setTemplates] = useState<Template[]>(TEMPLATES)
-  /** File name → ids of the templates its last import added (requester, 15 Oct 2026). */
-  const [importHistory, setImportHistory] = useState<Record<string, string[]>>(IMPORT_HISTORY)
+  /** Records imported before: template name (record key) → its id on the list (24 Nov 2026; was file name → ids, 15 Oct 2026). */
+  const [importedRecords, setImportedRecords] = useState<Record<string, string | null>>(IMPORTED_RECORDS)
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>(BROADCASTS)
   const [created, setCreated] = useState<ListToast | null>(null)
   const [openBroadcast, setOpenBroadcast] = useState<Broadcast | null>(null)
@@ -45,13 +45,16 @@ export default function App() {
   /* Rows an import just added are highlighted (PROPOSAL, 2 Nov 2026, pending BA): id → when it landed. */
   const [fresh, setFresh] = useState<ReadonlyMap<string, number>>(new Map())
 
-  /* Puts imported templates on the list. Importing over a file replaces the templates its earlier import added. */
-  const landImport = (imported: Template[], fileName?: string, replace?: boolean) => {
-    const gone = new Set(replace && fileName ? importHistory[fileName] : [])
+  /* Puts imported templates on the list. Confirmed over records imported before, each such record's
+     earlier row gives way to the new one (the backend's job; the prototype stands in). */
+  const landImport = (imported: Template[], _fileName?: string, replace?: boolean) => {
+    const gone = new Set(
+      replace ? imported.map((t) => importedRecords[recordKey(t.name)]).filter((id): id is string => !!id) : [],
+    )
     const base = nextRunning(templates)
     const stamped = imported.map((t, i) => stampImported(t, base + i))
     setTemplates((list) => [...stamped, ...list.filter((t) => !gone.has(t.id))])
-    if (fileName) setImportHistory((h) => ({ ...h, [fileName]: stamped.map((t) => t.id) }))
+    setImportedRecords((r) => ({ ...r, ...Object.fromEntries(stamped.map((t) => [recordKey(t.name), t.id])) }))
     const now = Date.now()
     setFresh((m) => new Map([...m, ...stamped.map((t) => [t.id, now] as const)]))
   }
@@ -276,7 +279,7 @@ export default function App() {
           importPreset={importPreset}
           importMenuHeld={importMenuHeld}
           onViewImports={() => go('/import-template')}
-          importedNames={Object.keys(importHistory)}
+          importedRecords={Object.keys(importedRecords)}
           onImport={landImport}
           importJobs={importJobs}
         />
@@ -312,7 +315,7 @@ export default function App() {
       {onImportTemplate && (
         <ImportDialog
           open={importOpen || hash === '#/import-template/import'}
-          importedNames={Object.keys(importHistory)}
+          importedRecords={Object.keys(importedRecords)}
           onClose={() => {
             setImportOpen(false)
             if (hash === '#/import-template/import') go('/import-template')
