@@ -198,7 +198,7 @@ export default function App() {
      `#/list/import-menu` shows the menu open. */
   const importMenuHeld = hash === '#/list/import-menu'
   const importRecords: ImportRecord[] = importSnapshot ?? [...importJobs.history.map(recordOfJob), ...IMPORT_RECORDS]
-  const importView = hash.match(/^#\/import-template\/view\/([A-Z]+-[A-Z]?\d+)(\/download|\/loading)?$/)
+  const importView = hash.match(/^#\/import-template\/view\/([A-Z]+-[A-Z]?\d+)(\/download(?:\/fail)?|\/loading)?$/)
   const importViewId = openImport ?? importView?.[1]
   const viewingImport = importViewId ? importRecords.find((r) => r.id === importViewId) : undefined
   const preset = listPreset(hash.match(/^#\/broadcast\/([a-z-]+)$/)?.[1])
@@ -330,7 +330,8 @@ export default function App() {
         <ImportTemplateDrawer
           key={`${viewingImport.id}${importView?.[2] ?? ''}`}
           record={viewingImport}
-          confirmingDownload={importView?.[2] === '/download'}
+          confirmingDownload={!!importView?.[2]?.startsWith('/download')}
+          downloadFailNext={importView?.[2] === '/download/fail'}
           holdLoading={importView?.[2] === '/loading'}
           onClose={() => {
             setOpenImport(null)
