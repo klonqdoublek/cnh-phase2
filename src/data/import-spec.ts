@@ -50,6 +50,8 @@ export const IMPORT_COPY = {
   /* Inside the file slot since 20 Oct 2026 (CMS's upload-failed slot); the banner's
      second line, "Please try again", became CMS's Try again button. */
   failTitle: 'Unable to import templates',
+  /* The original build's failure banner's second line, back as the modal's body (24 Nov 2026). */
+  failBody: 'Please try again',
   retry: 'Try again',
   /* Background processing (BA / Dev, 28 Oct 2026): Import that passes the dialog's checks
      sends the file to a server; its templates reach the list about 10 minutes later. The
