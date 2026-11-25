@@ -42,10 +42,8 @@ const IMPORT: Screen = {
   states: [
     s('#/list/import', 'Default', 'Import dialog'),
     s('#/list/import/selected', 'Data', 'File selected'),
-    s('#/list/import/drag-replace', 'Data', 'New file dragged over the file'),
     s('#/list/import/uploading', 'Loading', 'Uploading'),
     s('#/list/import/no-file', 'Error', 'Import pressed with no file'),
-    s('#/list/import/too-many', 'Error', 'More than one file dropped'),
     s('#/list/import/too-large', 'Error', 'File over 10 MB'),
     s('#/list/import/failure', 'Error', 'Import failure'),
     s('#/list/import/duplicate', 'Dialog', 'Replace imported templates?'),
