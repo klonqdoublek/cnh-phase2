@@ -2,10 +2,10 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { UploadZone } from '@/components/upload/UploadZone'
 import { UploadedFile } from '@/components/upload/UploadedFile'
 import { DateTimeInput } from '@/components/fields/DateTimeInput'
-import { QUIET_PERIOD_LABEL, TimeInput } from '@/components/fields/TimeInput'
+import { TimeInput } from '@/components/fields/TimeInput'
 import { Alert } from '@/bbl/alert'
 import { CardSurface } from '@/bbl/building-block-card-surface'
-import { FieldLabel, FieldRoot } from '@/bbl/field'
+import { FieldLabel } from '@/bbl/field'
 import { SpinnerLoader } from '@/bbl/building-block-spinner-loader'
 import { Icon } from '@/bbl/icon'
 import { IconButton } from '@/bbl/icon-button'
@@ -36,7 +36,7 @@ import {
 } from '@/data/broadcast'
 import { type Channel } from '@/data/templates'
 import { cn } from '@/lib/cn'
-import { Choice, LABEL, MessageEditor, ModeOption, NOTE, Select, Text } from './fields'
+import { Choice, DESCRIPTION_BOX, HALF, LABEL, MessageEditor, ModeOption, NOTE, Select, Text } from './fields'
 import { editBox, type Tint } from './highlight'
 import { MessagePreview } from './preview'
 import { ScrollBox } from './scroll-box'
@@ -91,21 +91,26 @@ export function Section({
 
 export function BasicInfo({ f }: F) {
   return (
-    <FormSectionCard title="General information" rowGap={4}>
+    <FormSectionCard title="General information">
       <Text
         id="name"
         label="Broadcast name"
         required
+        className={HALF}
         value={f.name}
         max={100}
         error={f.errors.name}
         placeholder="e.g. October Customer Campaign"
         onChange={f.setName}
       />
+      {/* Text Area (DS team, 25 Nov 2026; Figma 1693:350959): a fixed 90 box
+          that takes line breaks, no longer the one-line box that grew
+          (Korarit, 4 Nov 2026). */}
       <Text
         id="description"
         label="Description"
-        grow
+        multiline
+        className={cn(HALF, DESCRIPTION_BOX)}
         value={f.description}
         max={250}
         error={f.errors.description}
@@ -127,7 +132,7 @@ export function AudienceFile({ f }: F) {
     <FormSectionCard title="Upload Audience file">
       <ServiceCode f={f} />
       <RecipientType f={f} />
-      <div data-error={f.errors.file ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
+      <div data-error={f.errors.file ? 'true' : undefined} className={cn('flex min-w-0 flex-col gap-[var(--space-2)]', HALF)}>
         <FieldLabel required>Upload File</FieldLabel>
         {f.file ? (
           <FileResult f={f} />
@@ -279,16 +284,18 @@ const RECIPIENT_TYPES: { value: RecipientTypeValue; description: string }[] = [
 
 function RecipientType({ f }: F) {
   return (
-    <div className="flex min-w-0 flex-col gap-[var(--space-2)]">
+    <div className={cn('flex min-w-0 flex-col gap-[var(--space-2)]', HALF)}>
       <FieldLabel required>Select Recipient type</FieldLabel>
-      <div role="radiogroup" aria-label="Recipient type" className="flex gap-[var(--space-2)] py-[var(--space-3)]">
+      {/* One grid column each (DS team, 25 Nov 2026): three equal options,
+          gutter 24, across half the card. */}
+      <div role="radiogroup" aria-label="Recipient type" className="flex gap-[var(--space-6)]">
         {RECIPIENT_TYPES.map((t) => (
           <ModeOption
             key={t.value}
             on={f.recipientType === t.value}
             label={RECIPIENT_TYPE_LABEL[t.value]}
             description={t.description}
-            className="w-[377px]"
+            className="min-w-0 flex-1"
             onSelect={() => f.setRecipientType(t.value)}
           />
         ))}
@@ -305,7 +312,7 @@ function ServiceCode({ f }: F) {
   return (
     <Select
       label="Service code"
-      className="w-[456px]"
+      className={HALF}
       required
       value={f.serviceCode}
       options={BROADCAST_SERVICE_CODES}
@@ -324,7 +331,7 @@ function ColumnSelect({ f }: F) {
   return (
     <Select
       label={label}
-      className="w-[456px]"
+      className={HALF}
       required
       value={f.column}
       options={f.audience?.headers ?? []}
@@ -658,7 +665,7 @@ function ChannelFields({
 export function Delivery({ f }: F) {
   return (
     <FormSectionCard title="Select Delivery Date">
-      <div role="radiogroup" aria-label="When to send" className="flex flex-col gap-[var(--space-10)] py-[var(--space-3)]">
+      <div role="radiogroup" aria-label="When to send" className={cn('flex flex-col gap-[var(--space-6)]', HALF)}>
         <ModeOption
           on={f.mode === 'now'}
           label="Send as soon as possible"
@@ -711,6 +718,7 @@ function Outlook({ f }: F) {
   if (f.neverSends) return null
   return (
     <Alert
+      className={HALF}
       appearance="brand"
       icon={<Icon slug="information" size={24} color="var(--color-icon-highlight-default)" />}
       /* Title, not Description: the Figma Alert has no switch to hide its Title,
@@ -760,8 +768,9 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
   const daysError = f.errors[`dndDays:${rule.id}`]
   const timeError = f.errors[`dndTime:${rule.id}`]
   const which = f.dnd.rules.length > 1 ? ` ${index + 1}` : ''
+  const fromLabel = `Quiet period from (${TIME_ZONES.find((z) => z.value === f.dnd.timeZone)?.offset ?? f.dnd.timeZone})`
   return (
-    <div className="flex flex-col items-start gap-[var(--space-8)]">
+    <div className="flex min-w-0 flex-1 flex-col items-start gap-[var(--space-6)]">
       <div data-error={daysError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-3)]">
         <span className="type-label-xl text-[var(--color-text-tertiary-default)]">Weekdays</span>
         <div className="flex flex-wrap items-center gap-[var(--space-6)]">
@@ -785,21 +794,36 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
           </InlineMessage>
         )}
       </div>
-      <div data-error={timeError ? 'true' : undefined} className="flex min-w-0 flex-col gap-[var(--space-2)]">
+      {/* The row's label, then All day on its own line, then the two boxes
+          sharing half the card (DS team's layout, Figma 1693:350940, 25 Nov
+          2026; All day sat after the boxes until then). Rows 24 apart, as the
+          frame draws them (was 32, requester, 5 Nov 2026). */}
+      <div data-error={timeError ? 'true' : undefined} className={cn('flex min-w-0 flex-col gap-[var(--space-3)]', HALF)}>
+        <FieldLabel className="h-[22px]" colour={off ? 'disabled' : 'tertiary'}>
+          {fromLabel}
+        </FieldLabel>
+        <Choice
+          kind="checkbox"
+          label="All day"
+          ariaLabel={`Quiet period${which} all day`}
+          disabled={off}
+          on={rule.allDay}
+          onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
+        />
         <div className="flex items-start gap-[var(--space-4)]">
           <TimeInput
-            label={`Quiet period from (${TIME_ZONES.find((z) => z.value === f.dnd.timeZone)?.offset ?? f.dnd.timeZone})`}
+            label={fromLabel}
+            hideLabel
+            className="flex-1"
             value={rule.allDay ? '' : rule.from}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { from: v })}
           />
-          <BesideField>
-            <span className="type-body-m text-[var(--color-text-secondary-default)]">to</span>
-          </BesideField>
-          {/* The original draws no label here, only the room for one, so the two
-              boxes share a line. */}
+          <span className="flex h-[56px] shrink-0 items-center type-body-m text-[var(--color-text-secondary-default)]">to</span>
           <TimeInput
-            label=" "
+            label={`Quiet period${which} to`}
+            hideLabel
+            className="flex-1"
             value={rule.allDay ? '' : rule.to}
             disabled={off || rule.allDay}
             onChange={(v) => f.setDndRule(rule.id, { to: v })}
@@ -807,16 +831,6 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
                box so the row keeps its width. */
             hint={endsNextDay(rule) ? 'Next Day' : undefined}
           />
-          <BesideField>
-            <Choice
-              kind="checkbox"
-              label="All day"
-              ariaLabel={`Quiet period${which} all day`}
-              disabled={off}
-              on={rule.allDay}
-              onChange={(allDay) => f.setDndRule(rule.id, { allDay })}
-            />
-          </BesideField>
         </div>
         {timeError && (
           <InlineMessage appearance="negative" size="xs">
@@ -825,17 +839,6 @@ function DndRuleRow({ f, rule, index }: F & { rule: DndRule; index: number }) {
         )}
       </div>
     </div>
-  )
-}
-
-/** What sits beside the time boxes, set under an empty label on a 56-tall line
- *  so it stays level with the boxes when the To box carries a hint under it. */
-function BesideField({ className, children }: { className?: string; children: React.ReactNode }) {
-  return (
-    <FieldRoot className="w-auto shrink-0">
-      <FieldLabel className={QUIET_PERIOD_LABEL}> </FieldLabel>
-      <span className={cn('flex h-[56px] items-center', className)}>{children}</span>
-    </FieldRoot>
   )
 }
 

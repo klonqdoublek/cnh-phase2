@@ -81,9 +81,14 @@ export function TimeInput({
   disabled,
   placeholder = 'HH:mm',
   minuteStep = 5,
+  hideLabel,
   className,
 }: {
+  /** Also the box's accessible name, drawn or not. */
   label: string
+  /** The row's own label stands above the boxes (DS team's layout, Figma
+   *  1693:350940), so each box draws none. */
+  hideLabel?: boolean
   /** `HH:mm`, or '' for none. */
   value: string
   onChange: (value: string) => void
@@ -149,9 +154,11 @@ export function TimeInput({
   return (
     <div ref={rootRef} data-error={error ? 'true' : undefined} className={cn('relative w-[220px] min-w-0', className)}>
       <FieldRoot>
-        <FieldLabel className={QUIET_PERIOD_LABEL} colour={disabled ? 'disabled' : 'tertiary'} required={required}>
-          {label}
-        </FieldLabel>
+        {!hideLabel && (
+          <FieldLabel className={QUIET_PERIOD_LABEL} colour={disabled ? 'disabled' : 'tertiary'} required={required}>
+            {label}
+          </FieldLabel>
+        )}
         <div className="relative">
           <button
             type="button"

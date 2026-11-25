@@ -16,6 +16,25 @@ export const NOTE = 'type-body-s text-[var(--color-text-secondary-default)]'
 /** Label L Emphasized, Text/Primary — the original's `cnh-bc__label`. */
 export const LABEL = 'type-label-l-emphasized text-[var(--color-text-primary-default)]'
 
+/** Half a card: 3 of the card's 6 columns, gutter 24 (DS team's layout, Figma
+ *  1693:350940, 25 Nov 2026). 3 columns + 2 gutters of a 6-column, 5-gutter
+ *  grid is (width − 1 gutter) / 2, so no column width is written down. webds
+ *  publishes no layout-grid token (gap). */
+export const HALF = 'w-[calc((100%-var(--space-6))/2)]'
+
+/** Description's Text Area box: 90 as the DS team's frame draws it (Figma
+ *  1693:350959), not the set's 156. 90 is measured; webds has no token for it
+ *  (gap). Long text scrolls inside the box. */
+export const DESCRIPTION_BOX = '[&_.webds-text-area]:h-[90px]'
+
+/** The page column: 6 of 8 columns of the 1920 frame's grid (margin 32,
+ *  gutter 24), centred, for both the body and the footer (Figma 1693:350940).
+ *  The body's 100% is the frame less its 80 side padding, so the padding is
+ *  added back before the grid is taken. 1386 at a 1920 frame. */
+export const PAGE_COLUMN =
+  '[&_.webds-pattern-console-page-7]:w-[calc((100%+2*var(--space-20)-2*var(--space-8)-7*var(--space-6))*6/8+5*var(--space-6))] ' +
+  '[&_.webds-pattern-console-page-9]:w-[calc((100%-2*var(--space-8)-7*var(--space-6))*6/8+5*var(--space-6))] [&_.webds-pattern-console-page-9]:px-0'
+
 /** One text or text-area field. `data-field` lets the field chips find the
  *  message box the cursor was last in; `data-error` is what Submit scrolls to.
  *  `boxHeight` is the Template form's taller one-line box (Push message).

@@ -9,6 +9,8 @@ import type { FormPreset } from '@/data/broadcast-presets'
 import { Dialogs } from './create/Dialogs'
 import { AudienceFile, BasicInfo, ChannelAlert, Delivery, DndCard, MessageContent, Section, noFieldsNote, type FocusRef } from './create/sections'
 import { useBroadcastForm } from './create/useBroadcastForm'
+import { PAGE_COLUMN } from './create/fields'
+import { cn } from '@/lib/cn'
 import { seedWithColumns, useColumns } from '@/prototype/audience-fields'
 
 export type SaveKind = 'draft' | 'submit'
@@ -27,7 +29,9 @@ export type BroadcastWizardProps = {
 /**
  * Create / Edit broadcast — one page, four steps, the actions pinned below.
  * The frame is webds `console-page` (CNH's own: 82 header with a back mark,
- * a 1280 column scrolling in px 80 / py 32, a 76 footer); each step is its
+ * a column of 6 of the frame's 8 grid columns — 1386 at 1920, was 1280 until
+ * the DS team's layout, 25 Nov 2026 — scrolling in px 80 / py 32, a 76
+ * footer on the same column); each step is its
  * `FormStep`. Layout and step copy are draft 2.2 webds-matched (Figma
  * 85:19401, 15 Oct 2026): the channels moved from checkboxes onto their own
  * cards' switches, and the message content sits under the audience step.
@@ -51,7 +55,8 @@ function Wizard({ onBack, onCreate, failNext, loading, preset, initial }: Broadc
   return (
     <div className="relative h-full bg-[var(--color-surface-secondary-default)]">
       <ConsolePage
-        className="h-full"
+        className={cn('h-full', PAGE_COLUMN)}
+        columnWidth="fill"
         bodyRef={body}
         back={
           <button
